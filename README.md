@@ -17,10 +17,19 @@
 **The human** (Alan McDonagh) drives architecture, makes judgment calls, applies domain knowledge, and manages the project.
 **The AI** (Databricks Genie) generates code templates, suggests approaches, automates repetitive setup, and provides Databricks platform guidance.
 
+## 📖 Team Docs
+
+| Document | Description |
+|---|---|
+| **[Project Management Guide](docs/PROJECT_MANAGEMENT.md)** | How we use GitHub Issues, the Kanban board, and AI interaction logging — **read this first if you're new to the team** |
+| **[Decision Log](notebooks/00_decision_log.py)** | Running record of every AI vs human decision |
+
 ## 📁 Project Structure
 
 ```
 iaa-hackathon-2026/
+├── docs/
+│   └── PROJECT_MANAGEMENT.md   # Team onboarding & workflow guide
 ├── notebooks/
 │   ├── 00_decision_log.py      # AI vs human decision audit trail
 │   ├── 01_data_loading.py      # Load Kaggle data into Databricks
@@ -46,6 +55,8 @@ iaa-hackathon-2026/
 2. Upload your Kaggle dataset to a Unity Catalog Volume
 3. Update the `VOLUME_PATH` in `notebooks/01_data_loading.py`
 4. Run notebooks in order: `01` → `02` → `03` → `04` → `05`
+
+👉 **New to the team?** Read the [Project Management Guide](docs/PROJECT_MANAGEMENT.md) for the full workflow.
 
 ## 🛠️ Tech Stack
 
