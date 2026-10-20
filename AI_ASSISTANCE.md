@@ -145,6 +145,21 @@ Recorded after reviewing the Excel workbooks. These are thoughts only — nothin
 - **Results**: policies_motor_master 793,414 rows (61 MB), policies_contents_master 599,110 rows (39 MB), policies_buildings_master 596,186 rows (40 MB) — all round-trip verified via pandas AND Spark; all under GitHub's 100 MB per-file limit; raw `data/` folder untouched
 - **Files affected**: `notebooks/Motor_Bridget` (new cell), `workings/policies_motor_master.parquet`, `workings/policies_contents_master.parquet`, `workings/policies_buildings_master.parquet`
 
+### 2026-10-20 — Contents Tweedie XGBoost model & submission v001
+- **Task**: Build the contents model in the new `Contents_Bridget` notebook per Bridget's feature list (1 = use, 0 = exclude), score `test_contents` (2025), and fill the C-prefix rows of the sample_submission skeleton
+- **Human Contribution**: Provided the contents feature list (Year derived from period_start; target = ultimate_claims; written_premium, discount_applied and all claims-derived columns excluded; contents rows carry the C prefix in the submission)
+- **Human Decision (flagged)**: the seven weather features were left BLANK in the provided list — they are INCLUDED (consistent with the motor model and directly property-relevant); revisit if that was not the intent
+- **AI Contribution**: Mirrored the validated motor pipeline — contents master read from `workings/` (fast-start pattern, no rebuild), 50 features verified against the master (~2.5% missingness on joined customer/address features), 4-fold GroupKFold (grouped by customer_id) Tweedie XGBoost at p=1.5 with exposure sample weights, OOF decile evaluation, test master built with the same weather/customers/addresses joins (no unseen categorical levels; 2.5% join gap), refit on 100% of training rows and C rows filled into the skeleton (M/B rows keep the dummy 10)
+- **Results**: CV mean Tweedie deviance (p=1.5) 7,652 (folds 3,385 / 6,600 / 7,446 / 13,177 — tail-driven spread); mean pred ~52 vs actual ~78 (same under-prediction pattern as motor); deciles 100% monotonic, top-decile lift 2.20x, claim rate 1.7% → 6.3%; top gain features: exposure (13.5%), solar_panels, flood_zone, occupation, voluntary_excess; submission 626,639 rows — 187,498 C rows model-scored (mean 57.49, min 0.64, max 2,977.81), 20 zero-preds replaced with the dummy, 439,141 M/B dummy rows; evaluation exported to `Excel files/contents_tweedie_xgb_results.xlsx`
+- **Files affected**: `notebooks/Contents_Bridget` (cells 5–14), `submissions/contents_tweedie_xgb_submission_v001.csv` (new), `Excel files/contents_tweedie_xgb_results.xlsx` (new)
+
+### 2026-10-20 — Combined submission v3 (motor + buildings + contents)
+- **Task**: Assemble the full three-line submission — every row of the skeleton now carries a real model prediction (no more dummy slots)
+- **Human Contribution**: Requested the combined v3 assembly
+- **AI Contribution**: New section in `Contents_Bridget` — reads the three source files from disk (deterministic, restart-proof), merges by direct `row_id` matching: M rows ← motor model v1, B rows ← teammate's buildings model (carried from the v2 merge), C rows ← contents model v001; asserts each line against its source file plus full-skeleton checks (626,639 rows, no nulls, no zeros, unique row_id)
+- **Results**: M 254,986 rows (mean 267.39, identical to motor v1) | C 187,498 rows (mean 57.49, identical to contents v001) | B 184,155 rows (min 1.13 / mean 342.89 / max 420.28, identical to v2)
+- **Files affected**: `notebooks/Contents_Bridget` (cells 15–16), `submissions/motor_buildings_contents_submission_v003.csv` (new)
+
 ---
 
 *This log is updated whenever AI assistance is used for project work. Each entry is committed to Git alongside the related code changes.*
