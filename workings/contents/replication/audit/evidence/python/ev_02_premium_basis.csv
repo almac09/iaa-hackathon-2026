@@ -1,0 +1,25 @@
+line,src,time_on_cover,n_rows,mean_written_premium,mean_exposure,corr_premium_exposure
+buildings,test,1 full year,118647,370.23,1.0,0.0012
+buildings,test,2 half to full year,31153,357.81,0.7452,0.0041
+buildings,test,3 quarter to half,16560,361.18,0.3734,0.0067
+buildings,test,4 under a quarter,17795,362.94,0.1236,0.0162
+buildings,train,1 full year,482147,324.21,1.0,-0.0036
+buildings,train,2 half to full year,106998,320.3,0.7435,-0.0039
+buildings,train,3 quarter to half,56716,320.84,0.3748,-0.0015
+buildings,train,4 under a quarter,61865,321.24,0.1231,-0.0011
+contents,test,1 full year,116180,154.39,1.0,0.0001
+contents,test,2 half to full year,33341,154.13,0.7442,-0.0036
+contents,test,3 quarter to half,17904,154.46,0.3734,0.002
+contents,test,4 under a quarter,20073,155.15,0.122,0.0012
+contents,train,1 full year,472477,135.43,1.0,-0.0017
+contents,train,2 half to full year,116315,136.7,0.7427,-0.0027
+contents,train,3 quarter to half,62639,136.84,0.3741,-0.0002
+contents,train,4 under a quarter,70186,137.28,0.1221,0.0021
+motor,test,1 full year,151317,588.94,1.0,-0.0127
+motor,test,2 half to full year,47651,618.69,0.7424,0.0014
+motor,test,3 quarter to half,25910,616.33,0.3738,0.0032
+motor,test,4 under a quarter,30108,616.63,0.1198,-0.0048
+motor,train,1 full year,616076,550.42,1.0,-0.0066
+motor,train,2 half to full year,167096,580.26,0.7418,0.0038
+motor,train,3 quarter to half,92143,578.65,0.3741,0.0
+motor,train,4 under a quarter,104653,577.74,0.1211,0.0037

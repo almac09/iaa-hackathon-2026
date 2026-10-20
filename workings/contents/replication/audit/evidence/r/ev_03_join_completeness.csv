@@ -1,0 +1,3 @@
+src,n_rows,n_no_customer,n_no_address,n_no_weather
+test,187498,0,0,0
+train,721617,0,0,0

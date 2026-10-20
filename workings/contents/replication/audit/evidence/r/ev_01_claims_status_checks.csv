@@ -1,0 +1,4 @@
+status,n_claims,n_incurred_below_paid,n_zero_incurred,n_with_recoveries,n_reported_before_loss
+closed,151292,0,0,14776,0
+open,10147,0,0,0,0
+repudiated,1711,0,1711,0,0

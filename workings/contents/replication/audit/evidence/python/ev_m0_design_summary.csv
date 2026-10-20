@@ -1,0 +1,23 @@
+item,value
+n_fit_rows,534126
+n_score_rows,187491
+n_params_incl_intercept,85
+reference_level:f_flood_zone,1
+reference_level:f_elev_band,q00
+reference_level:f_river_band,MISSING
+reference_level:f_tenure,owner
+reference_level:f_region,R01
+reference_level:f_segment,mature_affluent
+reference_level:f_prior_claims,0
+reference_level:f_missed_pay,0
+reference_level:f_vol_xs,0
+reference_level:f_credit,A
+reference_level:f_age_band,a1 <=25
+reference_level:f_security,MISSING
+reference_level:f_hvi,0
+reference_level:f_ad_cover,false
+reference_level:f_bike,false
+reference_level:f_wfh,false
+reference_level:f_lodgers,false
+reference_level:f_urban,dense_urban
+reference_level:f_prop_type,detached

@@ -1,0 +1,5 @@
+size_band,n_claims,pct_claims,pct_cost,pct_accidental_damage,pct_theft,pct_escape_of_water,pct_flood
+band_1,10794,45.44,6.84,62.33,19.24,16.87,1.56
+band_2,9331,39.28,34.05,25.09,40.51,28.91,5.49
+band_3,3013,12.68,37.14,0.66,52.77,27.25,19.32
+band_4,615,2.59,21.97,0.0,33.01,8.46,58.54

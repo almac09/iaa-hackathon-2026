@@ -1,0 +1,5 @@
+claim_two_years_ago,claim_last_year,n_policies,freq_next_per_1000,ae_freq_within_flood_zone,ae_freq_vs_earned_premium,ae_cost_vs_earned_premium
+false,false,190365,37.06,0.95,0.95,0.936
+false,true,7313,61.29,1.517,1.503,1.835
+true,false,7226,67.45,1.669,1.668,1.661
+true,true,484,92.97,2.098,2.187,2.588

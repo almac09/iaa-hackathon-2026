@@ -1,0 +1,4 @@
+grp,mean_contacts,n_rows
+test,0.4009,187498
+train with claim,3.0486,22918
+train without claim,0.4115,698699
