@@ -1,0 +1,121 @@
+# AI Assistance Log — IAA Hackathon 2026
+
+This file documents all AI-assisted contributions to this project, maintained using Databricks Genie Code (AI assistant).
+
+## Format
+
+Each entry records:
+- **Date** — when the assistance occurred
+- **Task** — what was being worked on
+- **AI Contribution** — what the AI assistant did
+- **Human Contribution** — what the author directed, reviewed, or modified
+
+## Log
+
+### 2026-10-20 — Project Setup
+- **Task**: Connect the GitHub repo to Databricks workspace for version control
+- **AI Contribution**: Cloned `almac09/iaa-hackathon-2026` into the Databricks workspace at `/Workspace/Users/bridget.macdonnell1@gmail.com/hackathon-project`; explained Git branching and team sync workflows
+- **Human Contribution**: Set up GitHub credential via Linked Accounts, provided repo URL and workspace path, directed the setup
+- **Files affected**: Repo clone (no code changes yet)
+
+### 2026-10-20 — Fix seaborn import error in data_import_Bridget notebook
+- **Task**: Resolve ModuleNotFoundError when importing seaborn
+- **AI Contribution**: Diagnosed that seaborn is not pre-installed in the serverless compute environment; added a `%pip install seaborn` step at the top of the imports cell and verified successful execution
+- **Human Contribution**: Reported the failing cell and requested the fix
+- **Files affected**: `notebooks/data_import_Bridget` (Cell 2)
+
+### 2026-10-20 — Load parquet datasets & export Excel files
+- **Task**: Load all parquet datasets from the repo's data folder, create an overview Excel workbook (first 100 rows per dataset with total row counts), and export full datasets to Excel where size permits
+- **AI Contribution**: Located the 11 parquet files in the data folder, wrote code to loop through and load each into its own Spark DataFrame (df_claims, df_customers, etc.), built Data_overview_100_rows.xlsx with one sheet per dataset, and exported full Excel files with a 250,000-row safety threshold (8 of 11 datasets exceeded it and were skipped)
+- **Human Contribution**: Requested the loading and Excel export workflow, provided the folder location and naming requirements
+- **Files affected**: `notebooks/data_import_Bridget` (Cells 2, 5, 6, 7), new `Excel files/` folder with 4 workbooks
+
+### 2026-10-20 — Build Data_Summary.xlsx workbook
+- **Task**: Create a summary spreadsheet with dataframe name, shape, describe statistics, and missing-value information per dataset
+- **AI Contribution**: Added a cell that computes per-column dtypes, missing counts/percentages and numeric describe stats (count/mean/stddev/min/max) for all 11 datasets, with an Overview sheet plus one detail sheet per dataset
+- **Human Contribution**: Requested the summary workbook and its contents
+- **Files affected**: `notebooks/data_import_Bridget` (Cell 8), new `Excel files/Data_Summary.xlsx`
+
+## Human in the Loop — Review Checklist
+
+The following steps require human review and decision-making (not automated). Status: items 1–3 **completed** 2026-10-20 (review notes below); item 4 **pending** — awaiting human review of the master policy files.
+
+1. **Review the Excel files created** — Open `Excel files/Data_overview_100_rows.xlsx`, `claims.xlsx`, and `Data_Summary.xlsx` to get a feel for the data: column meanings, distributions, and missing-value patterns (notably the 10.32% missing cells in `claims` and 3.4% in `customers`).
+2. **Check for new files** — Confirm with the team whether any new data files have been received (e.g. new Kaggle uploads or teammate additions to the `data/` folder). New files are picked up automatically by re-running the loading cell in `notebooks/data_import_Bridget`.
+3. **Review overall approach** — Based on the data reviewed, decide whether the current plan needs to change: which datasets to join for modeling, how to handle missing values in `claims`/`customers`, and whether the target/feature set still makes sense for the competition.
+4. **Review the master policy files in Excel** (PENDING) — Open `Excel files/Master_Data_overview_100_rows.xlsx` (one sheet per line: motor, contents, buildings) and the supporting exports (`policies_*_master_first_100_rows.xlsx`, `earned_premium_examples.xlsx`, plus the claims-field examples in Cell 13 of the notebook) and check the masters are as expected: the joined columns (customer, address, weather and aggregated claims fields) look correct; the renewed-only filter is sensible; and the new fields behave as intended — `claim_indicator`, `n_claims`, `incurred_net_of_recoveries`, `ultimate_claims`, and the pro-rated `earned_premium` (incl. the flagged assumption that `written_premium` is annualized).
+
+## Human Review Notes — 2026-10-20
+
+Recorded after reviewing the Excel workbooks. These are thoughts only — nothing actioned yet.
+
+**Data quality**
+- A lot of missing data — for example the energy rating column in `addresses`
+- Possible class imbalance — e.g. almost no listed buildings in the addresses file
+
+**Claims development (target construction)**
+- We have incurred-to-date claims data but no development patterns to use or obtain — all claims data is as at 31/12/2024 and not tracked year on year
+- Will need to develop claims to ultimate using an external benchmark, or using expected loss ratios from earlier years
+- Assume all closed claims are ultimates, especially for earlier years (2021–2022) which are more developed
+- Note: most claims in the dataset are closed
+
+**Feature thinking**
+- A lot of the fields don't look predictive — e.g. email domain
+- Open question: is it ethical to include number of customer service contacts?
+- Weather probably matters more for home than motor — except possibly the hail peril for motor
+
+**Modelling approach**
+- Need to decide whether we model by peril or just by line of business
+- Can model altogether or separately as frequency and severity, for explainability purposes
+- Target for severity looks like ultimate claims — can use incurred-to-date less recoveries for now, until claims are more developed
+- Target for frequency would need a claims flag added to the policies files — consider how to add up multiple claims on one policy row
+
+### 2026-10-20 — Create master policy files (motor, contents, buildings)
+- **Task**: Build policies_motor_master, policies_contents_master and policies_buildings_master by joining customers, addresses, weather (year-matched to period_start) and claims (line-matched, loss year matched to period year, aggregated per policy) onto each policies file
+- **AI Contribution**: Inspected schemas and join-key uniqueness first; discovered addresses has no customer_id (joined on address_id instead), weather is unique per (address_id, year) 2021-2025, and policy_id repeats across years so claims were pre-aggregated per (policy_id, loss year) to prevent fan-out; wrote and ran the join code with sanity checks (all masters match their policy file row counts exactly)
+- **Human Contribution**: Specified the join keys, year-matching rules and multiple-claims aggregation rules (sum paid/incurred/recoveries, peril="multiple" when mixed, first claim for other fields, claim count noted)
+- **Files affected**: `notebooks/data_import_Bridget` (Cell 10)
+- **Follow-up (2026-10-20)**: Added `claim_indicator` (1 if `n_claims` ≥ 1, else 0) to all three master files; verified the indicator totals exactly match the claims-matched counts in each file.
+- **Human verification (completed 2026-10-20)**: Checked the master policy file creation has been done correctly — the output files look OK, the `n_claims` column was spot-checked, and confirmed no files were lost in the join/export process. Includes review of the first-100-row Excel exports of the three master files (Cell 11).
+
+### 2026-10-20 — Add earned_premium to master files
+- **Task**: Add an earned_premium field to each master dataframe for future loss-ratio work — equal to written_premium when the period sits within one calendar year, otherwise pro-rata by days in force during the start year (days to 31 Dec inclusive / total days inclusive, times written_premium, rounded to 2dp)
+- **AI Contribution**: Implemented the calculation in the master build with sanity checks (zero nulls across all three files); discovered that every policy in the data sits within a single calendar year, so the pro-rata branch never fires on real rows — demonstrated it instead on two synthetic test rows (500.00 x 365/730 = 250.00; 500.00 x 184/365 = 252.05); exported verification examples to `Excel files/earned_premium_examples.xlsx` and refreshed the first-100-row master exports
+- **Human Contribution**: Specified the earned premium rules (same-year vs cross-year pro-rata) and requested worked examples to hand-check
+- **Files affected**: `notebooks/data_import_Bridget` (Cells 10, 11, 12), new `Excel files/earned_premium_examples.xlsx`
+
+### 2026-10-20 — Investigate M53731187 (single-day policy)
+- **Task**: Investigate why M53731187 carried a 433.46 premium for a 1-day period (user suspected a cancelled policy)
+- **AI Contribution**: Confirmed the hypothesis — the 2022 row is a renewal that lapsed after one day (`renewal_decision` = "lapsed_by_customer", exposure = 0.0027 = 1/365); the policy's one claim (2021, third-party property, 979.32 paid, closed) attaches to the 2021 row correctly. Broader findings: `written_premium` is always the annualized quote (median ~480 across every period-length bucket from 1 day to 365); 795 motor policies are single-day and ~37% run shorter than 365 days; the `exposure` column has data-quality issues (3,991 motor rows > 1, mixed scales — some look like days, not years)
+- **Human Contribution**: Flagged the anomaly in the earned_premium examples and hypothesised cancellation
+- **Files affected**: none (ad-hoc exploration via chat)
+
+### 2026-10-20 — Filter master files to renewed policies only (HUMAN DECISION)
+- **Task**: Report the proportion of policies with `renewal_decision` = "renewed" and keep only those policies in the master files
+- **AI Contribution**: Measured the proportions (motor 80.96%, contents 83.02%, buildings 84.24%; remainder split between lapsed_by_customer, mid_term_change, cancelled, declined_by_insurer); implemented the renewed-only filter in the master build with updated sanity checks (master rows match renewed policy rows exactly in all three lines) and refreshed the Excel exports. **Flagged for revisit**: ~20-23% of renewed policies still run shorter than a full year (motor: 184,595 of 793,414 renewed rows, including 16,375 under 30 days) and `written_premium` is the annualized quote regardless of period length, so `earned_premium` = `written_premium` still overstates the premium base for those rows (e.g. 2-day renewed policies earn a full annual premium under the current rule)
+- **Human Contribution**: Decision to keep only renewed policies in the masters (noted as revisitable if needed); working assumption that only lapsed policies were affected by the earned premium issue — partially incorrect, see flag above
+- **Files affected**: `notebooks/data_import_Bridget` (Cells 10, 11, 12)
+
+### 2026-10-20 — Pro-rate earned_premium by days in force (DECISION / ASSUMPTION)
+- **Task**: Change earned_premium so the premium base reflects actual exposure instead of treating same-calendar-year policies as fully earned
+- **Decision / Assumption (human-approved, revisit if organisers clarify)**: `written_premium` is treated as the ANNUAL premium under the insurer's current pricing. The competition documentation is ambiguous ("Premium charged under the insurer's current pricing"), so this interpretation is data-driven, not confirmed: correlation between premium and days in force is ~0 in all three lines (motor -0.042, contents -0.012, buildings 0.003); 59,333 same-policy pairs show a short period (avg 104 days) priced at 99.6% of the following full year's premium; single-day policies carry ~100% of the annual median premium
+- **AI Contribution**: Implemented earned_premium = written_premium x days_in_force / days_in_calendar_year (inclusive day counts; 366-day basis for the 2024 leap year; days capped at the calendar year end for the hypothetical cross-year case); extended sanity checks — zero nulls and earned never exceeds written in any line; refreshed verification examples (incl. leap-year and 90-day synthetic tests) and the Excel exports
+- **Human Contribution**: Approved applying the fix and requested the interpretation be flagged as a decision/assumption in this log
+- **Files affected**: `notebooks/data_import_Bridget` (Cells 10, 11, 12), `Excel files/earned_premium_examples.xlsx` and first-100-row exports refreshed
+
+### 2026-10-20 — Add claims amount fields to master files
+- **Task**: Add `incurred_net_of_recoveries` and `ultimate_claims` fields alongside the aggregated claims fields in each master file
+- **AI Contribution**: Both fields = incurred_to_date − recoveries, computed on the per-policy-year aggregated sums (null for policy-years with no claims); sanity checks confirm the ultimate_claims totals match incurred minus recoveries exactly in all three lines (motor 261.1M, contents 46.6M, buildings 111.1M); added a verification cell showing single- and multi-claim rows (sums apply correctly); refreshed Excel exports. Note: compute had been terminated by inactivity, so the prerequisite cells (library install, data load, Excel folder setup) were re-run first
+- **Human Contribution**: Specified both fields; ultimate_claims is deliberately a placeholder (incurred net of recoveries) that may be revised later once claims are developed to ultimate
+- **Files affected**: `notebooks/data_import_Bridget` (Cells 10, 11, new Cell 13)
+- **Follow-up (2026-10-20)**: Added `Master_Data_overview_100_rows.xlsx` to the Excel files folder — one sheet per master line (motor, contents, buildings) with the first 100 rows and a total-row summary line, mirroring the layout of `Data_overview_100_rows.xlsx` (new Cell 14).
+
+### 2026-10-20 — Motor feature selection (HUMAN DECISION) & modeling dataset
+- **Task**: Select features for the motor Tweedie XGBoost (expert-judgement first pass, to be revisited after EDA) and build the modeling dataset
+- **Human Contribution**: Supplied the full include/exclude list — 41 features including a derived `Year` (from period_start); excluded vehicle_colour, discount_applied, customer_service_contacts (ethical grounds), renewal_decision (not available in test files), all property-risk attributes and non-hail weather (motor-irrelevant), and all claims-derived columns (leakage); chose to keep exposure, written_premium and earned_premium as features
+- **AI Contribution**: Implemented the feature list in new Cell 16; derived `Year`; converted target nulls to 0 for claim-free rows; kept `customer_id` for GroupKFold grouping and `policy_id`/`row_id` for prediction tracking; verified every listed column exists in the master; profiled the assembled dataset (missingness left as-is for XGBoost: telematics_score 87.6%; customer-block features ~10% reflecting the customer join gap; vehicle fields ~2.5%)
+- **Files affected**: `notebooks/data_import_Bridget` (Cells 5, 10 re-run after compute restart; new Cell 16)
+
+---
+
+*This log is updated whenever AI assistance is used for project work. Each entry is committed to Git alongside the related code changes.*
