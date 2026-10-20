@@ -116,6 +116,14 @@ Recorded after reviewing the Excel workbooks. These are thoughts only — nothin
 - **AI Contribution**: Implemented the feature list in new Cell 16; derived `Year`; converted target nulls to 0 for claim-free rows; kept `customer_id` for GroupKFold grouping and `policy_id`/`row_id` for prediction tracking; verified every listed column exists in the master; profiled the assembled dataset (missingness left as-is for XGBoost: telematics_score 87.6%; customer-block features ~10% reflecting the customer join gap; vehicle fields ~2.5%)
 - **Files affected**: `notebooks/data_import_Bridget` (Cells 5, 10 re-run after compute restart; new Cell 16)
 
+### 2026-10-20 — Motor Tweedie XGBoost: first GroupKFold CV model
+- **Task**: Drop earned_premium as a motor feature (keep annualized written_premium) and build and train the first Tweedie XGBoost for motor ultimate claims
+- **Human Contribution**: Dropped earned_premium from the feature list; noted the hackathon scores with Tweedie power 1.5
+- **AI Contribution**: Added Cells 17–21: pip install xgboost (3.4.1); pandas prep (15 categoricals kept as category dtype, 4 booleans → int); 4-fold GroupKFold (grouped by customer_id) XGBoost with objective reg:tweedie and tweedie_variance_power FIXED at 1.5 to match the hackathon scoring, exposure as sample weights; evaluation with mean Tweedie unit deviance at p=1.5 computed directly (the scoring loss form — XGBoost's built-in metric is a log-likelihood, not deviance); out-of-fold decile calibration, feature importance (gain); results exported to `Excel files/motor_tweedie_xgb_results.xlsx`
+- **Results**: mean deviance 12,029 across folds (fold range 3,511–16,136 — the spread is driven by a few very large claims landing in different folds); deciles perfectly monotonic on actual claims, claim rate rising 3.8% → 22.9% from decile 1 to 10, top-decile lift 2.30x; top features by gain: exposure 23.0%, telematics_opt_in 6.7%, ncb_years 5.8%, make_model 4.6%, transmission 3.2%
+- **Observations for next iteration**: OOF predictions under-predict the unweighted mean (≈265 vs ≈329) — consistent with exposure weighting plus the known exposure column issues (values > 1); exposure's top importance is partly mechanical (longer time in force → more chance of a claim). Both points feed the planned EDA/exposure cleanup
+- **Files affected**: `notebooks/data_import_Bridget` (Cells 16–21), `Excel files/motor_tweedie_xgb_results.xlsx`
+
 ---
 
 *This log is updated whenever AI assistance is used for project work. Each entry is committed to Git alongside the related code changes.*
