@@ -131,6 +131,13 @@ Recorded after reviewing the Excel workbooks. These are thoughts only — nothin
 - **Results**: 626,639 rows (M 254,986 / C 187,498 / B 184,155); motor mean prediction 267.39 (consistent with the OOF mean ~264), min 3.78, max 9,576.22; 371,653 dummy rows (B/C lines, no model yet); 1 motor zero-prediction replaced by the dummy; file verified on disk (header + 626,639 data rows)
 - **Files affected**: `notebooks/data_import_Bridget` (Cells 22–24), `submissions/motor_tweedie_xgb_submission_v001.csv` (new file, not yet committed)
 
+### 2026-10-20 — Submission v002: motor + teammate buildings
+- **Task**: Combine the motor predictions (v001) with the teammate's buildings predictions from `main`'s `home_insurance_submission_v001.csv` into a v2 submission, on the `hackathon-bridget` branch only
+- **Human Contribution**: Instructed to copy the buildings predictions (B-prefix row_ids) from the team submission file into her submission as v2; branch-local only, no merge of main
+- **AI Contribution**: Extracted the teammate's CSV via `git show origin/main:...` (no merge needed); merged on row_id (left join preserving her row order); contents rows kept at the dummy 10; applied the zero→10 rule (no zeros found); verified motor rows identical to v001, B rows identical to the teammate's values, 626,639 rows, all predictions positive
+- **Results**: B predictions from the teammate file: min 1.13, mean 342.89, max 420.28 (a notably narrow range — worth reviewing their buildings model later); file: `submissions/motor_buildings_submission_v002.csv`
+- **Files affected**: `submissions/motor_buildings_submission_v002.csv` (new)
+
 ---
 
 *This log is updated whenever AI assistance is used for project work. Each entry is committed to Git alongside the related code changes.*
