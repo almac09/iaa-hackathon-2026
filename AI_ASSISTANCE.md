@@ -124,6 +124,13 @@ Recorded after reviewing the Excel workbooks. These are thoughts only — nothin
 - **Observations for next iteration**: OOF predictions under-predict the unweighted mean (≈265 vs ≈329) — consistent with exposure weighting plus the known exposure column issues (values > 1); exposure's top importance is partly mechanical (longer time in force → more chance of a claim). Both points feed the planned EDA/exposure cleanup
 - **Files affected**: `notebooks/data_import_Bridget` (Cells 16–21), `Excel files/motor_tweedie_xgb_results.xlsx`
 
+### 2026-10-20 — Test-file scoring & first motor submission (v001)
+- **Task**: Refit the motor Tweedie XGBoost on 100% of the training rows, score the 2025 test files, and produce the first submission CSV (EDA/exposure cleanup and hyperparameter tuning deliberately deferred)
+- **Human Contribution**: Confirmed the submission format (sample_submission skeleton matched on row_id, prediction = predicted ultimate_claims, motor M / buildings B / contents C prefixes); instructed that buildings/contents rows and any zero predictions use a dummy value of 10 because the scorer does not accept zeros
+- **AI Contribution**: Built the motor test master mirroring the training joins (weather + customers + addresses; no claims join possible; NO renewal filter — renewal_decision absent from test files, so every test row is scored and the renewed-only training population mismatch stands); aligned categorical vocabularies with training (unseen levels → NaN; **none found** — perfect feature alignment); refit the final model on all 793,414 training rows; assembled the submission on the sample_submission skeleton with 2-dp rounding and the dummy-10 rule
+- **Results**: 626,639 rows (M 254,986 / C 187,498 / B 184,155); motor mean prediction 267.39 (consistent with the OOF mean ~264), min 3.78, max 9,576.22; 371,653 dummy rows (B/C lines, no model yet); 1 motor zero-prediction replaced by the dummy; file verified on disk (header + 626,639 data rows)
+- **Files affected**: `notebooks/data_import_Bridget` (Cells 22–24), `submissions/motor_tweedie_xgb_submission_v001.csv` (new file, not yet committed)
+
 ---
 
 *This log is updated whenever AI assistance is used for project work. Each entry is committed to Git alongside the related code changes.*
