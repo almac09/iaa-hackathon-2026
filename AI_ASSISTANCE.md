@@ -138,6 +138,13 @@ Recorded after reviewing the Excel workbooks. These are thoughts only — nothin
 - **Results**: B predictions from the teammate file: min 1.13, mean 342.89, max 420.28 (a notably narrow range — worth reviewing their buildings model later); file: `submissions/motor_buildings_submission_v002.csv`
 - **Files affected**: `submissions/motor_buildings_submission_v002.csv` (new)
 
+### 2026-10-20 — Persist master files to workings/
+- **Task**: Save the three master policy files (motor, contents, buildings) as single-file parquet in the repo's `workings/` folder on the `hackathon-bridget` branch, so future sessions can `spark.read.parquet` them directly instead of re-running the data load + master build (~5 min) after every compute restart
+- **Human Contribution**: Requested the persistence into a Workings folder in her branch
+- **AI Contribution**: New notebook cell (after Cell 14) writing each master via `toPandas().to_parquet` with a pandas read-back row-count verification; two environment quirks solved along the way — Spark Connect attaches plan metrics to `.attrs` which pyarrow cannot serialize (cleared before writing), and a freshly written `/Workspace` file takes a minute or more to become visible to `spark.read.parquet` (verification switched to pandas; Spark readability confirmed separately afterwards)
+- **Results**: policies_motor_master 793,414 rows (61 MB), policies_contents_master 599,110 rows (39 MB), policies_buildings_master 596,186 rows (40 MB) — all round-trip verified via pandas AND Spark; all under GitHub's 100 MB per-file limit; raw `data/` folder untouched
+- **Files affected**: `notebooks/Motor_Bridget` (new cell), `workings/policies_motor_master.parquet`, `workings/policies_contents_master.parquet`, `workings/policies_buildings_master.parquet`
+
 ---
 
 *This log is updated whenever AI assistance is used for project work. Each entry is committed to Git alongside the related code changes.*
