@@ -1,0 +1,15 @@
+# Competition data must never be committed (rules section 5b).
+data/
+work/
+*.parquet
+
+# Row-level evidence contains competition records; aggregate evidence (ev_*) is fine to commit.
+audit/evidence/*/evr_*
+audit/exploratory/evidence/A04_exposure_changed_rows.csv
+audit/exploratory/evidence/A05_sum_insured_changed_rows.csv
+
+__pycache__/
+.venv/
+venv/
+.Rhistory
+.DS_Store

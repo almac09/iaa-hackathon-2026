@@ -1,0 +1,96 @@
+{
+  "_about": "Every parameter and decision flag for the contents replication pack. Python and R both read this file. Decision flags mirror audit/DECISIONS.md: 'signed_off' stays false until a named person approves the decision there.",
+
+  "paths": {
+    "data_dir": "data",
+    "work_dir": "work",
+    "evidence_dir": "audit/evidence",
+    "run_log": "audit/run_log.jsonl",
+    "expected_inputs": "audit/expected_inputs.sha256"
+  },
+
+  "source": {
+    "databricks_data_path": "/Workspace/Users/{user}/iaa-hackathon-2026/data",
+    "_path_note": "{user} is filled in at run time from the logged-in Databricks user, so no personal details are stored here.",
+    "tables": ["addresses", "claims", "customers", "policies_buildings", "policies_contents",
+               "policies_motor", "test_buildings", "test_contents", "test_motor", "weather"]
+  },
+
+  "sql_files": ["sql/01_profile.sql", "sql/02_quality_checks.sql", "sql/03_build_contents.sql",
+                "sql/04_development.sql", "sql/05_severity.sql", "sql/06_persistence.sql",
+                "sql/07_leakage.sql", "sql/08_features.sql"],
+
+  "duckdb_threads": 1,
+
+  "sql_variables": {
+    "valuation_date": "2024-12-31",
+    "exposure_basis_days": 365,
+    "si_threshold": 1000000,
+    "si_divisor": 1000,
+    "band_1": 1000,
+    "band_2": 5000,
+    "band_3": 15000,
+    "lag_cdf_max_loss_year": 2022,
+    "min_exposure_persistence": 0.5
+  },
+
+  "decisions": {
+    "D01_recompute_exposure": {"apply": true, "sql_variable": "d01_recompute_exposure", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D02_rescale_sum_insured": {"apply": true, "sql_variable": "d02_rescale_sum_insured", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D03_target_definition": {"apply": true, "note": "Target = incurred - recoveries, repudiated and out-of-period claims excluded. The ~3% IBNR uplift is estimated in sql/04 but NOT applied to the target.", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D04_exclude_contacts": {"apply": true, "excluded_feature": "f_cs_contacts", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D05_exclude_written_premium": {"apply": true, "excluded_feature": "f_wp_band", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D06_missing_as_level": {"apply": true, "note": "Implemented in sql/08 only; imputation is not implemented, so apply=false is rejected.", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D07_expected_claims_basis": {"apply": true, "note": "Models use a log-exposure offset; earned premium (= annual written premium x exposure) is used for loss ratios and A/E only. Chosen by Gerard Murphy in session 2026-10-20.", "signed_off": false, "signed_off_by": null, "signed_off_date": null}
+  },
+
+  "oneway": {
+    "factors": {
+      "policy": ["f_age_band", "f_si_band", "f_tenure", "f_security", "f_hvi", "f_ad_cover", "f_wfh", "f_lodgers",
+                 "f_bike", "f_vol_xs", "f_channel", "f_payment", "f_missed_pay", "f_new_business", "f_renewals",
+                 "f_quote_days", "f_discount", "f_cs_contacts", "f_wp_band"],
+      "customer": ["f_occupation", "f_marital", "f_household", "f_credit", "f_prior_claims", "f_licence_pts",
+                   "f_yrs_at_addr", "f_cust_since", "f_email", "f_mkt_consent", "f_doc_pref", "f_prev_insurer",
+                   "f_campaign", "f_branch", "f_segment"],
+      "address": ["f_region", "f_urban", "f_flood_zone", "f_river_band", "f_elev_band", "f_soil", "f_built",
+                  "f_prop_type", "f_roof", "f_basement", "f_trees", "f_listed", "f_bedrooms", "f_energy", "f_solar"],
+      "weather": ["f_hail_band", "f_wind_band", "f_freeze_band", "f_dry_band", "f_wildfire_band", "f_rain_band",
+                  "f_temp_band"]
+    },
+    "_note": "One-way tables cover every factor, including those excluded from modelling (D-04, D-05), so the leakage stays visible."
+  },
+
+  "model": {
+    "tweedie_power": 1.5,
+    "alpha": 0.0001,
+    "_alpha_note": "L2 penalty (intercept unpenalised) on the scale of scikit-learn's GLM objective: (1/(2 sum w)) sum w d + alpha/2 ||b||^2. R/run_all.R minimises the same objective with its own penalised IRLS.",
+    "fit_year_max": 2023,
+    "score_year": 2024,
+    "factors": ["f_flood_zone", "f_elev_band", "f_river_band", "f_tenure", "f_region", "f_segment", "f_prior_claims",
+                "f_missed_pay", "f_vol_xs", "f_credit", "f_age_band", "f_security", "f_hvi", "f_ad_cover", "f_bike",
+                "f_wfh", "f_lodgers", "f_urban", "f_prop_type"],
+    "numeric": ["z_log_si"],
+    "perils": {"theft": ["cost_theft", "n_theft"], "escape_of_water": ["cost_eow", "n_eow"],
+               "accidental_damage": ["cost_ad", "n_ad"], "flood": ["cost_flood", "n_flood"]},
+    "size_bands": ["cost_band_1", "cost_band_2", "cost_band_3", "cost_band_4"],
+    "relativity_params": ["f_flood_zone", "f_tenure", "f_prior_claims", "f_vol_xs", "f_security", "f_ad_cover", "f_hvi", "z_log_si"]
+  },
+
+  "reconcile": {
+    "tol_d2_python_vs_r": 0.0005,
+    "tol_ratio_python_vs_r": 0.002,
+    "tol_coef_python_vs_r": 0.01,
+    "tol_vs_exploratory": 0.002,
+    "tol_component_total_rel": 0.001,
+    "quasi_separation_abs_coef": 8.0,
+    "_quasi_separation_note": "Coefficients beyond +/-8 (relativity below ~3e-4 or above ~3000) come from levels with almost no claims; they are reported as WARN and the component prediction check is binding (audit A11)."
+  },
+
+  "exploratory_reference": {
+    "_source": "Numbers produced during the exploratory session on 2026-10-20 (audit A07, A09). The pack is expected to reproduce them within tol_vs_exploratory; small differences come from unifying band definitions.",
+    "split_test_d2": {"exposure only": 0.0310, "A single Tweedie": 0.0933, "B per-peril Tweedie": 0.0920,
+                      "C per-size-band Tweedie": 0.0872, "D per-peril freq x sev": 0.0899},
+    "oneway_d2_gain": {"f_cs_contacts": 0.5774, "f_flood_zone": 0.0239, "f_wp_band": 0.0194, "f_elev_band": 0.0175,
+                       "f_si_band": 0.0164, "f_river_band": 0.0132, "f_tenure": 0.0050, "f_region": 0.0037}
+  }
+}
