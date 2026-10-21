@@ -160,6 +160,33 @@ Recorded after reviewing the Excel workbooks. These are thoughts only — nothin
 - **Results**: M 254,986 rows (mean 267.39, identical to motor v1) | C 187,498 rows (mean 57.49, identical to contents v001) | B 184,155 rows (min 1.13 / mean 342.89 / max 420.28, identical to v2)
 - **Files affected**: `notebooks/Contents_Bridget` (cells 15–16), `submissions/motor_buildings_contents_submission_v003.csv` (new)
 
+### 2026-10-21 — Buildings Tweedie XGBoost model & combined v4 submission
+- **Task**: Mirror the contents pipeline for buildings (Buildings_Bridget notebook), score test_buildings, replace the teammate's buildings predictions
+- **Human Contribution**: Requested the buildings pipeline; confirmed weather matching question (2025 test rows join 2025 weather on address_id + policy year)
+- **AI Contribution**: New notebook `notebooks/Buildings_Bridget` — feature list derived from Bridget's contents list (same exclusions) plus buildings-specific features (construction_type, occupancy, days_unoccupied, smoke_alarms, mortgage); one buildings-only fix: nullable boolean smoke_alarms (2.5% nulls) converted to 0/1/NaN instead of categorical (XGBoost categorical path rejects boolean-typed categories); same 4-fold GroupKFold Tweedie XGBoost (p=1.5, exposure weights), OOF decile lift analysis, test master with weather join on address_id + policy year, refit on 100%, submissions v001 + combined v4
+- **Results**: 49 features, 596,186 rows, 3.4% claim rate; CV mean deviance 776 (folds 665 / 2,216 / 119 / 105 — fold 2 tail); deciles 100% monotonic, top-decile lift 2.15x, claim rate 1.8% → 5.9%; top gain features: exposure (9.9%), flood_zone (6.1%), elevation_m, wind_exposure_index, occupation, construction_type, new_business; test 184,155 rows scored (mean 111.92, min 0.13, max 8,035.82), no unseen categorical levels, 2.5% customer join gap; v4: M 254,986 (mean 267.39) | C 187,498 (mean 57.49) | B 184,155 (mean 111.92) — all three lines now Bridget's own models
+- **Files affected**: `notebooks/Buildings_Bridget` (new, 16 cells), `submissions/buildings_tweedie_xgb_submission_v001.csv` (new), `submissions/motor_buildings_contents_submission_v004.csv` (new), `Excel files/buildings_tweedie_xgb_results.xlsx` (new)
+
+### 2026-10-21 — Buildings fold-2 deviance outlier investigation
+- **Task**: Investigate why fold 2's CV deviance (2,216) was 20x the other folds — suspected a large claim
+- **Human Contribution**: Requested the investigation without re-running training
+- **AI Contribution**: Added a diagnostic cell (now Cell 12) that re-derives the deterministic GroupKFold split (no retraining) and recomputes per-row unit deviance at p=1.5 from the cached OOF predictions; verified the re-derived folds reproduce fold_summary exactly
+- **Findings**: NOT a large claim — the 2,216 was 95.6% driven by 5 rows: moderate claims ($463–$11,012) sitting on policies with OOF predictions ≈ 1e-9 (Tweedie deviance explodes when a positive actual meets a near-zero prediction; worst row = unit deviance 134M). Excluding the top 10 rows, fold 2's mean deviance was 93.4 — the best fold. All folds carry balanced tails (414–418 claims >$10k each); the dataset's 15 largest claims ($220k–$630k) are spread across all folds. Fold 1's 665 had the same fragility (top-10 rows = 85.7% of the fold). Two root-cause data smells found in the culprit rows: (a) the exposure column mixes scales (547 buildings rows carry day counts like 365 instead of year fractions), and (b) construction_type has inconsistent casing — 11 raw levels that are really 5 (Brick/BRICK/brick, stone/STONE, t/T, w/W, non_standard/NON_STANDARD) — rare case variants route validation rows into near-zero-prediction leaves
+- **Files affected**: `notebooks/Buildings_Bridget` (new Cell 12)
+
+### 2026-10-21 — Buildings model fixes (exposure, casing, prediction floor) & rebuilt model + v5 submission
+- **Task**: Apply the three fixes suggested by the outlier investigation: recompute exposure from period dates, normalize construction_type casing, and floor near-zero predictions
+- **Human Contribution**: Approved all three actions
+- **AI Contribution**: (1) Exposure recomputed as days in force / days in calendar year (366 for leap-year 2024), capped at 1.0, in both the training (Cell 7) and test (Cell 14) masters; (2) construction_type normalized with lower(trim()) in both masters (applied consistently so train/test distributions stay aligned — no unseen categorical levels in test after the fix); (3) PRED_FLOOR = 1.0 applied to OOF and test predictions (Tweedie unit deviance at p=1.5 grows ~2y/√pred for small pred — one moderate claim on a near-zero prediction had produced unit deviances of 1e8); CV retrained end-to-end and the full pipeline re-scored, writing to NEW files (buildings v002 and combined v005) so v001/v004 remain untouched
+- **Results (before → after)**: CV mean Tweedie deviance 776 → **103.4** (folds 665/2,216/119/105 → 107/103/101/102 — the outlier is gone and fold spread is tight); fold-2 re-diagnostic: top-10 deviance rows now only 6% of the fold (was 95.8%), all genuine large claims. Trade-off noted: decile monotonicity 100% → 78% (small dips between deciles 2/3 and 5/6) and top-decile lift 2.15x → 2.01x; exposure no longer a top-gain feature (flood_zone now #1 at 7.3%) — the deviance (the competition's scoring metric) improved ~7.5x, which is why the trade-off was accepted. Test predictions: 184,155 B rows, mean 111.92 → 95.94, min 1.00 (floor), max 12,442.74. Combined v5: M 254,986 (mean 267.39, motor v1) | C 187,498 (mean 57.49, contents v001) | B 184,155 (mean 95.94, buildings v002)
+- **Files affected**: `notebooks/Buildings_Bridget` (Cells 7, 10, 14, 15, 16–17 retitled v5), `submissions/buildings_tweedie_xgb_submission_v002.csv` (new), `submissions/motor_buildings_contents_submission_v005.csv` (new), `Excel files/buildings_tweedie_xgb_results.xlsx` (refreshed)
+
+### 2026-10-21 — EDA notebook started (motor master)
+- **Task**: Start an EDA notebook by loading the motor policies master from the `workings` folder
+- **Human Contribution**: Requested the import; chose the simplest direct-load approach
+- **AI Contribution**: New notebook `notebooks/EDA - Bridget` — markdown title cell plus a load cell (`spark.read.parquet` on `workings/policies_motor_master.parquet` into `df_motor`, first 10 rows displayed; 93 columns loaded)
+- **Files affected**: `notebooks/EDA - Bridget` (new)
+
 ---
 
 *This log is updated whenever AI assistance is used for project work. Each entry is committed to Git alongside the related code changes.*
