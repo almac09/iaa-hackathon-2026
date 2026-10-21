@@ -187,6 +187,13 @@ Recorded after reviewing the Excel workbooks. These are thoughts only — nothin
 - **AI Contribution**: New notebook `notebooks/EDA - Bridget` — markdown title cell plus a load cell (`spark.read.parquet` on `workings/policies_motor_master.parquet` into `df_motor`, first 10 rows displayed; 93 columns loaded)
 - **Files affected**: `notebooks/EDA - Bridget` (new)
 
+### 2026-10-21 — Motor EDA notebook: feature selection, Year derivation, categorical value counts + Motor_EDA.xlsx
+- **Task**: Trim the motor master to an EDA feature set, derive a policy year, and produce full categorical value counts saved to Excel
+- **Human Contribution**: Supplied the full variable list (later trimmed to 42 core features plus `earned_premium`); requested pandas format, `Year` from `period_start`, categorical-only value counts with full output, and the Excel export; asked for explanations of f-strings
+- **AI Contribution**: `notebooks/EDA - Bridget` — `variables_motor` list (compact formatting, per user request) + `df_motor_trim` as pandas (4 ID fields + `earned_premium` + variables, 793,414 rows); `Year` = year of `period_start` via `pd.to_datetime(...).dt.year`, appended to `variables_motor`; value counts cell restricted to categorical (object/bool + `Year`) columns, excluding `period_start`/`period_end`, full distributions printed; all counts written to `Excel files/Motor_EDA.xlsx` (one sheet per variable, 23 sheets). Fixes: initial `value_counts()` failed on the Spark DataFrame (replaced with `groupBy().count()` then converted to pandas per user request); openpyxl absent on serverless compute — added `%pip install openpyxl` cell and switched the Excel writer to openpyxl
+- **Results**: 47-column pandas frame; categorical distributions include make_model (300 levels), occupation (21, 12.2% null), marital_status (9.8% null), credit_band (A–E, 10% null), marketing_segment (13 levels, 10% null), region (12, R01 largest at 16%), Year evenly split ~198.5k per 2021–2024
+- **Files affected**: `notebooks/EDA - Bridget` (new cells 2–6), `Excel files/Motor_EDA.xlsx` (new)
+
 ---
 
 *This log is updated whenever AI assistance is used for project work. Each entry is committed to Git alongside the related code changes.*
