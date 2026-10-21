@@ -76,6 +76,38 @@
     "relativity_params": ["f_flood_zone", "f_tenure", "f_prior_claims", "f_vol_xs", "f_security", "f_ad_cover", "f_hvi", "z_log_si"]
   },
 
+  "xgboost": {
+    "_about": "python/run_xgb.py (audit A13). Tweedie power, fit and score years come from 'model'. Tuning never sees the score year: each grid point is fitted on years up to tune_fit_year_max and early-stopped on tune_val_year; the best is refitted on all fit years with the same number of trees and scored once.",
+    "tune_fit_year_max": 2022,
+    "tune_val_year": 2023,
+    "seed": 20261021,
+    "nthread": 8,
+    "max_rounds": 3000,
+    "early_stopping_rounds": 100,
+    "fixed_params": {"eta": 0.05, "subsample": 0.8, "colsample_bytree": 0.8, "reg_lambda": 1.0},
+    "grid": {"max_depth": [1, 2, 3], "min_child_weight": [10, 2000, 20000]},
+    "_grid_note": "min_child_weight is a hessian sum; at the base rate the Tweedie hessian is about 5 per row (median), so 2000 and 20000 mean leaves of roughly 400 and 4000 rows. Run 1 used depth 2-6 and weights 10-200, and its best point sat on the grid edge (audit A13).",
+    "bootstrap": {"n": 1000, "seed": 2024},
+    "feature_sets": {
+      "banded": {"_note": "The GLM's inputs: model.factors as categoricals plus model.numeric."},
+      "raw": {
+        "_note": "Permitted columns at full resolution (D-08). Excluded: IDs, surname, dates, date_of_birth (duplicates age), yr (trees cannot extrapolate a trend), contacts (D-04), written and earned premium (D-05), renewal_decision and all claim columns.",
+        "numeric": ["policyholder_age", "sum_insured", "high_value_items", "voluntary_excess", "compulsory_excess",
+                    "missed_payments_12m", "renewal_count", "days_quote_to_inception", "discount_applied",
+                    "household_size", "prior_claims_5y", "licence_points", "years_at_address", "customer_since_year",
+                    "flood_zone", "distance_to_river_km", "elevation_m", "year_built", "bedrooms", "hail_days",
+                    "wind_exposure_index", "freezing_days", "dry_summer_index", "wildfire_index", "rainfall_mm",
+                    "mean_temperature_c"],
+        "categorical": ["tenure", "security_level", "accidental_damage_cover", "works_from_home", "lodgers",
+                        "bicycle_cover", "channel", "payment_method", "new_business", "occupation", "marital_status",
+                        "credit_band", "email_domain", "marketing_consent", "document_preference", "previous_insurer",
+                        "campaign_code", "branch_id", "marketing_segment", "region", "urban_density", "soil_type",
+                        "property_type", "roof_type", "basement", "trees_within_5m", "listed_building",
+                        "energy_rating", "solar_panels"]
+      }
+    }
+  },
+
   "reconcile": {
     "tol_d2_python_vs_r": 0.0005,
     "tol_ratio_python_vs_r": 0.002,
