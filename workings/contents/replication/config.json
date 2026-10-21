@@ -31,7 +31,9 @@
     "band_2": 5000,
     "band_3": 15000,
     "lag_cdf_max_loss_year": 2022,
-    "min_exposure_persistence": 0.5
+    "min_exposure_persistence": 0.5,
+    "bld_si_threshold": 10000000,
+    "large_claim_cap": 1000000
   },
 
   "decisions": {
@@ -41,7 +43,11 @@
     "D04_exclude_contacts": {"apply": true, "excluded_feature": "f_cs_contacts", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
     "D05_exclude_written_premium": {"apply": true, "excluded_feature": "f_wp_band", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
     "D06_missing_as_level": {"apply": true, "note": "Implemented in sql/08 only; imputation is not implemented, so apply=false is rejected.", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
-    "D07_expected_claims_basis": {"apply": true, "note": "Models use a log-exposure offset; earned premium (= annual written premium x exposure) is used for loss ratios and A/E only. Chosen by Gerard Murphy in session 2026-10-20.", "signed_off": false, "signed_off_by": null, "signed_off_date": null}
+    "D07_expected_claims_basis": {"apply": true, "note": "Models use a log-exposure offset; earned premium (= annual written premium x exposure) is used for loss ratios and A/E only. Chosen by Gerard Murphy in session 2026-10-20.", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D10_develop_ibnr": {"apply": true, "sql_variable": "d10_develop_ibnr", "note": "Three-line run only (sql/10): every reported claim grossed up by 1/F(age), F the cost-weighted report-lag distribution by line and peril. The GLM pack (run_all.py) is unchanged.", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D11_ibner_motor_bi": {"apply": true, "sql_variable": "d11_ibner_motor_bi", "note": "Motor bodily injury only: each loss year lifted to the 2021 claim size of claims reported within 90 days, no inflation (lower bound).", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D12_cap_large_claims": {"apply": true, "sql_variable": "d12_cap_large_claims", "note": "Developed claims capped at sql_variables.large_claim_cap; the line's excess is spread back as a multiplicative loading. Added during the run (A15), not in the approved plan.", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D13_trend_to_2025": {"apply": true, "note": "Log-linear calendar-year trend per line, fitted jointly with XGBoost by backfitting the year term into the offset, projected to the 2025 rows. Approved by Gerard Murphy in session 2026-10-21.", "signed_off": false, "signed_off_by": null, "signed_off_date": null}
   },
 
   "oneway": {
@@ -104,6 +110,49 @@
                         "campaign_code", "branch_id", "marketing_segment", "region", "urban_density", "soil_type",
                         "property_type", "roof_type", "basement", "trees_within_5m", "listed_building",
                         "energy_rating", "solar_panels"]
+      }
+    }
+  },
+
+  "lines": {
+    "_about": "python/run_lines.py (audit A15). XGBoost per line on the developed, capped target, with a backfitted log-linear year trend (D-13) and the large-claim loading (D-12). Same protocol as A13: tune on 2021-22 early-stopped on 2023; backtest fit 2021-23, score 2024; final fit 2021-24, predict 2025. Boosting settings (eta, subsampling, seed, threads, rounds) come from 'xgboost'.",
+    "sql_files": ["sql/09_build_lines.sql", "sql/10_development.sql", "sql/11_line_models.sql"],
+    "out_file": "work/submissions/submission_all_lines_xgb_{date}.csv",
+    "grid": {"max_depth": [1, 2, 3, 4]},
+    "min_child_rows": [50, 500, 5000, 20000, 50000],
+    "_min_child_note": "min_child_weight = rows x the line's median Tweedie hessian per row at the base rate, so leaf sizes mean the same thing on every line. Run 1 stopped at 5000 and motor's best sat on that edge (A15), so 20000 and 50000 were added.",
+    "trend_iterations": 4,
+    "models": {
+      "buildings": {
+        "prefix": "B", "table": "buildings_model",
+        "numeric": ["policyholder_age", "sum_insured", "days_unoccupied", "voluntary_excess", "missed_payments_12m",
+                    "renewal_count", "days_quote_to_inception", "discount_applied", "household_size", "prior_claims_5y",
+                    "licence_points", "years_at_address", "customer_since_year", "flood_zone", "distance_to_river_km",
+                    "elevation_m", "year_built", "bedrooms", "hail_days", "wind_exposure_index", "freezing_days",
+                    "dry_summer_index", "wildfire_index", "rainfall_mm", "mean_temperature_c"],
+        "categorical": ["construction_type", "occupancy", "smoke_alarms", "accidental_damage_cover", "mortgage", "channel",
+                        "payment_method", "new_business", "occupation", "marital_status", "credit_band", "email_domain",
+                        "marketing_consent", "document_preference", "previous_insurer", "campaign_code", "branch_id",
+                        "marketing_segment", "region", "urban_density", "soil_type", "property_type", "roof_type",
+                        "basement", "trees_within_5m", "listed_building", "energy_rating", "solar_panels"]
+      },
+      "contents": {
+        "prefix": "C", "table": "contents_model_dev",
+        "_note": "The banded set (model.factors and model.numeric), which beat the raw set in A13.",
+        "numeric": "model.numeric", "categorical": "model.factors"
+      },
+      "motor": {
+        "prefix": "M", "table": "motor_model",
+        "numeric": ["driver_age", "years_licensed", "ncb_years", "vehicle_value_group", "vehicle_age", "engine_size_cc",
+                    "seats", "annual_mileage", "telematics_score", "voluntary_excess", "missed_payments_12m",
+                    "renewal_count", "days_quote_to_inception", "discount_applied", "household_size", "prior_claims_5y",
+                    "licence_points", "years_at_address", "customer_since_year", "hail_days", "wind_exposure_index",
+                    "freezing_days", "dry_summer_index", "wildfire_index", "rainfall_mm", "mean_temperature_c"],
+        "categorical": ["make_model", "body_type", "transmission", "vehicle_colour", "fuel_type", "driver_assist",
+                        "cover_type", "overnight_parking", "vehicle_use", "named_young_driver", "telematics_opt_in",
+                        "channel", "payment_method", "new_business", "occupation", "marital_status", "credit_band",
+                        "email_domain", "marketing_consent", "document_preference", "previous_insurer", "campaign_code",
+                        "branch_id", "marketing_segment", "region", "urban_density"]
       }
     }
   },

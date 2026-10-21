@@ -22,6 +22,7 @@ IAA AI-Assisted Hackathon 2026, Part 1. This pack reproduces every step of the h
 | Single vs per-peril vs per-size-band vs frequency × severity GLMs | A09 | `python/run_all.py`, `R/run_all.R` |
 | Python vs R reconciliation, and reproduction of the exploratory numbers | A11 | `reconcile/reconcile.py` |
 | XGBoost (Tweedie, exposure offset) on banded and raw features, against GLM A with a paired bootstrap. Python only | A13 | `python/run_xgb.py` |
+| All three lines: buildings and motor data layer, development to ultimate (IBNR, motor bodily injury IBNER), large-claim cap, XGBoost per line with a backfitted year trend, 2024 backtest, combined 2025 submission | A15 | `sql/09`–`11`, `python/run_lines.py` |
 
 **How the three languages fit together.** The SQL is the single source of truth for data preparation. Python and R both run the same SQL files through DuckDB, so their cleaned data is identical by construction (the reconciliation checks this byte for byte). The modelling is written twice, independently: Python uses scikit-learn's Newton solver and R uses its own penalised IRLS written in base R. Both use the same objective, so the results should agree to within the tolerances set in `config.json`.
 
@@ -70,6 +71,9 @@ python reconcile/reconcile.py
 python python/run_xgb.py
 ```
 ```bash
+python python/run_lines.py
+```
+```bash
 python -m pytest -q tests
 ```
 ```bash
@@ -78,7 +82,7 @@ Rscript -e "testthat::test_dir('tests/testthat')"
 
 `fetch_data.py` exports the parquet files from the team's Databricks Git folder into `data/` and stops if any file's SHA-256 differs from `audit/expected_inputs.sha256`. Use `--from-dir <folder>` to copy from an existing local copy instead. The runners check the hashes again before doing anything.
 
-**Expected result:** `reconcile.py` ends with `0 failed`. The Python run takes about 1–2 minutes. The R run takes a few minutes. `run_xgb.py` is independent of the reconciliation: it writes to `audit/evidence/xgboost/` and has no R twin, because an R xgboost run would not agree closely enough to reconcile. It is checked against GLM A on the same split instead.
+**Expected result:** `reconcile.py` ends with `0 failed`. The Python run takes about 1–2 minutes. The R run takes a few minutes. `run_xgb.py` is independent of the reconciliation: it writes to `audit/evidence/xgboost/` and has no R twin, because an R xgboost run would not agree closely enough to reconcile. It is checked against GLM A on the same split instead. `run_lines.py` covers all three lines despite the folder's name. It runs `sql/09`–`11` after the shared SQL, writes to `audit/evidence/lines/`, and writes the combined submission to `work/submissions/`. It needs `work/sample_submission.csv` (from the team repo's `data/`).
 
 ## The audit trail
 

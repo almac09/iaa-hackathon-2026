@@ -106,11 +106,13 @@ def run_sql_files(con: duckdb.DuckDBPyConnection, cfg: dict) -> dict[str, str]:
     return hashes
 
 
-def export_sql_evidence(con: duckdb.DuckDBPyConnection, out_dir: Path) -> list[Path]:
-    """Write every ev_* / evr_* table to CSV, rows sorted on all columns so files are deterministic."""
+def export_sql_evidence(con: duckdb.DuckDBPyConnection, out_dir: Path, prefixes: tuple[str, ...] = ("ev",)) -> list[Path]:
+    """Write every ev_* / evr_* table (or those starting with `prefixes`) to CSV, rows sorted on all columns so
+    files are deterministic."""
     out_dir.mkdir(parents=True, exist_ok=True)
     names = [r[0] for r in con.execute(
-        "SELECT table_name FROM duckdb_tables() WHERE table_name LIKE 'ev%' ORDER BY 1").fetchall()]
+        "SELECT table_name FROM duckdb_tables() WHERE table_name LIKE 'ev%' ORDER BY 1").fetchall()
+        if r[0].startswith(prefixes)]
     paths = []
     for n in names:
         p = out_dir / f"{n}.csv"

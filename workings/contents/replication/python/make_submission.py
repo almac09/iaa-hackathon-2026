@@ -49,12 +49,23 @@ def predict_contents(cfg: dict, feats: pd.DataFrame) -> dict[str, pd.Series]:
                                                        e_test, base), index=test.row_id)}
 
 
-def build_submission(sample: pd.DataFrame, contents: pd.Series, prefix: str, other_value: float) -> pd.DataFrame:
-    is_contents = sample.row_id.str.startswith(prefix)
-    if set(sample.row_id[is_contents]) != set(contents.index) or contents.index.duplicated().any():
-        raise ValueError("Contents row_ids differ from the sample submission's.")
-    pred = np.where(is_contents, sample.row_id.map(contents), other_value)
-    out = pd.DataFrame({"row_id": sample.row_id, "prediction": pred})
+def build_submission(sample: pd.DataFrame, preds: dict[str, pd.Series],
+                     other_value: float | None = None) -> pd.DataFrame:
+    """Predictions in the sample's row order. `preds` maps a row_id prefix (line) to its predictions by row_id;
+    rows of any other line get `other_value`, which must then be given."""
+    pred = pd.Series(np.nan, index=sample.index)
+    covered = pd.Series(False, index=sample.index)
+    for prefix, p in preds.items():
+        rows = sample.row_id.str.startswith(prefix)
+        if set(sample.row_id[rows]) != set(p.index) or p.index.duplicated().any():
+            raise ValueError(f"Line {prefix} row_ids differ from the sample submission's.")
+        pred[rows] = sample.row_id[rows].map(p)
+        covered |= rows
+    if not covered.all():
+        if other_value is None:
+            raise ValueError(f"{(~covered).sum()} rows have no prediction and no fill value was given.")
+        pred[~covered] = other_value
+    out = pd.DataFrame({"row_id": sample.row_id, "prediction": pred.to_numpy()})
     # Tweedie deviance is infinite at a zero prediction for a row with a claim, so refuse it.
     if out.prediction.isna().any() or not (out.prediction > 0).all():
         raise ValueError("Every prediction must be present and strictly positive.")
@@ -83,7 +94,7 @@ def main() -> None:
         test_expo = feats.loc[feats.src == "test", "exposure"].sum()
         rec["outputs_sha256"], rec["metrics"] = {}, {}
         for name, contents in predict_contents(cfg, feats).items():
-            sub = build_submission(sample, contents, sc["contents_prefix"], sc["other_lines_value"])
+            sub = build_submission(sample, {sc["contents_prefix"]: contents}, sc["other_lines_value"])
             path = out_dir / f"submission_contents_{name}_{stamp}.csv"
             sub.round(6).to_csv(path, index=False)
             rec["outputs_sha256"][path.relative_to(common.PACK_ROOT).as_posix()] = common.sha256_file(path)

@@ -48,25 +48,58 @@ def matrix(df: pd.DataFrame, numeric: list[str], categories: dict[str, list[str]
     return pd.DataFrame(out, index=df.index)
 
 
-def _dmatrix(X: pd.DataFrame, expo: np.ndarray, base_rate: float, y: np.ndarray | None = None) -> xgb.DMatrix:
+def _dmatrix(X: pd.DataFrame, expo: np.ndarray, base_rate: float, y: np.ndarray | None = None,
+             extra: np.ndarray | None = None) -> xgb.DMatrix:
     # Exposure enters as a log offset. The base rate goes into the offset too: with base_margin set,
     # XGBoost does not add base_score, so otherwise the first trees would be spent learning the intercept.
-    return xgb.DMatrix(X, label=y, base_margin=np.log(expo) + np.log(base_rate), enable_categorical=True)
+    # `extra` is any further fixed log-scale term, such as the calendar-year trend.
+    margin = np.log(expo) + np.log(base_rate) + (0.0 if extra is None else extra)
+    return xgb.DMatrix(X, label=y, base_margin=margin, enable_categorical=True)
 
 
-def fit(X, y, expo, base_rate, power, params, n_rounds, seed, nthread, val=None, early_stopping=None) -> xgb.Booster:
+def fit(X, y, expo, base_rate, power, params, n_rounds, seed, nthread, val=None, early_stopping=None,
+        extra=None) -> xgb.Booster:
     """Tweedie boosting with a log-exposure offset. `val` = (X, y, expo) enables early stopping on it."""
     full = {"objective": "reg:tweedie", "tweedie_variance_power": power, "eval_metric": f"tweedie-nloglik@{power}",
             "tree_method": "hist", "seed": seed, "nthread": nthread, **params}
     evals = [(_dmatrix(val[0], val[2], base_rate, val[1]), "val")] if val else []
-    return xgb.train(full, _dmatrix(X, expo, base_rate, y), num_boost_round=n_rounds, evals=evals,
+    return xgb.train(full, _dmatrix(X, expo, base_rate, y, extra), num_boost_round=n_rounds, evals=evals,
                      early_stopping_rounds=early_stopping, verbose_eval=False)
 
 
 def predict(booster: xgb.Booster, X: pd.DataFrame, expo: np.ndarray, base_rate: float,
-            n_trees: int | None = None) -> np.ndarray:
+            n_trees: int | None = None, extra: np.ndarray | None = None) -> np.ndarray:
     """Expected claim cost for the row's exposure, using the first `n_trees` trees (all by default)."""
-    return booster.predict(_dmatrix(X, expo, base_rate), iteration_range=(0, n_trees or 0))
+    return booster.predict(_dmatrix(X, expo, base_rate, extra=extra), iteration_range=(0, n_trees or 0))
+
+
+def _year_slope(y, mu, yr, centre) -> float:
+    """Slope of log(actual / expected) by year on (year - centre), weighted by expected cost."""
+    g = pd.DataFrame({"y": y, "mu": mu, "yr": yr}).groupby("yr").sum()
+    t, w = g.index.to_numpy(dtype=float) - centre, g.mu.to_numpy()
+    z = np.log(g.y.to_numpy() / w)
+    t_bar = np.average(t, weights=w)
+    return float(np.sum(w * (t - t_bar) * (z - np.average(z, weights=w))) / np.sum(w * (t - t_bar) ** 2))
+
+
+def fit_with_trend(X, y, expo, yr, base_rate, power, params, n_rounds, seed, nthread, n_iter=3):
+    """Boosting plus a log-linear calendar-year term, fitted jointly by backfitting.
+
+    Trees cannot extrapolate a year feature, so the trend sits in the offset as slope x (year - centre).
+    Each pass fits the trees with the current slope, measures the trend left in actual/expected by year and
+    adds it to the slope; a final fit uses the converged slope. Returns (booster, slope, centre, history).
+    """
+    yr = np.asarray(yr, dtype=float)
+    centre = float(np.average(yr, weights=expo))
+    slope, history = 0.0, []
+    for i in range(n_iter + 1):
+        extra = slope * (yr - centre)
+        b = fit(X, y, expo, base_rate, power, params, n_rounds, seed, nthread, extra=extra)
+        residual = _year_slope(y, predict(b, X, expo, base_rate, extra=extra), yr, centre)
+        history.append({"iteration": i, "slope": slope, "residual_slope": residual})
+        if i < n_iter:
+            slope += residual
+    return b, slope, centre, history
 
 
 def paired_bootstrap_d2(y, pred_a, pred_b, p, n_boot, seed) -> np.ndarray:

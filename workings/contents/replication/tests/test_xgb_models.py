@@ -60,3 +60,23 @@ def test_paired_bootstrap():
     diff = xgb_models.paired_bootstrap_d2(y, good, flat, 1.5, n_boot=50, seed=3)
     assert np.all(diff > 0)
     assert np.array_equal(diff, xgb_models.paired_bootstrap_d2(y, good, flat, 1.5, n_boot=50, seed=3))
+
+
+def test_trend_backfitting_recovers_known_yearly_trend():
+    rng = np.random.default_rng(2)
+    n = 40000
+    x = rng.integers(0, 2, n)
+    yr = rng.integers(2021, 2025, n)
+    expo = rng.uniform(0.2, 1.0, n)
+    y = rng.poisson(np.exp(1.0 + 0.5 * x + 0.06 * (yr - 2022.5)) * expo).astype(float) * 10.0
+    X = pd.DataFrame({"x": x.astype(float)})  # no year feature: the trend can only enter through the offset
+    b, slope, centre, history = xgb_models.fit_with_trend(X, y, expo, yr, y.sum() / expo.sum(), 1.5, PARAMS,
+                                                          n_rounds=100, seed=0, nthread=1, n_iter=3)
+    assert slope == pytest.approx(0.06, abs=0.01)
+    assert abs(history[-1]["residual_slope"]) < 0.002  # converged: the final fit leaves no trend in its A/E
+    # Projecting a year ahead raises the prediction by exp(slope) exactly, whatever the row.
+    grid = pd.DataFrame({"x": [0.0, 1.0]})
+    base = y.sum() / expo.sum()
+    p24 = xgb_models.predict(b, grid, np.ones(2), base, extra=slope * (2024 - centre) * np.ones(2))
+    p25 = xgb_models.predict(b, grid, np.ones(2), base, extra=slope * (2025 - centre) * np.ones(2))
+    assert p25 / p24 == pytest.approx(np.exp(slope) * np.ones(2), rel=1e-6)
