@@ -1,6 +1,6 @@
 # Reconciliation report
 
-Generated 2026-10-20T16:23:57+00:00. 100 checks, 0 failed, 1 warnings (see audit A11).
+Generated 2026-10-21T19:11:27+00:00. 100 checks, 0 failed, 1 warnings (see audit A11).
 
 | Check | Item | Result | Detail |
 |---|---|---|---|

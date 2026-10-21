@@ -163,3 +163,72 @@
 - **Level:** the predicted 2025 contents rate per unit of exposure is 116.8 for GLM A and 112.5 for XGBoost, against training years of 105.5 / 107.0 / 117.0 / 116.8. The GLM's continuous log sum insured picks up the year-on-year rise in sums insured; the trees cannot extrapolate it. **No trend or IBNR adjustment is applied** (A13), so both are probably too low for 2025.
 - **Leaderboard caution:** a constant 0.1 for buildings and motor scores those rows far below a mean-only prediction, so the overall leaderboard score reflects that choice, not the contents model alone.
 - **Status:** analysis. Submitting is the owner's decision.
+
+### A15 — XGBoost on all three lines, with development, a large-claim cap and a trend, combined submission
+- **When / who:** 2026-10-21 ~19:00–20:20 BST, Claude, at the owner's request ("run XGBoost across the three datasets independently and combine the submission"). The owner approved the plan, including development for all lines and a per-line trend to 2025. Bridget's `hackathon-bridget` branch already had XGBoost for all lines. It was reviewed and not reused: it uses exposure as a weight and a feature instead of an offset, trains on renewed policies only, uses `Year` as a feature and has no development. Its v008 predicted means per row are about half of this run's (buildings 98 against 395, contents 48 against 100, motor 244 against 476).
+- **Data layer (`sql/09`):** buildings and motor are built with the contents rules (D-01 to D-03).
+  - Exposure is recomputed from the period dates: 4,138 buildings rows and 5,666 motor rows change.
+  - Buildings sum insured is divided by 1,000 at **10m and above** (1,395 training rows, 370 test rows). The rule is the same as D-02, but the threshold isn't: values from 52m to 594m are wrong, with a same-policy ratio of median 978 across 3,265 pairs. Nothing lies between 2m and 36m, and one genuine-looking 1.06m test risk (premium 545) must not be divided.
+  - Buildings `construction_type` is normalised for casing (11 raw values become 5).
+  - The new claim build reproduces sql/03's 23,753 contents claims exactly (`ev_09_contents_claims_match`).
+  - Unmatched claims dropped: 67 buildings and 294 motor. 10% of motor rows have no customer record, in training and test alike.
+  - **Contacts leak in every line** (D-04 extended): claimants average 3.0 (buildings) and 3.3 (motor) contacts, against 0.4 for non-claimants and 0.40 in the test files.
+- **IBNR (`sql/10`, D-10):** a cost-weighted report-lag distribution for each line and peril. It is estimated from every loss year with the right-truncation product-limit estimator and applied as the mean factor for each line, peril and loss quarter. Applying it claim by claim gave one early-reported motor bodily injury claim ×60; buildings breached the cap that way in the first attempt.
+  - **Validation:** the estimated pattern matches the empirical share reported by lag in fully observed loss years to about ±0.01 (contents theft and escape of water, motor own damage and bodily injury).
+  - Hand-checked case in `tests/test_sql_lines.py`.
+  - Factors for loss year 2024: **buildings 1.109, contents 1.028, motor 1.268**. Factors for 2023 are 1.002–1.004, except motor at 1.123.
+  - The largest are motor bodily injury (2.04 for 2024 including IBNER) and buildings subsidence (1.68).
+  - **Correction to A06:** contents theft IBNR is 1.2%, not 3.45%, and escape of water is 4.6%, not 2.4%. sql/04 pooled one lag distribution across perils, and theft is reported faster than average. The total is little changed.
+- **IBNER (D-11):** one snapshot cannot show development on reported claims. Average current cost of claims reported within 90 days (losses January–September) rises with inflation for every peril except **motor bodily injury**: 21,049 (2021, 10% open), 19,564, 17,325, 18,098 (2024, 74% open).
+  - Each bodily-injury loss year is lifted to the 2021 level with no inflation: 1.076, 1.215 and 1.163 for 2022–24.
+  - This is a lower bound. Inflation is left to the trend term, so adding it here would count it twice.
+  - Buildings subsidence (58% open in 2024) shows no clear shortfall and is not lifted.
+- **Large claims (D-12, added during the run, not in the approved plan):** one open 2023 motor bodily injury claim is **11.89m**, ten times the next largest (1.12m).
+  - It is genuine, not a ×1,000 error: 738,769 has already been paid.
+  - Developed claims are capped at 1m and the excess is spread back over the line as a multiplicative loading: motor ×1.031. No buildings or contents claim reaches the cap.
+- **Developed cost per unit of exposure, capped excess included (2021–24):**
+  - Buildings 383.9 / 410.5 / 433.8 / 498.1.
+  - Contents 105.5 / 107.0 / 117.2 / 120.0.
+  - Motor 564.5 / 606.7 / 659.6 / 575.4. Capped, motor 2023 is 588.3.
+- **Model (`python/run_lines.py`):** XGBoost per line on the developed capped target, with a log-exposure offset and the A13 settings.
+  - **Features:** buildings 53 raw columns, motor 52 raw columns, contents the banded set from A13.
+  - **Trend (D-13):** a log-linear calendar-year term fitted jointly with the trees, by backfitting it into the offset over 4 iterations. The remaining slope is at most 0.0006 a year. Tested on synthetic data with a known trend.
+  - **Tuning:** fit on 2021–22, early-stopped on 2023, over depth 1–4 and leaf size of 50–50,000 rows of median hessian.
+- **Run 1 (kept in the run log):** leaf size stopped at 5,000 rows and motor's best sat on that edge. In run 2, 20,000 and 50,000 were added. A side check on motor found 100,000 rows gives 0.0853 and 200,000 gives 0.0782, against 0.0886 at 50,000, so 50,000 is the optimum. Chosen settings:
+  - buildings depth 3, 20,000 rows, 184 trees;
+  - contents depth 1, 5,000 rows, 574 trees;
+  - motor depth 1, 50,000 rows, 1,081 trees.
+- **Backtest (fit 2021–23, score 2024):**
+
+  | Line | Model | D² vs reported | D² vs developed | Predicted / developed |
+  |---|---|---|---|---|
+  | Buildings | exposure only | 0.0417 | 0.0378 | 0.823 |
+  | | XGBoost, no trend | 0.1106 | 0.1020 | 0.825 |
+  | | **XGBoost, trend 3.3%** | **0.1114** | **0.1045** | 0.874 |
+  | Contents | exposure only | 0.0310 | 0.0303 | 0.916 |
+  | | XGBoost, no trend | 0.0920 | 0.0919 | 0.933 |
+  | | **XGBoost, trend 3.6%** | **0.0923** | **0.0927** | 0.999 |
+  | Motor | exposure only | 0.0192 | 0.0303 | 1.062 |
+  | | XGBoost, no trend | 0.0711 | 0.0818 | 1.021 |
+  | | **XGBoost, trend 4.2%** | 0.0661 | 0.0816 | 1.088 |
+
+  The trend improves buildings and contents. For motor it scores the same against developed 2024 and worse against reported 2024. Reported 2024 is the least developed year, and the Kaggle target is ultimate cost, so D² against developed is the relevant comparison.
+- **2025 (fit 2021–24):**
+
+  | Line | Trend a year | 2025 rate per unit of exposure | vs developed 2024 |
+  |---|---|---|---|
+  | Buildings | 6.4% | 484.1 | 0.972 |
+  | Contents | 3.3% | 124.5 | 1.037 |
+  | Motor | 3.6% | 607.4 (load ×1.031 included) | 1.056 |
+
+  Buildings 2025 sits below 2024 despite its trend because the model uses each year's weather. 2024 had more freezing days (39.5 against 34.7) and its escape of water cost rose from 99.9 to 117.3; 2025 is milder (35.9).
+- **Submission:** `work/submissions/submission_all_lines_xgb_20261021.csv` (git-ignored). It has 626,639 rows, row_ids and order identical to the sample, no nulls, and a minimum prediction of 0.063. Mean per row: buildings 395, contents 100, motor 476.
+- **Main uncertainties, in order:**
+  1. **Motor bodily injury development.** 2024 developed bodily injury is 214 per unit of exposure, against 246–311 in 2021–23, so 2024 is probably still under-developed. That would explain the motor trend's 9% over-prediction of 2024 in the backtest.
+  2. **Buildings subsidence for 2024.** Its 1.68 factor rests on 69% open claims.
+  3. **The trends rest on four years each.**
+  4. **The open-claim uplift for bodily injury is a lower bound.**
+
+  Backtest deciles (level-matched) are within 0.84–1.15 for each line, except buildings decile 1 (0.72).
+- **Checks:** the GLM pack is unchanged. `run_all.py` evidence is byte-identical, and after re-running R in this checkout `reconcile.py` gives 100 checks, 0 failed. Tests: 24 pass (pytest). Lint clean.
+- **Status:** analysis. D-10 to D-13 await sign-off. Submitting is the owner's decision.
