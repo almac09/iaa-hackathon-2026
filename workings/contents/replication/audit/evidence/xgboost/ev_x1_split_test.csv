@@ -1,0 +1,5 @@
+model,d2,pred_over_actual,d2_level_matched,n_features,n_trees,eta,subsample,colsample_bytree,reg_lambda,max_depth,min_child_weight
+exposure only,0.030993,0.94086,0.03172,,,,,,,,
+A single Tweedie,0.093249,0.974953,0.093492,,,,,,,,
+XGBoost banded,0.091898,0.940618,0.092406,20.0,234.0,0.05,0.8,0.8,1.0,2.0,20000.0
+XGBoost raw,0.091326,0.942451,0.09163,55.0,414.0,0.05,0.8,0.8,1.0,1.0,20000.0

@@ -129,3 +129,29 @@
 - **New evidence (D-07):** persistence measured against expected claims based on earned premium, which controls for everything in the current price. A claim in both prior years gives next-year cost A/E **2.59**; last year only **1.84**; two years ago only **1.66**; neither **0.94**. A large claim (5k+) last year gives next-year cost A/E **3.35**. The current pricing does not reflect own-claims history, so experience rating would add information the rates don't already contain.
 - **Changes:** `sql/02` (premium-basis evidence), `sql/03` (`earned_premium` column), `sql/04` (loss ratios on earned premium for all lines, with the written-premium figures kept as `_superseded` columns), `sql/06` (A/E against earned premium). Re-run and reconciled in A11's final run.
 - **Status:** applied-derived. D-07 decided in session; formal sign-off pending.
+
+### A13 — XGBoost on contents, against GLM A
+- **When / who:** 2026-10-21 ~19:00–19:35 BST, Claude, at the owner's request ("I need XGBoost to be run on the contents dataset"). The owner approved the plan: both feature sets, with no submission file yet.
+- **Why:** A09 found that factor effects differ by claim size and suggested a GBM as a way to capture interactions that a single GLM averages out.
+- **Method:** `python/run_xgb.py` and `python/xgb_models.py`, using xgboost 3.2.0 with settings in `config.json` → `xgboost`. Tweedie objective with power 1.5. Exposure and the fit-period base rate enter as a log offset (`base_margin`). Checked: with `base_margin` set, XGBoost does not add `base_score`. Same split as A09: fit on 2021–23, score on 2024. Tuning never sees 2024: each grid point is fitted on 2021–22 and early-stopped on 2023 (Tweedie negative log-likelihood, which is the deviance up to a constant), then refitted on 2021–23 with the same number of trees. Two feature sets:
+  - *banded*: GLM A's 19 factors plus `z_log_si`.
+  - *raw*: 55 permitted columns at full resolution (D-08).
+
+  A paired bootstrap (1,000 row resamples of 2024) compares each model with GLM A. GLM A is refitted inside the runner; it matches the pack's D² to 2e-7.
+- **Run 1 (kept in `run_log.jsonl`):** grid of depth 2/4/6 × `min_child_weight` 10/200. The best point was depth 2, on the edge of the grid, and the two weights gave identical results. At the base rate the Tweedie hessian is about 5 per row (median), so both weights allowed leaves of only a handful of rows. Run 1 was set aside as under-specified, not reported as a finding.
+- **Run 2 (reported):** grid of depth 1/2/3 × `min_child_weight` 10/2,000/20,000. No grid point hit the 3,000-tree cap. Two runs gave byte-identical evidence.
+
+  | Model (2024) | D² | Predicted/actual | D² level-matched (diagnostic) |
+  |---|---|---|---|
+  | Exposure only | 0.0310 | 0.941 | 0.0317 |
+  | **GLM A single Tweedie** | **0.0932** | 0.975 | **0.0935** |
+  | XGBoost banded (depth 2, weight 20,000, 234 trees) | 0.0919 | 0.941 | 0.0924 |
+  | XGBoost raw (depth 1, weight 20,000, 414 trees) | 0.0913 | 0.942 | 0.0916 |
+
+  **Bootstrap, XGBoost minus GLM A:** banded −0.0014 (95% interval −0.0034 to +0.0006; not better in 92% of resamples). Raw −0.0019 (−0.0055 to +0.0019; 84%).
+- **Conclusion:** XGBoost does **not** beat GLM A on contents. The gap is within noise, so the two are statistically level, and the GLM is the more explainable of the two. Shallow trees did best in tuning: depth 1, which is additive with no interactions, was within 0.0002 of the best on 2023. So on this data, interactions add nothing measurable to expected cost, despite the size-dependent relativities in A09. Level-matched to actual, XGBoost's decile A/E ranges 0.87–1.09 (banded) and 0.75–1.16 (raw), against GLM A's 0.94–1.10. The trees under-predict the top deciles.
+- **Finding for the 2025 price, all models:** loss cost per unit of exposure steps up from 105.5 and 107.0 (2021, 2022) to 116.9 and 116.8 (2023, 2024). Claim frequency is flat at 0.040–0.041, so the step is mostly in severity. Fitted on 2021–22, GLM A under-predicts 2023 by 7%. 2024 is not yet developed (about 3% IBNR, D-03), so its underlying level is probably above 2023's. Any 2025 submission needs an explicit trend or level adjustment; none is applied here.
+- **Not explained:** the raw set scores below the banded set at every depth on 2023. Dropping the three fields whose meaning shifts with calendar time (`customer_since_year`, `years_at_address`, `renewal_count`) did not change this, so time drift in those fields is not the cause. The likely cause is extra noise from 35 more features, but that is untested.
+- **Limitations:** the bootstrap resamples rows, not policies or addresses, so it ignores within-address correlation and its intervals are, if anything, too narrow. That strengthens the conclusion that the gap is not significant. The model is Python only, with no R twin. Gain importance is descriptive, not a test.
+- **Evidence:** `evidence/xgboost/ev_x1_split_test.csv`, `ev_x2_tuning.csv`, `ev_x3_importance.csv`, `ev_x4_bootstrap_vs_glm_a.csv`, `ev_x5_deciles.csv`. Tests: `tests/test_xgb_models.py` (offset recovers a known rate and scales exactly with exposure; categories fixed to training levels; feature guard; bootstrap).
+- **Status:** analysis. D-08 awaits sign-off.
