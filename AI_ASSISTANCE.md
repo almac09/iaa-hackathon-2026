@@ -194,6 +194,19 @@ Recorded after reviewing the Excel workbooks. These are thoughts only — nothin
 - **Results**: 47-column pandas frame; categorical distributions include make_model (300 levels), occupation (21, 12.2% null), marital_status (9.8% null), credit_band (A–E, 10% null), marketing_segment (13 levels, 10% null), region (12, R01 largest at 16%), Year evenly split ~198.5k per 2021–2024
 - **Files affected**: `notebooks/EDA - Bridget` (new cells 2–6), `Excel files/Motor_EDA.xlsx` (new)
 
+### 2026-10-21 - PROJECT DECISION: fix motor exposure column
+- **Task**: Log Bridget's decision to fix the motor exposure column before any motor model retrain
+- **Human Contribution**: Decision by Bridget (2026-10-21) - recompute motor exposure from period dates (days in force / days in calendar year, 366 for 2024 leap year, capped at 1.0), mirroring the approved buildings fix
+- **AI Contribution**: EDA notebook finding that motivated the decision - 3,763 of 793,414 motor rows (0.47%) have exposure over 1: a cluster at 1.0139 (365/360, leap-year divisor inconsistency) and a tail up to 365.0 (day counts stored instead of year fractions). Culprit rows isolated to Excel files/Motor_EDA.xlsx sheet exposure_over_1. Contents master suspected to have the same issue, not yet confirmed
+- **Files affected**: decision only, no code changes yet; fix to be applied in the motor model notebook (now applied in Motor_Bridget - see next entry)
+
+### 2026-10-21 - Motor exposure fix APPLIED, CV rerun, motor v002 + combined v006
+- **Task**: Apply the exposure decision in Motor_Bridget, retrain, and produce new motor and combined submissions
+- **Human Contribution**: Specified the formula: exposure = (period_end - period_start + 1) / 365, fixed divisor. Clarified that Motor_Bridget_v1 is her BACKUP copy for reproducing v001 results - do not edit it; ongoing work stays in Motor_Bridget
+- **AI Contribution**: Motor_Bridget cells 17 (training modeling dataset) and 24 (2025 test master) recompute exposure as (datediff(period_end, period_start) + 1) / 365 instead of the raw column; cell 25 retargeted to motor_tweedie_xgb_submission_v002.csv (v001 preserved); new cell 26 builds the combined file by swapping motor v002 M-rows into the v005 skeleton (contents v001 C-rows and buildings v002 B-rows unchanged). Full chain re-run and verified: no exposure values over 1, no unseen categorical levels in test
+- **Results**: CV mean Tweedie deviance (p=1.5) 12,029 down to 107.8 (folds 112/106/105/108; was 3,511-16,136 spread); deciles 100% monotonic, claim rate 3.9% to 22.4%, top-decile lift 2.30x to 2.21x; exposure dropped from top gain feature (23%) to outside the top 15 (ncb_years now top at 9.3%, then cover_type, make_model, written_premium). Test: 254,986 M rows, mean pred 243.74 (v001: 267.39), min 0.72, max 13,634.45. Combined v006: M 243.74, C 57.49, B 95.94 - all 626,639 rows, no nulls/zeros. Motor_EDA.xlsx also gained 25 boxplot sheets and the exposure_over_1 sheet
+- **Files affected**: notebooks/Motor_Bridget (cells 17, 24, 25, 26), notebooks/EDA - Bridget (boxplot + exposure cells), submissions/motor_tweedie_xgb_submission_v002.csv (new), submissions/motor_buildings_contents_submission_v006.csv (new), Excel files/motor_tweedie_xgb_results.xlsx (refreshed), Excel files/Motor_EDA.xlsx (refreshed)
+
 ---
 
 *This log is updated whenever AI assistance is used for project work. Each entry is committed to Git alongside the related code changes.*
