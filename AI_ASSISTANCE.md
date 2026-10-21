@@ -228,6 +228,12 @@ Recorded after reviewing the Excel workbooks. These are thoughts only — nothin
 - **Results**: modes — flood_zone 1.0, security_level standard, high_value_items 0.0, years_at_address 4.0, marital_status married, energy_rating C, occupation Retired, distance_to_river_km 0.27, soil_type clay, roof_type pitched, household_size 1.0. CV mean Tweedie deviance 4,858 → **63.63** (folds 61.6/64.4/63.6/64.9 — ~76x improvement, mirroring motor 12,029→107.8 and buildings 776→103.4); deciles 100% monotonic, top-decile lift 2.01x. Test: 187,498 C rows, mean pred 47.64 (v001: 57.49), min 0.31, max 2,927.34. Combined v008: M 243.74 | C 47.64 | B 98.11, all 626,639 rows verified. All three lines now run the fixed pipeline (exposure recompute + mode imputation; plus casing fix and prediction floor on buildings)
 - **Files affected**: `notebooks/Contents_Bridget` (Cells 7, 13, 14, 15–16), `submissions/contents_tweedie_xgb_submission_v002.csv` (new), `submissions/motor_buildings_contents_submission_v008.csv` (new), `Excel files/contents_tweedie_xgb_results.xlsx` (refreshed)
 
+### 2026-10-21 — Combined v009 with teammate's buildings predictions (A/B test)
+- **Task**: Generate a combined submission identical to v008 except the B rows use teammate Alan's buildings predictions instead of Bridget's, to A/B test the buildings line on the leaderboard
+- **Human Contribution**: Suspects her buildings model is the weak line; requested the swap file using her motor and contents predictions
+- **AI Contribution**: Built `submissions/motor_buildings_contents_submission_v009_alanB.csv` ad-hoc (M = motor v002, C = contents v002, B = Alan's buildings rows extracted from the existing `motor_buildings_submission_v002.csv` teammate merge); verified 626,639 rows, no nulls/zeros. Noted diagnostic: Alan's B predictions are narrowly banded (min 1.13 / mean 342.89 / max 420.28, no large predictions) vs Bridget's (mean 98.11 / max 11,525) and a training average of ~186/row — the two models will fail very differently under Tweedie deviance
+- **Files affected**: `submissions/motor_buildings_contents_submission_v009_alanB.csv` (new)
+
 ---
 
 *This log is updated whenever AI assistance is used for project work. Each entry is committed to Git alongside the related code changes.*
