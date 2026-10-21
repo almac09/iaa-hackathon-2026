@@ -28,20 +28,25 @@ IAA AI-Assisted Hackathon 2026, Part 1. This pack reproduces every step of the h
 
 ## How to run
 
-You need Python 3.11, R 4.5, the Databricks CLI (logged in), and about 8 GB of free memory (the R run peaks at about 6 GB). The commands are the same in zsh (macOS) and PowerShell (Windows) unless marked otherwise.
+You need Python 3.11, R 4.5, the Databricks CLI (logged in) and about 8 GB of free memory. Run every command from this folder (`workings/contents/replication` in the team repo).
 
+First, create and activate a virtual environment (once per machine).
+
+macOS / Linux (zsh). On macOS the command is `python3`, because plain `python` does not exist until the environment is active:
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 ```
-macOS / Linux:
 ```bash
 source .venv/bin/activate
 ```
 Windows PowerShell:
 ```bash
+py -3.11 -m venv .venv
+```
+```bash
 .venv\Scripts\Activate.ps1
 ```
-Then, from the pack root:
+With the environment active, `python` works on both systems, so the remaining commands are the same everywhere. Reactivate the environment in each new terminal.
 ```bash
 pip install -r requirements.txt
 ```
