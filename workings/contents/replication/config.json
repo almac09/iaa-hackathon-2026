@@ -108,6 +108,16 @@
     }
   },
 
+  "submission": {
+    "_about": "python/make_submission.py. Contents rows are predicted by each model refitted on every training year; rows of other lines get other_lines_value (owner's instruction, 2026-10-21). No trend or IBNR adjustment is applied (A13).",
+    "sample_file": "work/sample_submission.csv",
+    "out_dir": "work/submissions",
+    "contents_prefix": "C",
+    "other_lines_value": 0.1,
+    "xgb_banded": {"max_depth": 2, "min_child_weight": 20000, "n_trees": 234,
+                   "_source": "Chosen by tuning in A13 run 2 (evidence/xgboost/ev_x1_split_test.csv)."}
+  },
+
   "reconcile": {
     "tol_d2_python_vs_r": 0.0005,
     "tol_ratio_python_vs_r": 0.002,
