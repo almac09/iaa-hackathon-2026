@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "python"))
+import models  # noqa: E402
 import xgb_models  # noqa: E402
 
 PARAMS = {"max_depth": 1, "eta": 0.3, "subsample": 1.0, "colsample_bytree": 1.0, "min_child_weight": 1.0,
@@ -80,3 +81,19 @@ def test_trend_backfitting_recovers_known_yearly_trend():
     p24 = xgb_models.predict(b, grid, np.ones(2), base, extra=slope * (2024 - centre) * np.ones(2))
     p25 = xgb_models.predict(b, grid, np.ones(2), base, extra=slope * (2025 - centre) * np.ones(2))
     assert p25 / p24 == pytest.approx(np.exp(slope) * np.ones(2), rel=1e-6)
+
+
+def test_cluster_bootstrap_matches_unweighted_d2_and_detects_a_real_gain():
+    import significance  # noqa: E402  (python/ is on the path above)
+    rng = np.random.default_rng(4)
+    n = 6000
+    y = rng.gamma(0.3, 300, n)
+    good, flat = 0.6 * y + 0.4 * y.mean(), np.full(n, y.mean())
+    clusters = rng.integers(0, 2000, n)
+    one = np.ones((1, n))
+    assert significance._weighted_d2(y, good, one, 1.5)[0] == pytest.approx(models.d2_tweedie(y, good, 1.5))
+    diff = significance.paired_cluster_bootstrap(y, good, flat, clusters, 1.5, n_boot=200, seed=1)
+    s = significance.summarise(diff, models.d2_tweedie(y, good, 1.5) - models.d2_tweedie(y, flat, 1.5))
+    assert s["significant_95"] and s["share_not_better"] == 0
+    same = significance.paired_cluster_bootstrap(y, flat, flat, clusters, 1.5, n_boot=50, seed=1)
+    assert np.allclose(same, 0)
