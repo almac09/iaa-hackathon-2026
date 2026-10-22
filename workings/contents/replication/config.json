@@ -165,6 +165,18 @@
   "glm_lines": {
     "_about": "python/run_glm_lines.py (audit A16). Owner's design, 2026-10-22: contents one GLM (no split); buildings small claims XGBoost at depth 3 plus a large-claim GLM; motor small-claim GLM plus a large-claim GLM. Claim history (sql/12, sql/13) enters every line as a credibility factor (k + n) / (k + E), E from a frequency GLM without history, k tuned on 2023 per group. Large claims: cost above the threshold, developed, modelled by a compact Tweedie GLM and scaled to a generalised Pareto mean. Same protocol and development as A15; the D-12 cap is not used.",
     "sql_files": ["sql/12_claim_history.sql"],
+    "cann": {
+      "_about": "A20. CANN correction of each line's small-claim model, adopted per line only if it improves both 2023 and 2024. Architecture fixed in advance, not tuned.",
+      "enabled": true, "n_seeds": 20, "hidden": [128, 64, 32], "dropout": 0.1, "learning_rate": 0.001,
+      "batch_size": 16384, "max_epochs": 40, "patience": 4, "val_share": 0.1, "seed": 2026,
+      "features": {"buildings": "lines.models.buildings", "contents": "xgboost.feature_sets.raw", "motor": "lines.models.motor"}
+    },
+    "bootstrap": {"n": 1000, "seed": 2025, "cluster": "customer_id"},
+    "level": {
+      "_about": "A20. Deviance-optimal level factor per line, adopted only if each year's factor improves the other year; then the uncertainty premium exp(sigma^2/2).",
+      "uncertainty_evidence": "audit/evidence/glm_lines/ev_u1_development_bootstrap.csv",
+      "n_boot": 200, "seed": 77, "workers": 14, "z90": 1.645
+    },
     "expected_sql": "sql/13_history_expected.sql",
     "credibility_k_grid": [0.5, 1, 2, 4, 8, 16, 32, 64],
     "freq_alpha": 0.001,
@@ -176,6 +188,9 @@
       "buildings": {
         "split": true, "small": "xgb", "max_depth": 3, "min_child_rows": 20000,
         "_small_note": "XGBoost features are lines.models.buildings.",
+        "a16_override": {"excess": {"numeric": ["flood_zone", "sum_insured", "elevation_m", "year_built", "distance_to_river_km"],
+                                    "categorical": ["soil_type", "construction_type"], "n_bands": 5}},
+        "_a16_note": "a16_override: the A16 settings, used only for the 'no A17 changes' significance variant.",
         "excess": {"numeric": ["flood_zone", "sum_insured", "elevation_m", "year_built", "distance_to_river_km"],
                    "categorical": ["soil_type", "construction_type"], "n_bands": 5, "smooth": "all", "n_knots": 4},
         "freq": {"numeric": ["flood_zone", "sum_insured", "elevation_m", "year_built", "distance_to_river_km",
@@ -188,7 +203,9 @@
         "numeric": ["policyholder_age", "elevation_m", "distance_to_river_km"],
         "categorical": ["f_flood_zone", "f_tenure", "f_region", "f_segment", "f_prior_claims", "f_missed_pay", "f_vol_xs", "f_credit", "f_security", "f_hvi", "f_ad_cover", "f_bike", "f_wfh", "f_lodgers", "f_urban", "f_prop_type"],
         "continuous": "model.numeric", "n_bands": 10, "smooth": "all", "n_knots": 4,
-        "extra_columns": ["policyholder_age", "elevation_m", "distance_to_river_km"],
+        "extra_columns": ["policyholder_age", "elevation_m", "distance_to_river_km", "sum_insured", "high_value_items", "voluntary_excess", "compulsory_excess", "missed_payments_12m", "renewal_count", "days_quote_to_inception", "discount_applied", "household_size", "prior_claims_5y", "licence_points", "years_at_address", "customer_since_year", "flood_zone", "year_built", "bedrooms", "hail_days", "wind_exposure_index", "freezing_days", "dry_summer_index", "wildfire_index", "rainfall_mm", "mean_temperature_c", "tenure", "security_level", "accidental_damage_cover", "works_from_home", "lodgers", "bicycle_cover", "channel", "payment_method", "new_business", "occupation", "marital_status", "credit_band", "email_domain", "marketing_consent", "document_preference", "previous_insurer", "campaign_code", "branch_id", "marketing_segment", "region", "urban_density", "soil_type", "property_type", "roof_type", "basement", "trees_within_5m", "listed_building", "energy_rating", "solar_panels"],
+        "a16_override": {"numeric": [], "categorical": "model.factors", "smooth": []},
+        "_a16_note": "a16_override: the A16 settings, used only for the 'no A17 changes' significance variant.",
         "_smooth_note": "A17: GLM A's age, elevation and river-distance bands replaced by cubic splines on the raw values (+0.0011 D2 on 2023, +0.0019 on 2024).",
         "freq": {"numeric": [], "categorical": "model.factors", "continuous": "model.numeric", "n_bands": 10}
       },
@@ -200,6 +217,9 @@
                         "payment_method", "credit_band"],
         "continuous": [], "n_bands": 10, "smooth": "all", "n_knots": 4,
         "_smooth_note": "A17: numerics as cubic splines, plus missed payments and credit band (+0.0053 D2 on 2023, +0.0023 on 2024). The large-claim GLM stays banded: smoothing it failed on 2023.",
+        "a16_override": {"numeric": ["ncb_years", "driver_age", "annual_mileage", "years_licensed", "vehicle_age", "telematics_score", "vehicle_value_group", "voluntary_excess", "prior_claims_5y"],
+                         "categorical": ["region", "marketing_segment", "cover_type", "urban_density", "channel", "vehicle_use", "payment_method"], "smooth": []},
+        "_a16_note": "a16_override: the A16 settings, used only for the 'no A17 changes' significance variant.",
         "_factor_note": "Features with at least 1% XGBoost gain in A15.",
         "excess": {"numeric": ["ncb_years", "driver_age", "annual_mileage", "years_licensed"],
                    "categorical": ["region"], "n_bands": 5},

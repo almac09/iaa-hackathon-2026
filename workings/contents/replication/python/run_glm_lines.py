@@ -29,10 +29,12 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import cann  # noqa: E402
 import common  # noqa: E402
 import glm_lines  # noqa: E402
 import make_submission  # noqa: E402
 import models  # noqa: E402
+import significance  # noqa: E402
 import xgb_models  # noqa: E402
 from run_lines import median_hessian  # noqa: E402
 from run_xgb import write_csv  # noqa: E402
@@ -41,6 +43,7 @@ RUNNER = "glm_lines"
 WINDOWS = {"tune": ([2021, 2022], 2023), "backtest": ([2021, 2022, 2023], 2024),
            "final": ([2021, 2022, 2023, 2024], 2025)}
 GROUPS = {"buildings": ["own", "home", "cross"], "contents": ["own", "home", "cross"], "motor": ["own", "cross"]}
+EVAL_WINDOWS = ("tune", "backtest")
 
 
 def resolve(cfg: dict, v) -> list[str]:
@@ -104,13 +107,16 @@ class XGBSmall:
 
 
 class LineModel:
-    """Small-claim model plus, for split lines, the large-claim GLM scaled to the Pareto mean."""
+    """Small-claim model (with its CANN correction, if any) plus, for split lines, the large-claim GLM scaled to the
+    Pareto mean."""
 
-    def __init__(self, small, excess=None, tail=None):
-        self.small, self.excess, self.tail = small, excess, tail
+    def __init__(self, small, excess=None, tail=None, cann=None):
+        self.small, self.excess, self.tail, self.cann = small, excess, tail, cann
 
     def predict(self, d: pd.DataFrame, year=None) -> np.ndarray:
         pred = self.small.predict(d, year)
+        if self.cann is not None:
+            pred = pred * np.exp(self.cann.correction(d))
         if self.excess is not None:
             yr = d.yr.to_numpy() if year is None else np.full(len(d), year)
             trend = np.exp(self.small.slope * (yr - self.excess.centre))
@@ -169,8 +175,9 @@ class Line:
                            early_stopping=xc["early_stopping_rounds"])
         return b.best_iteration + 1, params
 
-    def build(self, years, threshold, alpha, trees=None, trend=True) -> LineModel:
-        sp, gl = self.spec, self.cfg["glm_lines"]
+    def build(self, years, threshold, alpha, trees=None, trend=True, a16=False) -> LineModel:
+        """`a16` rebuilds with the settings before A17 (no smoothing, no added motor factors), for significance."""
+        sp, gl = ({**self.spec, **self.spec["a16_override"]} if a16 else self.spec), self.cfg["glm_lines"]
         d = self.rows(years)
         y_small, y_excess = self.targets(d, threshold)
         if sp["small"] == "glm":
@@ -187,6 +194,18 @@ class Line:
         excess = GLM(spec, [], gl["excess_alpha"], trend=False).fit(d, y_excess, self.p)
         tail = glm_lines.gpd_tail(self.claims[self.claims.row_id.isin(d.row_id)], threshold)
         return LineModel(small, excess, tail)
+
+    def add_cann(self, model: LineModel, years, threshold) -> LineModel:
+        """The model with a CANN ensemble correcting its small-claim part, trained on the window's small claims."""
+        d = self.rows(years)
+        ref = self.cfg["glm_lines"]["cann"]["features"][self.name]
+        node = self.cfg
+        for key in ref.split("."):
+            node = node[key]
+        ens = cann.CANNEnsemble(resolve(self.cfg, node["numeric"]), resolve(self.cfg, node["categorical"]),
+                                self.cfg["glm_lines"]["cann"], self.p)
+        ens.fit(d, self.targets(d, threshold)[0], model.small.predict(d))
+        return LineModel(model.small, model.excess, model.tail, cann=ens)
 
     def credibility(self, d: pd.DataFrame, window: str, ks: dict) -> np.ndarray:
         e = self.expected[window].reindex(d.row_id.to_numpy())
@@ -254,42 +273,155 @@ def run_line(line: Line) -> dict:
         print(f"  {line.name} credibility {grp}: k {ks[grp]} (D2 {scores[ks[grp]]:.4f}, "
               f"no history {scores[np.inf]:.4f})", flush=True)
 
-    b_years, b_year = WINDOWS["backtest"]
-    b_val = line.rows([b_year])
-    variants = {"chosen": {}, "no history": {"ks": {g: np.inf for g in ks}}, "no trend": {"trend": False}}
-    if sp["split"]:
-        variants["no split"] = {"threshold": None}
-    for name, change in variants.items():
+    # CANN (A20): adopted only if it improves both out-of-time years on the full pipeline.
+    trees_by_threshold = {threshold: tree_spec}
+
+    def trees_for(th):
+        if sp["small"] != "xgb":
+            return None
+        if th not in trees_by_threshold:
+            trees_by_threshold[th] = line.tune_trees(th)
+        return trees_by_threshold[th]
+
+    base, with_cann = {}, {}
+    out["cann"] = []
+    for w in EVAL_WINDOWS:
+        yrs, yv = WINDOWS[w]
+        v = line.rows([yv])
+        base[w] = line.build(yrs, threshold, alpha, tree_spec)
+        row = {"line": line.name, "score_year": yv,
+               "d2_without_cann": line.score(line.predict(base[w], w, ks, v, year=yv), v)["d2_vs_developed"]}
+        if gl["cann"]["enabled"]:
+            with_cann[w] = line.add_cann(base[w], yrs, threshold)
+            row["d2_with_cann"] = line.score(line.predict(with_cann[w], w, ks, v, year=yv), v)["d2_vs_developed"]
+        out["cann"].append(row)
+        print(f"  {line.name} CANN {yv}: without {row['d2_without_cann']:.5f}, "
+              f"with {row.get('d2_with_cann', np.nan):.5f}", flush=True)
+    adopt_cann = bool(with_cann) and all(r["d2_with_cann"] > r["d2_without_cann"] for r in out["cann"])
+    for r in out["cann"]:
+        r["adopted"] = adopt_cann
+
+    def variant(w, **change):
+        """The chosen model rebuilt with one component removed (CANN refitted on top when adopted)."""
+        yrs = WINDOWS[w][0]
         th = change.get("threshold", threshold)
-        ts = line.tune_trees(th) if sp["small"] == "xgb" and th != threshold else tree_spec
-        trend = change.get("trend", True)
-        m = line.build(b_years, th, alpha, ts, trend=trend)
-        pred = line.predict(m, "backtest", change.get("ks", ks), b_val, year=b_year if trend else None)
-        out["backtest"].append({"line": line.name, "variant": name, **line.score(pred, b_val)})
-        if name == "chosen":
-            out["backtest_pred"] = b_val.assign(mu=pred)
-        print(f"  {line.name} backtest {name}: D2 {out['backtest'][-1]['d2_vs_developed']:.4f}, "
-              f"p/a {out['backtest'][-1]['pred_over_developed']:.3f}", flush=True)
+        m = line.build(yrs, th, alpha, trees_for(th), trend=change.get("trend", True), a16=change.get("a16", False))
+        return line.add_cann(m, yrs, th) if adopt_cann else m
+
+    # Per-row predictions on both years for the chosen model and each variant (significance, A20).
+    out["preds"] = {}
+    for w in EVAL_WINDOWS:
+        yrs, yv = WINDOWS[w]
+        v = line.rows([yv])
+        chosen = with_cann[w] if adopt_cann else base[w]
+        cols = {"chosen": line.predict(chosen, w, ks, v, year=yv)}
+        if with_cann:
+            cols["no CANN" if adopt_cann else "with CANN (not adopted)"] = line.predict(
+                base[w] if adopt_cann else with_cann[w], w, ks, v, year=yv)
+        cols["no history"] = line.predict(chosen, w, {g: np.inf for g in ks}, v, year=yv)
+        cols["no trend"] = line.predict(variant(w, trend=False), w, ks, v)
+        if sp["split"]:
+            cols["no split"] = line.predict(variant(w, threshold=None), w, ks, v, year=yv)
+        cols["no A17 changes"] = line.predict(variant(w, a16=True), w, ks, v, year=yv)
+        out["preds"][w] = pd.DataFrame({"row_id": v.row_id.to_numpy(), "customer_id": v.customer_id.to_numpy(),
+                                        "address_id": v.address_id.to_numpy(), "y_full": v.y_full.to_numpy(),
+                                        "claim_cost": v.claim_cost.to_numpy(), **cols})
+        for name, pred in cols.items():
+            if w == "backtest":
+                out["backtest"].append({"line": line.name, "variant": name, **line.score(pred, v)})
+        print(f"  {line.name} variants scored for {yv}", flush=True)
+    out["backtest_pred"] = out["preds"]["backtest"].assign(mu=out["preds"]["backtest"]["chosen"])
+
+    # Level (A20): deviance-optimal scale on each year; adopted only if each year's scale improves the other year.
+    p, ys = line.p, {w: out["preds"][w].y_full.to_numpy() for w in EVAL_WINDOWS}
+    mus = {w: out["preds"][w]["chosen"].to_numpy() for w in EVAL_WINDOWS}
+    k = {w: deviance_scale(ys[w], mus[w], p) for w in EVAL_WINDOWS}
+    other = {"tune": "backtest", "backtest": "tune"}
+    level = {"line": line.name, **{f"k_{WINDOWS[w][1]}": k[w] for w in EVAL_WINDOWS}}
+    for w in EVAL_WINDOWS:
+        yv = WINDOWS[w][1]
+        level[f"d2_{yv}"] = models.d2_tweedie(ys[w], mus[w], p)
+        level[f"d2_{yv}_with_k_from_{WINDOWS[other[w]][1]}"] = models.d2_tweedie(ys[w], mus[w] * k[other[w]], p)
+    level["adopted"] = all(level[f"d2_{WINDOWS[w][1]}_with_k_from_{WINDOWS[other[w]][1]}"]
+                           > level[f"d2_{WINDOWS[w][1]}"] for w in EVAL_WINDOWS)
+    level["level_factor"] = float(np.exp(np.mean(np.log(list(k.values()))))) if level["adopted"] else 1.0
 
     f_years, f_year = WINDOWS["final"]
     final = line.build(f_years, threshold, alpha, tree_spec)
-    pred = line.predict(final, "final", ks, line.test, year=f_year)
+    if adopt_cann:
+        final = line.add_cann(final, f_years, threshold)
+    pred = line.predict(final, "final", ks, line.test, year=f_year) * level["level_factor"]
+
+    # Level uncertainty (A20): development (bootstrap, ev_u1), trend and year-to-year noise, propagated to 2025.
+    fitted = line.predict(final, "final", ks, line.train)
+    by_year = pd.DataFrame({"yr": line.train.yr.to_numpy(), "y": line.train.y_full.to_numpy(),
+                            "mu": fitted}).groupby("yr").sum()
+    resid = np.log(by_year.y / by_year.mu)
+    sigma_year = float(np.sqrt((resid ** 2).sum() / (len(resid) - 2)))
+    dev = line.cfg["_dev_uncertainty"]
+    cv = {ay: float(dev[(dev.line == line.name) & (dev.ay == ay)].cv.iloc[0]) for ay in (2023, 2024)}
+    # The OLS projection from 2021-24 to 2025 weights 2024 by 1.0 and 2023 by 0.5; the projection's own variance plus
+    # a new year's noise is 2.5 sigma^2.
+    sigma2 = cv[2024] ** 2 + 0.25 * cv[2023] ** 2 + 2.5 * sigma_year ** 2
+    tilt_raw = float(np.exp(sigma2 / 2))
+    # The tilt is a change of level like any other, so it faces the two-year rule: kept only if it improves D2 on
+    # both backtest years (on top of any level factor).
+    unc = {"line": line.name, "dev_cv_2024": cv[2024], "dev_cv_2023": cv[2023],
+           "year_residuals": "; ".join(f"{y}: {r:+.4f}" for y, r in resid.items()),
+           "sigma_year": sigma_year, "sigma_level_2025": float(np.sqrt(sigma2)), "tilt_computed": tilt_raw}
+    for w in EVAL_WINDOWS:
+        yv, base_mu = WINDOWS[w][1], mus[w] * level["level_factor"]
+        unc[f"d2_{yv}"] = models.d2_tweedie(ys[w], base_mu, p)
+        unc[f"d2_{yv}_with_tilt"] = models.d2_tweedie(ys[w], base_mu * tilt_raw, p)
+    unc["tilt_adopted"] = all(unc[f"d2_{WINDOWS[w][1]}_with_tilt"] > unc[f"d2_{WINDOWS[w][1]}"] for w in EVAL_WINDOWS)
+    tilt = tilt_raw if unc["tilt_adopted"] else 1.0
+    pred = pred * tilt
+    z = line.cfg["glm_lines"]["level"]["z90"]
+    rate = pred.sum() / line.test.exposure.sum()
+    out["uncertainty"] = {**unc, "uncertainty_tilt": tilt,
+                          "rate_2025": rate, "rate_2025_p05": rate * np.exp(-z * np.sqrt(sigma2)),
+                          "rate_2025_p95": rate * np.exp(z * np.sqrt(sigma2))}
+    out["level"] = level
+
     cf = line.credibility(line.test, "final", ks)
     last = line.rows([2024])
     rate_2024 = last.y_full.sum() / last.exposure.sum()
-    out["summary"] = {"line": line.name, "small_model": sp["small"], "threshold": threshold, "alpha": alpha,
-                      "n_trees": tree_spec[0] if tree_spec else None, "trend_pa": np.expm1(final.small.slope),
-                      **{f"k_{g}": k for g, k in ks.items()},
+    out["summary"] = {"line": line.name, "small_model": sp["small"], "cann": adopt_cann, "threshold": threshold,
+                      "alpha": alpha, "n_trees": tree_spec[0] if tree_spec else None,
+                      "trend_pa": np.expm1(final.small.slope), **{f"k_{g}": kv for g, kv in ks.items()},
                       "credibility_min": cf.min(), "credibility_max": cf.max(),
                       "tail_shape": final.tail["shape"] if final.tail else None,
                       "tail_adjustment": final.tail["adjustment"] if final.tail else None,
-                      "rate_2025": pred.sum() / line.test.exposure.sum(), "developed_rate_2024": rate_2024,
-                      "rate_2025_over_2024": pred.sum() / line.test.exposure.sum() / rate_2024,
+                      "level_factor": level["level_factor"], "uncertainty_tilt": tilt,
+                      "rate_2025": rate, "developed_rate_2024": rate_2024, "rate_2025_over_2024": rate / rate_2024,
                       "pred_min": pred.min(), "pred_max": pred.max()}
     if final.tail:
         out["tail"] = {"line": line.name, **final.tail}
     out["pred"] = pd.Series(pred, index=line.test.row_id.to_numpy())
     return out
+
+
+def deviance_scale(y: np.ndarray, mu: np.ndarray, p: float) -> float:
+    """The scale factor that minimises Tweedie deviance, sum(y mu^(1-p)) / sum(mu^(2-p)). For p = 1.5 this is not the
+    ratio of totals, which is the deviance-optimal scale only under the canonical link."""
+    return float((y * mu ** (1 - p)).sum() / (mu ** (2 - p)).sum())
+
+
+def bootstrap_table(results: dict, cfg: dict) -> pd.DataFrame:
+    """Paired customer-cluster bootstrap of D2(chosen) - D2(variant) for every variant, line and year."""
+    bs, p, rows = cfg["glm_lines"]["bootstrap"], cfg["model"]["tweedie_power"], []
+    for name, r in results.items():
+        for w, d in r["preds"].items():
+            y, mu = d.y_full.to_numpy(), d["chosen"].to_numpy()
+            for col in [c for c in d.columns if c not in ("row_id", "customer_id", "address_id", "y_full", "claim_cost",
+                                                           "chosen")]:
+                alt = d[col].to_numpy()
+                diff = significance.paired_cluster_bootstrap(y, mu, alt, d[bs["cluster"]].to_numpy(), p, bs["n"],
+                                                             bs["seed"])
+                obs = models.d2_tweedie(y, mu, p) - models.d2_tweedie(y, alt, p)
+                rows.append({"line": name, "score_year": WINDOWS[w][1], "chosen_vs": col,
+                             **significance.summarise(diff, obs)})
+    return pd.DataFrame(rows)
 
 
 def residual_correlation(results: dict, p: float) -> pd.DataFrame:
@@ -325,6 +457,12 @@ def main() -> None:
         expected_sql = (common.PACK_ROOT / gl["expected_sql"]).read_text()
         outputs = common.export_sql_evidence(con, out_dir, prefixes=("ev_09", "ev_10", "ev_11", "ev_12"))
 
+        dev_path = common.PACK_ROOT / gl["level"]["uncertainty_evidence"]
+        if not dev_path.exists():
+            raise FileNotFoundError(f"{dev_path.relative_to(common.PACK_ROOT)} is missing: "
+                                    "run python/level_uncertainty.py first.")
+        rec["dev_uncertainty_sha256"] = common.sha256_file(dev_path)
+        cfg["_dev_uncertainty"] = pd.read_csv(dev_path)
         lines = {}
         for name in gl["models"]:
             table = cfg["lines"]["models"][name]["table"]
@@ -351,12 +489,17 @@ def main() -> None:
 
         summary = cat("summary")
         corr = residual_correlation(results, cfg["model"]["tweedie_power"])
+        boot = bootstrap_table(results, cfg)
         outputs += [write_csv(cat("tuning"), out_dir / "ev_g1_tuning.csv"),
                     write_csv(cat("credibility"), out_dir / "ev_g2_credibility_tuning.csv"),
                     write_csv(cat("backtest"), out_dir / "ev_g3_backtest_2024.csv"),
                     write_csv(cat("tail"), out_dir / "ev_g4_large_claim_tail.csv"),
                     write_csv(corr, out_dir / "ev_g5_buildings_contents_residual_corr.csv"),
-                    write_csv(summary, out_dir / "ev_g6_summary.csv")]
+                    write_csv(summary, out_dir / "ev_g6_summary.csv"),
+                    write_csv(cat("cann"), out_dir / "ev_g7_cann_two_year.csv"),
+                    write_csv(boot, out_dir / "ev_g8_bootstrap_significance.csv"),
+                    write_csv(cat("level"), out_dir / "ev_g9_level_factor.csv"),
+                    write_csv(cat("uncertainty"), out_dir / "ev_g10_level_uncertainty.csv")]
 
         prefixes = {name: cfg["lines"]["models"][name]["prefix"] for name in results}
         sub = make_submission.build_submission(sample, {prefixes[k]: r["pred"] for k, r in results.items()})
@@ -368,20 +511,26 @@ def main() -> None:
                                  for o in outputs + [path]}
         rec["metrics"] = {"summary": summary.round(6).to_dict("records"),
                           "backtest": cat("backtest").round(6).to_dict("records"),
-                          "residual_corr": corr.round(6).to_dict("records")}
+                          "residual_corr": corr.round(6).to_dict("records"),
+                          "significance": boot.round(6).to_dict("records"),
+                          "level": cat("level").round(6).to_dict("records")}
         rec["status"] = "success"
         print(cat("backtest").round(4).to_string(index=False))
         print(summary.round(4).to_string(index=False))
         print(corr.round(4).to_string(index=False))
+        print(boot.round(5).to_string(index=False))
+        print(cat("level").round(5).to_string(index=False))
+        print(cat("uncertainty").round(4).to_string(index=False))
         print(f"Submission: {path.relative_to(common.PACK_ROOT)} ({len(sub)} rows)")
     except Exception as exc:
         rec["status"] = "failed"
         rec["error"] = f"{type(exc).__name__}: {exc}"
         raise
     finally:
-        import duckdb, scipy, sklearn, xgboost  # noqa: E401  versions recorded for the audit trail
+        import duckdb, scipy, sklearn, torch, xgboost  # noqa: E401  versions recorded for the audit trail
         rec["versions"] = {"python": sys.version.split()[0], "duckdb": duckdb.__version__, "pandas": pd.__version__,
                            "numpy": np.__version__, "scikit-learn": sklearn.__version__, "scipy": scipy.__version__,
+                           "torch": torch.__version__,
                            "xgboost": xgboost.__version__}
         rec["finished_utc"] = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
         rec["elapsed_s"] = round(time.time() - t0, 1)

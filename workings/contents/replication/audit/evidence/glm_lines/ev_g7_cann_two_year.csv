@@ -1,0 +1,7 @@
+line,score_year,d2_without_cann,d2_with_cann,adopted
+buildings,2023,0.111702,0.111755,True
+buildings,2024,0.110897,0.110952,True
+contents,2023,0.094383,0.094437,True
+contents,2024,0.096454,0.096501,True
+motor,2023,0.10097,0.100784,False
+motor,2024,0.080618,0.081284,False
