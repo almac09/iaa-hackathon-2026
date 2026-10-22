@@ -42,3 +42,13 @@ def test_every_line_from_its_own_predictions():
 def test_rows_of_a_line_without_predictions_need_a_fill_value():
     with pytest.raises(ValueError, match="no prediction"):
         make_submission.build_submission(SAMPLE, {"C": pd.Series([5.0, 7.0], index=["C1", "C2"])})
+
+
+def test_level_variant_rescales_one_line_only():
+    import level_variant
+    sub = pd.DataFrame({"row_id": ["M1", "M2", "B1"], "claim_cost": [100.0, 300.0, 50.0]})
+    out, factor = level_variant.rescale(sub, "M", 100.0)
+    assert factor == pytest.approx(0.5)
+    assert out.claim_cost.tolist() == [50.0, 150.0, 50.0]
+    with pytest.raises(ValueError):
+        level_variant.rescale(sub, "C", 1.0)
