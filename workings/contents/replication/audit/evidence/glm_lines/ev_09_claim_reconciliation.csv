@@ -1,4 +1,4 @@
-line,n_claims_all,n_repudiated,n_outside_any_period,n_in_target,net_cost_in_target
-buildings,26442,0,67,26375,247768586.05
-contents,24102,300,49,23753,65966578.85
-motor,112606,1411,294,110901,430595512.14
+line,n_duplicates_removed,n_claims_after_dedupe,n_repudiated,n_outside_any_period,n_in_target,net_cost_in_target
+buildings,109,26333,0,67,26266,246656437.27
+contents,84,24018,299,49,23670,65737584.58
+motor,411,112195,1406,293,110496,428762846.58

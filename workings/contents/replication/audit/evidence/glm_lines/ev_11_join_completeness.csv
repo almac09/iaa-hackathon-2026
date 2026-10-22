@@ -1,5 +1,5 @@
 line,src,n_rows,n_no_customer,n_no_address,n_no_weather
 buildings,test,184155,0,0,0
 buildings,train,707726,0,0,0
-motor,test,254986,25554,0,0
-motor,train,979968,98110,0,0
+motor,test,254986,0,0,0
+motor,train,979968,0,0,0

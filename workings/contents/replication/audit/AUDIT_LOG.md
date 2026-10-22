@@ -343,3 +343,20 @@
   - The bodily-injury "actual" in the development backtest is itself 49% open.
 - **Checks:** tests 31 pass (pytest); lint clean.
 - **Status:** analysis. D-17 and D-18 await sign-off.
+
+### A18 — Duplicate claims and unpadded motor customer IDs (found by checking the team's issues)
+- **When / who:** 2026-10-22, Claude, while preparing documentation and GitHub issues at the owner's request. The team's data workstream had already found both problems (GitHub #55 duplicate claims and #51 motor customer_id padding, both closed for their pipeline). This pack had not applied either fix.
+- **Duplicate claims (D-19):** 604 claims repeat another claim on every field except `claim_id`: policy, peril, loss and report dates, status, paid, incurred and recoveries. For example, two motor third-party property claims on policy M46478953 share a loss date (2022-01-27), an amount (4,160.43), a repairer and a third party. There are 411 in motor, 109 in buildings and 84 in contents (one of the 84 is repudiated). One copy of each is kept (`claims_clean`, sql/03); every later step reads it, while sql/01 and sql/02 still profile the raw table. Contents loses 229k of cost (0.35%).
+- **Motor customer IDs:** 98,110 training rows and 25,554 test rows (10%) hold `customer_id` without leading zeros. sql/02 flagged this in A03 (`ev_02_motor_customer_id_padding`), but sql/09 never applied the fix. After padding to 8 characters, every motor row finds its customer record.
+- **Correction to A15 and A16:** they said 10% of motor rows "have no customer record". That was this defect, not missing data. Until now, those rows lacked customer features and their motor/home history links.
+- **Re-run:**
+  - **GLM pack:** reconciliation 100 checks, 0 failed. GLM A's 2024 D² is 0.0933 before and after.
+  - **Development backtest:** subsidence 1.012, bodily injury 1.134 under BF (chain ladder 1.177 and 1.326).
+  - **Current model, 2024 backtest:** buildings 0.1114 → **0.1109**, contents 0.0958 → **0.0965**, motor 0.0801 → **0.0806**.
+  - **Contents claim history** now improves 2024 as well (+0.0006 against no history).
+  - **2025 rates:** buildings 488.8, contents 129.7, motor 627.4.
+  - **Submission:** `work/submissions/submission_all_lines_glm_20261022.csv` regenerated (626,639 rows in sample order, no nulls, minimum 0.044).
+- **Not changed:** A13–A15 (the XGBoost runs) were not re-run, so their evidence reflects claims before de-duplication. They are superseded by the current model.
+- **Also confirmed:** the competition data is in the public GitHub repo (`data/*.parquet` on `main`, `hackathon-bridget` and `data-cian`), the risk A02 raised. This needs a team decision under rules §5b.
+- **Tests:** 33 pass, including duplicate claims counted once and motor IDs padded.
+- **Status:** applied-derived. D-19 awaits sign-off.

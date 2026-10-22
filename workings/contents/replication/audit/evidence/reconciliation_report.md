@@ -1,6 +1,6 @@
 # Reconciliation report
 
-Generated 2026-10-21T19:11:27+00:00. 100 checks, 0 failed, 1 warnings (see audit A11).
+Generated 2026-10-22T15:09:52+00:00. 100 checks, 0 failed, 1 warnings (see audit A11).
 
 | Check | Item | Result | Detail |
 |---|---|---|---|
@@ -39,18 +39,18 @@ Generated 2026-10-21T19:11:27+00:00. 100 checks, 0 failed, 1 warnings (see audit
 | sql evidence | evr_01_largest_claims.csv | PASS | byte-identical |
 | sql evidence | evr_03_exposure_changed_rows.csv | PASS | byte-identical |
 | sql evidence | evr_03_sum_insured_changed_rows.csv | PASS | byte-identical |
-| split test D2 | exposure only | PASS | py 0.03099 r 0.03099 diff 0.00000 |
+| split test D2 | exposure only | PASS | py 0.03089 r 0.03089 diff 0.00000 |
 | split test pred/actual | exposure only | PASS | diff 0.00000 |
-| split test D2 | A single Tweedie | PASS | py 0.09325 r 0.09325 diff 0.00000 |
+| split test D2 | A single Tweedie | PASS | py 0.09328 r 0.09328 diff 0.00000 |
 | split test pred/actual | A single Tweedie | PASS | diff 0.00000 |
-| split test D2 | B per-peril Tweedie | PASS | py 0.09196 r 0.09196 diff 0.00000 |
+| split test D2 | B per-peril Tweedie | PASS | py 0.09200 r 0.09200 diff 0.00000 |
 | split test pred/actual | B per-peril Tweedie | PASS | diff 0.00000 |
 | split test D2 | C per-size-band Tweedie | PASS | py 0.08721 r 0.08721 diff 0.00000 |
 | split test pred/actual | C per-size-band Tweedie | PASS | diff 0.00000 |
-| split test D2 | D per-peril freq x sev | PASS | py 0.09041 r 0.09041 diff 0.00000 |
+| split test D2 | D per-peril freq x sev | PASS | py 0.09039 r 0.09039 diff 0.00000 |
 | split test pred/actual | D per-peril freq x sev | PASS | diff 0.00000 |
 | coefficients | same parameters in every component | PASS | 0 unmatched |
-| coefficients | B flood | f_elev_band=q07 | WARN | quasi-separated: py -12.9715 r -12.9715 (relativity ~2.3e-06) |
+| coefficients | B flood | f_elev_band=q07 | WARN | quasi-separated: py -12.9685 r -12.9685 (relativity ~2.3e-06) |
 | coefficients | A total | PASS | max abs diff 0.00000 ((intercept)) |
 | coefficients | B accidental_damage | PASS | max abs diff 0.00000 ((intercept)) |
 | coefficients | B escape_of_water | PASS | max abs diff 0.00000 ((intercept)) |
@@ -68,19 +68,19 @@ Generated 2026-10-21T19:11:27+00:00. 100 checks, 0 failed, 1 warnings (see audit
 | coefficients | D sev escape_of_water | PASS | max abs diff 0.00000 ((intercept)) |
 | coefficients | D sev flood | PASS | max abs diff 0.00000 ((intercept)) |
 | coefficients | D sev theft | PASS | max abs diff 0.00000 ((intercept)) |
-| component predictions | A total | PASS | py 17,077,309 r 17,077,309 rel diff 5.87e-14 |
-| component predictions | B accidental_damage | PASS | py 1,879,483 r 1,879,483 rel diff 5.32e-13 |
-| component predictions | B escape_of_water | PASS | py 3,968,983 r 3,968,983 rel diff 2.52e-13 |
-| component predictions | B flood | PASS | py 4,198,501 r 4,198,501 rel diff 1.91e-12 |
-| component predictions | B theft | PASS | py 7,168,483 r 7,168,483 rel diff 1.39e-13 |
-| component predictions | C cost_band_1 | PASS | py 1,169,393 r 1,169,393 rel diff 0.00e+00 |
-| component predictions | C cost_band_2 | PASS | py 5,823,999 r 5,823,999 rel diff 1.72e-13 |
-| component predictions | C cost_band_3 | PASS | py 6,447,024 r 6,447,024 rel diff 1.09e-12 |
-| component predictions | C cost_band_4 | PASS | py 4,715,665 r 4,715,665 rel diff 2.12e-13 |
-| component predictions | D accidental_damage | PASS | py 1,880,834 r 1,880,834 rel diff 2.68e-09 |
-| component predictions | D escape_of_water | PASS | py 3,894,104 r 3,894,104 rel diff 4.62e-10 |
-| component predictions | D flood | PASS | py 4,309,152 r 4,309,152 rel diff 1.19e-09 |
-| component predictions | D theft | PASS | py 7,126,037 r 7,126,037 rel diff 1.32e-10 |
+| component predictions | A total | PASS | py 17,002,647 r 17,002,647 rel diff 0.00e+00 |
+| component predictions | B accidental_damage | PASS | py 1,871,564 r 1,871,564 rel diff 5.34e-13 |
+| component predictions | B escape_of_water | PASS | py 3,947,440 r 3,947,440 rel diff 2.53e-13 |
+| component predictions | B flood | PASS | py 4,172,131 r 4,172,131 rel diff 1.92e-12 |
+| component predictions | B theft | PASS | py 7,144,090 r 7,144,090 rel diff 2.80e-13 |
+| component predictions | C cost_band_1 | PASS | py 1,163,154 r 1,163,154 rel diff 0.00e+00 |
+| component predictions | C cost_band_2 | PASS | py 5,799,486 r 5,799,486 rel diff 3.45e-13 |
+| component predictions | C cost_band_3 | PASS | py 6,419,402 r 6,419,402 rel diff 9.35e-13 |
+| component predictions | C cost_band_4 | PASS | py 4,692,220 r 4,692,220 rel diff 4.26e-13 |
+| component predictions | D accidental_damage | PASS | py 1,873,670 r 1,873,670 rel diff 2.66e-09 |
+| component predictions | D escape_of_water | PASS | py 3,872,175 r 3,872,175 rel diff 4.53e-10 |
+| component predictions | D flood | PASS | py 4,277,756 r 4,277,756 rel diff 1.04e-09 |
+| component predictions | D theft | PASS | py 7,101,372 r 7,101,372 rel diff 1.37e-10 |
 | one-way scores | 56 factors, d2_gain | PASS | max abs diff 0.00e+00 |
 | one-way scores | levels per factor | PASS |  |
 | one-way tables | same factor levels | PASS | 394 rows |
@@ -91,16 +91,16 @@ Generated 2026-10-21T19:11:27+00:00. 100 checks, 0 failed, 1 warnings (see audit
 | one-way tables | rel_2021_22 | PASS | max abs diff 0.00e+00 |
 | one-way tables | rel_2023_24 | PASS | max abs diff 0.00e+00 |
 | design | rows, parameters and reference levels | PASS |  |
-| vs exploratory | split D2: exposure only | PASS | exploratory 0.0310 pack 0.0310 |
-| vs exploratory | split D2: A single Tweedie | PASS | exploratory 0.0933 pack 0.0932 |
+| vs exploratory | split D2: exposure only | PASS | exploratory 0.0310 pack 0.0309 |
+| vs exploratory | split D2: A single Tweedie | PASS | exploratory 0.0933 pack 0.0933 |
 | vs exploratory | split D2: B per-peril Tweedie | PASS | exploratory 0.0920 pack 0.0920 |
 | vs exploratory | split D2: C per-size-band Tweedie | PASS | exploratory 0.0872 pack 0.0872 |
 | vs exploratory | split D2: D per-peril freq x sev | PASS | exploratory 0.0899 pack 0.0904 |
-| vs exploratory | one-way gain: f_cs_contacts | PASS | exploratory 0.5774 pack 0.5774 |
+| vs exploratory | one-way gain: f_cs_contacts | PASS | exploratory 0.5774 pack 0.5781 |
 | vs exploratory | one-way gain: f_flood_zone | PASS | exploratory 0.0239 pack 0.0239 |
-| vs exploratory | one-way gain: f_wp_band | PASS | exploratory 0.0194 pack 0.0194 |
+| vs exploratory | one-way gain: f_wp_band | PASS | exploratory 0.0194 pack 0.0195 |
 | vs exploratory | one-way gain: f_elev_band | PASS | exploratory 0.0175 pack 0.0175 |
 | vs exploratory | one-way gain: f_si_band | PASS | exploratory 0.0164 pack 0.0164 |
-| vs exploratory | one-way gain: f_river_band | PASS | exploratory 0.0132 pack 0.0132 |
+| vs exploratory | one-way gain: f_river_band | PASS | exploratory 0.0132 pack 0.0133 |
 | vs exploratory | one-way gain: f_tenure | PASS | exploratory 0.0050 pack 0.0050 |
 | vs exploratory | one-way gain: f_region | PASS | exploratory 0.0037 pack 0.0037 |

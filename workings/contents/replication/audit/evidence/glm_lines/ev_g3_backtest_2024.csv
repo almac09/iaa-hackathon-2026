@@ -1,12 +1,12 @@
 line,variant,d2_vs_developed,d2_vs_reported,pred_over_developed
-buildings,chosen,0.111406,0.114348,0.916564
-buildings,no history,0.109748,0.112731,0.915151
-buildings,no trend,0.110214,0.114267,0.870043
-buildings,no split,0.109504,0.113117,0.899607
-contents,chosen,0.095831,0.095232,1.047054
-contents,no history,0.095872,0.095236,1.044482
-contents,no trend,0.095085,0.095153,0.953152
-motor,chosen,0.080097,0.071122,1.056053
-motor,no history,0.077082,0.06873,1.052681
-motor,no trend,0.079143,0.079955,0.938429
-motor,no split,0.075114,0.061139,1.131894
+buildings,chosen,0.110897,0.113879,0.91461
+buildings,no history,0.10922,0.112244,0.913264
+buildings,no trend,0.109212,0.113478,0.861252
+buildings,no split,0.109448,0.113412,0.891844
+contents,chosen,0.096454,0.095893,1.04408
+contents,no history,0.095941,0.095348,1.041106
+contents,no trend,0.095664,0.095773,0.949414
+motor,chosen,0.080618,0.071913,1.052985
+motor,no history,0.077659,0.069565,1.049608
+motor,no trend,0.079558,0.080664,0.935226
+motor,no split,0.075729,0.061817,1.130649
