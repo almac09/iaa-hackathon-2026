@@ -232,3 +232,56 @@
   Backtest deciles (level-matched) are within 0.84–1.15 for each line, except buildings decile 1 (0.72).
 - **Checks:** the GLM pack is unchanged. `run_all.py` evidence is byte-identical, and after re-running R in this checkout `reconcile.py` gives 100 checks, 0 failed. Tests: 24 pass (pytest). Lint clean.
 - **Status:** analysis. D-10 to D-13 await sign-off. Submitting is the owner's decision.
+
+### A16 — Split models with claim-history credibility; buildings–contents correlation
+- **When / who:** 2026-10-22, Claude, at the owner's request: GLMs, with large ("catastrophic") and small claims modelled separately, accounting for correlation between buildings and contents claims. After seeing the plan the owner set the design: **contents** one GLM, not split; **buildings** small claims by XGBoost at depth 3 plus a large-claim model; **motor** small-claim GLM plus a large-claim model; and "take full account of claim history".
+- **Correlation evidence:** buildings and contents claims barely move together.
+  - **Same customer, address and year (both policies held):** contents frequency is 42.3 per 1,000 with a buildings claim against 40.3 without.
+  - **Same address and loss date:** 4 claim pairs, out of about 24,000 contents and 26,000 buildings claims. There are no shared events, not even flood.
+  - **Next year:**
+
+    | Prior-year claim | Next-year contents frequency | Next-year buildings frequency |
+    |---|---|---|
+    | None | 38.8 | 42.6 |
+    | Contents only | 67.6 | 49.9 |
+    | Buildings only | 43.2 | 75.0 |
+
+  - **After the models, 2024 backtest:** Pearson residual correlation of buildings and contents by customer and address is **−0.002**; claim-indicator correlation is **0.005** (128,878 pairs).
+  - So the link that matters is a customer's own history. A copula, a joint model of the two lines' claims, was not fitted: it would change the spread of combined losses, not the expected cost per row that is scored.
+- **Claim history (`sql/12`, `sql/13`, D-14):** for every row, the claims of the same customer that were lost *and reported* before the row's period started.
+  - **Groups:** own line (customer and address for home, customer for motor), the other home line (customer and address), and motor/home (customer).
+  - Frequency by own prior claims (0 / 1 / 2 / 3+), per 1,000: buildings 43 / 69 / 108 / 185, contents 38 / 64 / 81 / 140, motor 116 / 196 / 291 / 470.
+  - Tested for no look-ahead: a late-reported claim is excluded until it is known.
+  - **First attempt, rejected (kept in the run log):** history as model factors. Prior exposure grows with the calendar year (none in 2021, up to 4 years for 2025), so it confounded the trend and the 2025 rows fell into levels never seen in training. Contents scored 0.0614 against 0.0939 without history, and motor's trend inflated to 8.5% a year.
+  - **Adopted:** a Poisson–gamma credibility factor (k + n) / (k + E). n is the prior claims; E is the claims a frequency GLM without history expects over the same prior rows. It is rebalanced so the fitted rows keep their total, and k is tuned per group on 2023 (infinite k = group off).
+  - Chosen k: own line 4 (buildings), 2 (contents), 8 (motor); other home line off for buildings, 8 for contents; motor/home off for buildings and motor, 8 for contents.
+  - 2025 factors range from 0.67 to 3.38.
+- **Large claims (D-15):** each claim is split at a threshold on its *reported* cost, and both parts are then developed. Developing first would push slow-reporting claims over the threshold (motor bodily injury Q4 2024 is ×5.2).
+  - The large part is a compact Tweedie GLM, scaled so its mean matches a generalised Pareto fit to the excess, with the small-claim trend applied.
+  - Thresholds tuned on 2023 from 25k, 50k and 100k: **buildings 100k** (Pareto shape 0.03, adjustment 1.00), **motor 50k** (shape 0.48, adjustment 0.77). For motor, the fitted mean excess of 50.5k replaces the empirical 65.6k, which the 11.9m claim inflated.
+  - The D-12 cap is not used here.
+- **Backtest (fit 2021–23, score 2024; D² against developed actual):**
+
+  | Line | Chosen | No history | No trend | No split | A15 XGBoost | Predicted / developed |
+  |---|---|---|---|---|---|---|
+  | Buildings | **0.1082** | 0.1064 | 0.1057 | 0.1063 | 0.1045 | 0.877 |
+  | Contents | **0.0945** | 0.0939 | 0.0938 | — | 0.0927 | 1.045 |
+  | Motor | **0.0839** | 0.0810 | 0.0837 | 0.0783 | 0.0816 | 1.058 |
+
+  The chosen models beat A15's XGBoost on every line. History adds 0.0018 (buildings), 0.0006 (contents) and 0.0029 (motor). The split adds 0.0019 (buildings) and 0.0056 (motor). These differences have not been tested for significance.
+- **2025 (fit 2021–24):**
+
+  | Line | Trend a year | Rate per unit of exposure | vs developed 2024 |
+  |---|---|---|---|
+  | Buildings | 6.3% | 491.8 | 0.987 |
+  | Contents | 4.1% | 129.6 | 1.080 |
+  | Motor | 4.3% | 610.0 | 1.060 |
+
+  Submission: `work/submissions/submission_all_lines_glm_20261022.csv` (git-ignored). It has 626,639 rows in sample order, no nulls and a minimum prediction of 0.043. Mean per row: buildings 401, contents 104, motor 478; these correlate 0.94–0.97 with the A15 file.
+- **Uncertainties:**
+  1. A15's development uncertainties (motor bodily injury 2024, buildings subsidence) carry over unchanged. Buildings still under-predicts 2024 (0.877) and motor over-predicts (1.058).
+  2. History counts use reported claims while E uses expected claims, so the most recent prior year is slightly short for slow-reporting perils. The rebalancing absorbs this on average, not by row.
+  3. The large-claim GLMs rest on 593 (motor, at 50k) and 260 (buildings, at 100k) reported large claims.
+  4. Python only; no R twin.
+- **Checks:** tests 29 pass, including split, Pareto, credibility, history without look-ahead and expected history over the right rows. Lint clean.
+- **Status:** analysis. D-14 to D-16 await sign-off. Submitting is the owner's decision.

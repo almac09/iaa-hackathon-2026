@@ -1,0 +1,3 @@
+line,threshold,n_large,shape,scale,mean_excess_empirical,mean_excess_fitted,adjustment,infinite_mean
+buildings,100000,260,0.030023,71481.184024,73687.922577,73693.694361,1.000078,False
+motor,50000,593,0.482669,26146.464342,65635.119359,50541.084646,0.770031,False

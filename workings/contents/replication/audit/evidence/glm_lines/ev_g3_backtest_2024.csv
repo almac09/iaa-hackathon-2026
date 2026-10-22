@@ -1,0 +1,12 @@
+line,variant,d2_vs_developed,d2_vs_reported,pred_over_developed
+buildings,chosen,0.108229,0.114154,0.877268
+buildings,no history,0.106434,0.112529,0.875863
+buildings,no trend,0.105656,0.113533,0.830738
+buildings,no split,0.106328,0.113117,0.875553
+contents,chosen,0.094532,0.093933,1.045344
+contents,no history,0.093898,0.093271,1.042806
+contents,no trend,0.093752,0.093818,0.951684
+motor,chosen,0.083906,0.071447,1.057939
+motor,no history,0.080987,0.068944,1.054786
+motor,no trend,0.083685,0.078067,0.961952
+motor,no split,0.078316,0.062114,1.121144
