@@ -438,6 +438,41 @@ def residual_correlation(results: dict, p: float) -> pd.DataFrame:
                           "claim_indicator_corr": (j.y_b > 0).astype(float).corr((j.y_c > 0).astype(float))}])
 
 
+def prepare(con, cfg: dict, rec: dict, out_dir: Path | None = None) -> tuple[dict, list[Path]]:
+    """Run the SQL and build every Line with its claim history and expected claims for each window. Writes the SQL
+    evidence tables when `out_dir` is given. Shared with python/gap_tests.py so both use the same data."""
+    gl = cfg["glm_lines"]
+    rec["sql_sha256"] = common.run_sql_files(con, cfg)
+    for rel in cfg["lines"]["sql_files"] + gl["sql_files"]:
+        rec["sql_sha256"][rel] = common.sha256_file(common.PACK_ROOT / rel)
+        con.execute((common.PACK_ROOT / rel).read_text())
+    rec["sql_sha256"][gl["expected_sql"]] = common.sha256_file(common.PACK_ROOT / gl["expected_sql"])
+    expected_sql = (common.PACK_ROOT / gl["expected_sql"]).read_text()
+    outputs = (common.export_sql_evidence(con, out_dir, prefixes=("ev_09", "ev_10", "ev_11", "ev_12"))
+               if out_dir is not None else [])
+
+    dev_path = common.PACK_ROOT / gl["level"]["uncertainty_evidence"]
+    if not dev_path.exists():
+        raise FileNotFoundError(f"{dev_path.relative_to(common.PACK_ROOT)} is missing: "
+                                "run python/level_uncertainty.py first.")
+    rec["dev_uncertainty_sha256"] = common.sha256_file(dev_path)
+    cfg["_dev_uncertainty"] = pd.read_csv(dev_path)
+    lines = {}
+    for name in gl["models"]:
+        table = cfg["lines"]["models"][name]["table"]
+        df = con.execute(f"""SELECT m.*, h.* EXCLUDE (line, row_id)
+                             FROM {table} m JOIN claim_history h ON h.line = '{name}' AND h.row_id = m.row_id
+                             ORDER BY m.row_id""").df()
+        if name == "contents":  # contents_model_dev has no customer, address or raw columns
+            extra = ", ".join(["customer_id", "address_id"] + gl["models"][name].get("extra_columns", []))
+            df = df.merge(con.execute(f"SELECT row_id, {extra} FROM contents_model").df(), on="row_id")
+        claims = con.execute(f"SELECT row_id, net_cost, dev_factor FROM line_claims_dev WHERE line = '{name}'").df()
+        lines[name] = Line(name, df, claims, cfg)
+    for window in WINDOWS:
+        expected_history(con, lines, window, expected_sql)
+    return lines, outputs
+
+
 def main() -> None:
     t0 = time.time()
     cfg = common.load_config()
@@ -450,33 +485,7 @@ def main() -> None:
         sample = pd.read_csv(sample_path, dtype={"row_id": str})
         rec["inputs_sha256"] = common.verify_inputs(cfg)
         con = common.open_duckdb(cfg)
-        rec["sql_sha256"] = common.run_sql_files(con, cfg)
-        for rel in cfg["lines"]["sql_files"] + gl["sql_files"]:
-            rec["sql_sha256"][rel] = common.sha256_file(common.PACK_ROOT / rel)
-            con.execute((common.PACK_ROOT / rel).read_text())
-        rec["sql_sha256"][gl["expected_sql"]] = common.sha256_file(common.PACK_ROOT / gl["expected_sql"])
-        expected_sql = (common.PACK_ROOT / gl["expected_sql"]).read_text()
-        outputs = common.export_sql_evidence(con, out_dir, prefixes=("ev_09", "ev_10", "ev_11", "ev_12"))
-
-        dev_path = common.PACK_ROOT / gl["level"]["uncertainty_evidence"]
-        if not dev_path.exists():
-            raise FileNotFoundError(f"{dev_path.relative_to(common.PACK_ROOT)} is missing: "
-                                    "run python/level_uncertainty.py first.")
-        rec["dev_uncertainty_sha256"] = common.sha256_file(dev_path)
-        cfg["_dev_uncertainty"] = pd.read_csv(dev_path)
-        lines = {}
-        for name in gl["models"]:
-            table = cfg["lines"]["models"][name]["table"]
-            df = con.execute(f"""SELECT m.*, h.* EXCLUDE (line, row_id)
-                                 FROM {table} m JOIN claim_history h ON h.line = '{name}' AND h.row_id = m.row_id
-                                 ORDER BY m.row_id""").df()
-            if name == "contents":  # contents_model_dev has no customer, address or raw columns
-                extra = ", ".join(["customer_id", "address_id"] + gl["models"][name].get("extra_columns", []))
-                df = df.merge(con.execute(f"SELECT row_id, {extra} FROM contents_model").df(), on="row_id")
-            claims = con.execute(f"SELECT row_id, net_cost, dev_factor FROM line_claims_dev WHERE line = '{name}'").df()
-            lines[name] = Line(name, df, claims, cfg)
-        for window in WINDOWS:
-            expected_history(con, lines, window, expected_sql)
+        lines, outputs = prepare(con, cfg, rec, out_dir)
         con.close()
 
         results = {}
