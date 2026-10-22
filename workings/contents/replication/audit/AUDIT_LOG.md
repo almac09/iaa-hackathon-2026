@@ -360,3 +360,8 @@
 - **Also confirmed:** the competition data is in the public GitHub repo (`data/*.parquet` on `main`, `hackathon-bridget` and `data-cian`), the risk A02 raised. This needs a team decision under rules §5b.
 - **Tests:** 33 pass, including duplicate claims counted once and motor IDs padded.
 - **Status:** applied-derived. D-19 awaits sign-off.
+
+### A19 — Work recorded as GitHub issues
+- **When / who:** 2026-10-22, Claude, at the owner's instruction: post the issues on the public repo as closed, and push `contents/gerard` so their links work. The owner gave this instruction after being told that the repo is public and holds the competition data (A18).
+- **What:** 22 issues, #105–#121 and #123–#127, each created and closed as completed. They follow the team template (AI interaction log, tasks, notes), carry the team's labels and cross-reference the data workstream's issues (#51–#56, #59–#64, #66–#72, #83, #86–#87, #96, #100, #102, #104). #122 is not part of this set. `contents/gerard` was pushed (ef86154..abfed31); the push contained no data or submission files.
+- **Status:** done. The public-data question (A02, A18) remains open for the team.
