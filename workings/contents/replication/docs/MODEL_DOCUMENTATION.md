@@ -1,11 +1,11 @@
 # Home and motor claims cost model: technical documentation
 
-IAA AI-Assisted Hackathon 2026, Part 1. This documents the model behind `work/submissions/submission_all_lines_glm_20261022.csv`, every data issue we found and how it was resolved, and how the model was validated. It reflects the pack as of audit entry A22 (22 October 2026).
+IAA AI-Assisted Hackathon 2026, Part 1. This documents the model behind `work/submissions/submission_all_lines_glm_20261022.csv`, every data issue we found and how it was resolved, and how the model was validated. It reflects the pack as of audit entry A23 (22 October 2026).
 
 - **Owner:** Gerard Murphy. **AI assistance:** Claude Code (Claude Opus 5.5).
 - **Code:** `workings/contents/replication`, branch `contents/gerard`. Every figure here comes from a logged run (`audit/run_log.jsonl`) and an evidence file under `audit/evidence/`.
 - **Decisions** are numbered D-01 to D-23 and are recorded in `audit/DECISIONS.md`. Their switches are in `config.json`. None is formally signed off yet.
-- **Audit entries** A01 to A22 are in `audit/AUDIT_LOG.md`. This document summarises them; the log has the full detail.
+- **Audit entries** A01 to A23 are in `audit/AUDIT_LOG.md`. This document summarises them; the log has the full detail.
 
 ## 1. Summary
 
@@ -371,6 +371,27 @@ D-08 records the XGBoost feature set used in A13 only. No decision is formally s
 7. **Implementation coverage.** The new models are implemented in Python only. GLM A, the contents benchmark, has an independent R implementation that reconciles (100 checks, 0 failed).
 8. **Synthetic data.** It has no shared events between buildings and contents. A real portfolio would, and the independence assumption would need revisiting for Week 2.
 9. **Data in a public repository** (section 2.2, issue 17) is unresolved.
+
+### 8.1 Risk register: what would make the model wrong (A21)
+
+Each risk found by inverting the model, what has been done, and the GitHub issue that tracks it. Resolved work is in closed issues [#128](https://github.com/almac09/iaa-hackathon-2026/issues/128)–[#139](https://github.com/almac09/iaa-hackathon-2026/issues/139).
+
+| Risk | Status | Issue |
+|---|---|---|
+| Wrong 2025 level | Measured: 90% ranges per line. No level factor passes the two-year rule; buildings carries a +0.5% mean adjustment. | [#131](https://github.com/almac09/iaa-hackathon-2026/issues/131) (closed) |
+| Ranges too narrow: development method error and tail-fit uncertainty left out | **Open** | [#140](https://github.com/almac09/iaa-hackathon-2026/issues/140) |
+| Leakage | Contacts excluded; missed payments tested and kept; categorical features **not yet scanned** | [#135](https://github.com/almac09/iaa-hackathon-2026/issues/135) (closed), [#141](https://github.com/almac09/iaa-hackathon-2026/issues/141) |
+| Selection on the same two years | Significance now required for discretionary additions (D-23); structural components stay under the two-year rule | [#138](https://github.com/almac09/iaa-hackathon-2026/issues/138) (closed) |
+| A kept component that fails the two-year rule: motor large-claim split | **Open**: owner decision on D-15 | [#142](https://github.com/almac09/iaa-hackathon-2026/issues/142) |
+| Buildings under-predicts every fitted year in total | **Open** | [#143](https://github.com/almac09/iaa-hackathon-2026/issues/143) |
+| Dispersion (frequency and severity move in opposite directions) | Double GLM tested and rejected; a separate frequency × severity model not tried | [#136](https://github.com/almac09/iaa-hackathon-2026/issues/136) (closed) |
+| Seasonality | Adopted for contents (D-22); buildings and motor rejected, reason for buildings **open** | [#137](https://github.com/almac09/iaa-hackathon-2026/issues/137) (closed), [#144](https://github.com/almac09/iaa-hackathon-2026/issues/144) |
+| Train and test rows built differently | Checked: no difference | [#134](https://github.com/almac09/iaa-hackathon-2026/issues/134) (closed) |
+| Silent failure of the full run | Worker fails loudly; torch kept out of the main process; **no end-to-end test yet** | [#129](https://github.com/almac09/iaa-hackathon-2026/issues/129) (closed), [#145](https://github.com/almac09/iaa-hackathon-2026/issues/145) |
+| Pack D² not comparable with the leaderboard | **Open** (model choices unaffected) | [#146](https://github.com/almac09/iaa-hackathon-2026/issues/146) |
+| Decisions not signed off | **Open** | [#147](https://github.com/almac09/iaa-hackathon-2026/issues/147) |
+
+The public-repository data question (item 9) is not raised as a public issue, because a public issue would draw attention to the possible breach. It is for the team to settle privately (A02, A18).
 
 ## 9. How to reproduce
 

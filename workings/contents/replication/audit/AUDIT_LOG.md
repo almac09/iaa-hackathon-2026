@@ -487,3 +487,32 @@
   - An empty calendar month no longer turns the seasonal weights into NaN; a unit test found this.
 - **Checks:** 41 tests pass, including seasonal exposure keeping the fitting total, weighting winter rows up and leaving other lines untouched. Ruff passes.
 - **Status:** applied. D-22 and D-23 were adopted by the owner in session; formal sign-off is outstanding.
+
+### A23 — Work A20–A22 and open risks recorded as GitHub issues
+- **When / who:** 2026-10-22, Claude, at the owner's instruction to make sure everything is documented and every issue encountered is raised on GitHub.
+- **Closed issues #128–#139** (resolved work, created and closed as completed):
+  - CANN (#128);
+  - the PyTorch/XGBoost crash and the 78-minute hang (#129);
+  - the customer bootstrap (#130);
+  - the 2025 level and its ranges (#131);
+  - the uncertainty adjustment applied without the two-year test (#132);
+  - the wrong asymmetry claim in the documentation (#133);
+  - the inversion and its data checks (#134);
+  - missed payments (#135);
+  - the double GLM (#136);
+  - seasonal exposure (#137);
+  - adoption by significance (#138);
+  - documentation and the submission (#139).
+- **Open issues #140–#147:**
+  - level ranges missing method and tail error (#140);
+  - categorical leak scan (#141);
+  - the motor large-claim split (#142);
+  - buildings under-prediction in total (#143);
+  - buildings seasonality (#144);
+  - no end-to-end test (#145);
+  - the D² baseline (#146);
+  - decision sign-off (#147).
+- **Format:** all issues use the team template (AI interaction log, tasks, notes) and the team's labels. They cross-reference the team's #67, #70, #71, #91, #92, #101 and #110 where relevant, and link to the documentation on `contents/gerard-a20-a22`.
+- **Not raised:** the competition data in the public repository (A02, A18). A public issue would draw attention to the possible breach, so it is left to the team.
+- **Documentation:** a risk register (section 8.1) maps each risk to its issue.
+- **Status:** done.
