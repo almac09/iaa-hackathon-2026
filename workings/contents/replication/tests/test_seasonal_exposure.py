@@ -39,3 +39,13 @@ def test_lines_without_seasonal_exposure_are_untouched():
     line.month_days = None
     line.use_window("tune")
     assert (line.df.exposure == line.df.exposure_plain).all()
+
+
+def test_offset_line_fits_reported_cost_and_the_share_weights_quarters():
+    import development_tests
+    line = make_line()
+    off = development_tests.OffsetLine("contents", line.df, pd.DataFrame(
+        {"row_id": ["a", "a", "b"], "net_cost": [100.0, 50.0, 70_000.0], "dev_factor": [2.0, 2.0, 1.0]}), line.cfg)
+    d = off.df[off.df.src == "train"]
+    assert off.reported_small(d, None).tolist() == [150.0, 70_000.0]          # reported, not developed
+    assert off.reported_small(d, 50_000).tolist() == [150.0, 50_000.0]       # split on reported cost
