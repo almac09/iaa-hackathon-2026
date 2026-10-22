@@ -35,7 +35,7 @@ def cfg():
     return common.load_config()
 
 
-def build(cfg):
+def build(cfg, extra_claims=()):
     train = pd.DataFrame([
         # Mid-term change: one policy, two rows. Exposure recorded in days, then on a 360-day basis.
         policy("R1", "P1", date(2023, 1, 1), date(2023, 6, 30), 181.0),
@@ -51,6 +51,7 @@ def build(cfg):
         claim("C3", "P1", date(2024, 2, 1), 700.0),                              # excluded: no row covers it
         claim("C4", "P1", date(2023, 3, 1), 900.0, line="motor"),                # excluded: other line
         claim("C5", "P2", date(2023, 5, 5), 20000.0, peril="flood"),             # -> R3, size band 4
+        *extra_claims,
     ])
     con = duckdb.connect()
     for name, df in {"policies_contents": train, "test_contents": test, "claims": claims,
@@ -98,3 +99,12 @@ def test_decision_switches_off_keep_raw_values(cfg):
     m = build(off)
     assert m.loc["R1", "exposure"] == 181.0
     assert m.loc["R3", "sum_insured"] == 21_400_000
+
+
+def test_duplicate_claims_counted_once(cfg):
+    # C6 repeats C1 on every field except claim_id (A18): kept once while D-19 applies, twice when switched off.
+    dup = [claim("C6", "P1", date(2023, 8, 15), 1000.0, recoveries=200.0)]
+    assert build(cfg, dup).loc["R2", "claim_cost"] == pytest.approx(800.0)
+    off = copy.deepcopy(cfg)
+    off["decisions"]["D19_dedupe_claims"]["apply"] = False
+    assert build(off, dup).loc["R2", "claim_cost"] == pytest.approx(1600.0)

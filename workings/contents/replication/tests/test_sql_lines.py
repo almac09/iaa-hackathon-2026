@@ -36,7 +36,8 @@ def build(cfg, extra_motor=(), extra_claims=()):
         row("B2", "PB2", *y(2024), sum_insured=52_000_000.0, construction_type="Brick"),
     ]).assign(renewal_decision="renewed")
     motor = pd.DataFrame([row("M1", "PM1", *y(2021)), row("M2", "PM1", *y(2024)), row("M3", "PM2", *y(2021)),
-                          row("M4", "PM2", *y(2024)), *extra_motor]).assign(renewal_decision="renewed")
+                          row("M4", "PM2", *y(2024)), *extra_motor]).assign(renewal_decision="renewed",
+                                                                            customer_id="4521")
     claims = pd.DataFrame([
         # Own damage: two old claims at lags 1 and 10, and a 2024 claim aged 5 days, reported at lag 1.
         claim("C1", "PM1", "motor", "own_damage", pd.Timestamp(2021, 1, 1), 1, 100.0),
@@ -60,7 +61,9 @@ def build(cfg, extra_motor=(), extra_claims=()):
     no_test_rows = lambda d: d.head(0).drop(columns="renewal_decision")  # noqa: E731
     for name, df in {"policies_buildings": buildings, "test_buildings": no_test_rows(buildings),
                      "policies_motor": motor, "test_motor": no_test_rows(motor),
-                     "claims": claims, "contents_rows": empty_rows, "contents_claims": empty_claims}.items():
+                     "claims": claims, "claims_clean": claims, "contents_rows": empty_rows,
+                     "contents_claims": empty_claims,
+                     "customers": pd.DataFrame({"customer_id": ["00004521"]})}.items():
         con.register(f"{name}_df", df)
         con.execute(f"CREATE TABLE {name} AS SELECT * FROM {name}_df")
     common.set_sql_variables(con, cfg)
@@ -76,6 +79,13 @@ def test_buildings_sum_insured_threshold_and_casing(cfg):
     assert b.loc["B2", "sum_insured_raw"] == 52_000_000
     assert b.construction_type.tolist() == ["brick", "brick"]
     assert b.loc["B1", "construction_type_raw"] == "BRICK "
+
+
+def test_motor_customer_id_padded_to_customers_format(cfg):
+    m = build(cfg).execute("SELECT * FROM motor_rows").df()
+    assert set(m.customer_id) == {"00004521"} and set(m.customer_id_raw) == {"4521"}
+    pad = build(cfg).execute("SELECT * FROM ev_09_motor_customer_padding").df()
+    assert pad.n_without_customer_after.tolist() == [0]
 
 
 def test_claims_matched_net_of_recoveries_and_filtered(cfg):

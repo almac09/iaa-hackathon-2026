@@ -28,13 +28,22 @@ FROM stacked;
 ALTER TABLE contents_rows ADD COLUMN earned_premium DOUBLE;
 UPDATE contents_rows SET earned_premium = written_premium * exposure;
 
+-- Duplicate claims (D-19, audit A18): 604 claims, in all three lines, repeat another claim on every field except
+-- claim_id (policy, peril, loss and report dates, status and amounts). One copy of each is kept. Every later step
+-- reads claims_clean; sql/01 and sql/02 profile the raw table.
+CREATE OR REPLACE TABLE claims_clean AS
+SELECT * FROM claims
+QUALIFY NOT getvariable('d19_dedupe_claims') OR row_number() OVER (
+    PARTITION BY policy_id, line, peril, loss_date, report_date, status, paid_to_date, incurred_to_date, recoveries
+    ORDER BY claim_id) = 1;
+
 -- Claim-level target (D-03): non-repudiated claims matched to the policy row whose period contains
 -- the loss date. Net cost = incurred (already net of excess) less recoveries.
 CREATE OR REPLACE TABLE contents_claims AS
 SELECT r.row_id, c.claim_id, c.peril, c.status, c.loss_date, c.report_date,
        c.incurred_to_date, c.recoveries,
        c.incurred_to_date - c.recoveries AS net_cost
-FROM claims c
+FROM claims_clean c
 JOIN contents_rows r
   ON r.src = 'train' AND r.policy_id = c.policy_id AND c.loss_date BETWEEN r.period_start AND r.period_end
 WHERE c.line = 'contents' AND c.status <> 'repudiated';
@@ -100,13 +109,16 @@ SELECT src,
 FROM contents_rows GROUP BY src;
 
 CREATE OR REPLACE TABLE ev_03_claim_reconciliation AS
-WITH all_c AS (SELECT * FROM claims WHERE line = 'contents')
-SELECT 1 AS step, 'all contents claims' AS description, count(*) AS n_claims, round(sum(incurred_to_date - recoveries), 2) AS net_cost FROM all_c
-UNION ALL SELECT 2, 'less repudiated', -count(*), -round(sum(incurred_to_date - recoveries), 2) FROM all_c WHERE status = 'repudiated'
-UNION ALL SELECT 3, 'less outside any policy period', -(SELECT count(*) FROM all_c WHERE status <> 'repudiated') + (SELECT count(*) FROM contents_claims),
+WITH raw_c AS (SELECT * FROM claims WHERE line = 'contents'),
+     all_c AS (SELECT * FROM claims_clean WHERE line = 'contents')
+SELECT 1 AS step, 'all contents claims' AS description, count(*) AS n_claims, round(sum(incurred_to_date - recoveries), 2) AS net_cost FROM raw_c
+UNION ALL SELECT 2, 'less duplicates', (SELECT count(*) FROM all_c) - count(*),
+          round((SELECT sum(incurred_to_date - recoveries) FROM all_c) - sum(incurred_to_date - recoveries), 2) FROM raw_c
+UNION ALL SELECT 3, 'less repudiated', -count(*), -round(sum(incurred_to_date - recoveries), 2) FROM all_c WHERE status = 'repudiated'
+UNION ALL SELECT 4, 'less outside any policy period', -(SELECT count(*) FROM all_c WHERE status <> 'repudiated') + (SELECT count(*) FROM contents_claims),
           -round((SELECT sum(incurred_to_date - recoveries) FROM all_c WHERE status <> 'repudiated') - (SELECT sum(net_cost) FROM contents_claims), 2)
-UNION ALL SELECT 4, 'claims in target', count(*), round(sum(net_cost), 2) FROM contents_claims
-UNION ALL SELECT 5, 'check: target total on rows', sum(n_claims), round(sum(claim_cost), 2) FROM contents_model;
+UNION ALL SELECT 5, 'claims in target', count(*), round(sum(net_cost), 2) FROM contents_claims
+UNION ALL SELECT 6, 'check: target total on rows', sum(n_claims), round(sum(claim_cost), 2) FROM contents_model;
 
 CREATE OR REPLACE TABLE ev_03_join_completeness AS
 SELECT src, count(*) AS n_rows,

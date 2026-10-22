@@ -9,21 +9,21 @@ SELECT line,
        round(avg((datediff('day', loss_date, report_date) <= 90)::INT), 4) AS share_within_90d,
        round(avg((datediff('day', loss_date, report_date) <= 182)::INT), 4) AS share_within_182d,
        round(avg((datediff('day', loss_date, report_date) <= 365)::INT), 4) AS share_within_365d
-FROM claims
+FROM claims_clean
 WHERE status <> 'repudiated' AND year(loss_date) BETWEEN 2021 AND getvariable('lag_cdf_max_loss_year')
 GROUP BY line;
 
 -- Contents: empirical CDF of report lag, then expected unreported count for 2024 losses.
 CREATE OR REPLACE TABLE contents_lag_cdf AS
 SELECT k AS lag_days, avg((datediff('day', loss_date, report_date) <= k)::INT) AS completeness
-FROM claims, range(0, 800) AS t(k)
+FROM claims_clean, range(0, 800) AS t(k)
 WHERE line = 'contents' AND status <> 'repudiated'
   AND year(loss_date) BETWEEN 2021 AND getvariable('lag_cdf_max_loss_year')
 GROUP BY k;
 
 CREATE OR REPLACE TABLE ev_04_contents_ibnr_2024 AS
 WITH c AS (
-    SELECT peril, loss_date FROM claims
+    SELECT peril, loss_date FROM claims_clean
     WHERE line = 'contents' AND status <> 'repudiated'
       AND year(loss_date) = year(getvariable('valuation_date'))
 )
@@ -42,7 +42,7 @@ SELECT peril, year(loss_date) AS loss_year,
        round(avg(incurred_to_date), 0) AS mean_incurred,
        round(avg(incurred_to_date) FILTER (WHERE status = 'closed'), 0) AS mean_incurred_closed,
        round(avg(incurred_to_date) FILTER (WHERE status = 'open'), 0) AS mean_incurred_open
-FROM claims
+FROM claims_clean
 WHERE line = 'contents' AND status <> 'repudiated' AND year(loss_date) >= 2021
 GROUP BY ALL;
 
@@ -55,7 +55,7 @@ WITH r AS (
 ),
 c AS (
     SELECT r.row_id, sum(cl.incurred_to_date - cl.recoveries) AS net_cost
-    FROM claims cl JOIN r ON r.policy_id = cl.policy_id AND cl.loss_date BETWEEN r.period_start AND r.period_end
+    FROM claims_clean cl JOIN r ON r.policy_id = cl.policy_id AND cl.loss_date BETWEEN r.period_start AND r.period_end
     WHERE cl.status <> 'repudiated'
     GROUP BY r.row_id
 )
