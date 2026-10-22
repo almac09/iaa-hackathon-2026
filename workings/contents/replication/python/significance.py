@@ -35,3 +35,12 @@ def summarise(diff: np.ndarray, observed: float) -> dict:
     return {"d2_gain": observed, "boot_mean": diff.mean(), "ci_low_95": np.percentile(diff, 2.5),
             "ci_high_95": np.percentile(diff, 97.5), "share_not_better": (diff <= 0).mean(), "n_boot": len(diff),
             "significant_95": bool(np.percentile(diff, 2.5) > 0)}
+
+
+def two_year_interval(gains, ci_lows, ci_highs) -> tuple[float, float, float]:
+    """Mean of the yearly D2 gains with an approximate 95% interval from the yearly bootstrap intervals (standard
+    error = width / 3.92), treating the years as independent. They share customers, so if anything the interval is
+    too narrow (A21)."""
+    se = np.sqrt(sum(((h - lo) / 3.92) ** 2 for lo, h in zip(ci_lows, ci_highs))) / len(gains)
+    mean = float(np.mean(gains))
+    return mean, mean - 1.96 * se, mean + 1.96 * se

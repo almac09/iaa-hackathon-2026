@@ -11,6 +11,8 @@
   G4 seasonality: buildings claims run about 10% above average in Q1 and Q4. Variant: exposure weighted by the
      line's claim frequency by month of year, estimated on the fitting years only.
 
+As run for A21, before D-22 was adopted: the lines keep plain exposure here because use_window() is never called.
+
 Baseline: the chosen model without CANN, whose +0.00005 would only add noise here, with the threshold, penalty,
 trees and credibility k of the last full run (ev_g6_summary.csv). Each variant changes one thing; XGBoost's tree
 count is re-tuned on the variant's own data, as in the full run. The backtest rows carry any leak too, so for G1
@@ -40,9 +42,7 @@ from run_xgb import write_csv  # noqa: E402
 
 RUNNER = "gap_tests"
 EVAL = rgl.EVAL_WINDOWS
-MONTH_DAYS = ", ".join(
-    f"greatest(0, date_diff('day', greatest(period_start, make_date(yr, {m}, 1)), "
-    f"least(period_end, last_day(make_date(yr, {m}, 1)))) + 1) AS d{m}" for m in range(1, 13))
+MONTH_DAYS = rgl.MONTH_DAYS
 _TREES: dict[int, tuple] = {}
 
 
@@ -119,12 +119,12 @@ def compare(base_line: rgl.Line, base: dict, alt: dict, test: str, variant: str,
                      "d2_baseline": models.d2_tweedie(y, base[w], p), "d2_variant": models.d2_tweedie(y, alt[w], p),
                      "pred_over_developed": alt[w].sum() / y.sum(), **significance.summarise(diff, obs)})
     passed = all(r["d2_gain"] > 0 for r in rows)
-    mean = np.mean([r["d2_gain"] for r in rows])  # two-year mean with the G2 approximation (years independent)
-    se = np.sqrt(sum(((r["ci_high_95"] - r["ci_low_95"]) / 3.92) ** 2 for r in rows)) / len(rows)
+    mean, lo, hi = significance.two_year_interval([r["d2_gain"] for r in rows], [r["ci_low_95"] for r in rows],
+                                                  [r["ci_high_95"] for r in rows])
     for r in rows:
         r["passes_two_year_rule"] = passed
-        r["two_year_mean"], r["two_year_ci_low_95"], r["two_year_ci_high_95"] = mean, mean - 1.96 * se, mean + 1.96 * se
-        r["passes_significance_rule"] = passed and mean - 1.96 * se > 0
+        r["two_year_mean"], r["two_year_ci_low_95"], r["two_year_ci_high_95"] = mean, lo, hi
+        r["passes_significance_rule"] = passed and lo > 0
     print(f"  {base_line.name} {test} {variant}: " + ", ".join(
         f"{r['score_year']} {r['d2_gain']:+.5f} ({r['ci_low_95']:+.5f}, {r['ci_high_95']:+.5f})" for r in rows)
         + f" -> {'passes' if passed else 'fails'}", flush=True)

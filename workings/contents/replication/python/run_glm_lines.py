@@ -45,6 +45,10 @@ WINDOWS = {"tune": ([2021, 2022], 2023), "backtest": ([2021, 2022, 2023], 2024),
            "final": ([2021, 2022, 2023, 2024], 2025)}
 GROUPS = {"buildings": ["own", "home", "cross"], "contents": ["own", "home", "cross"], "motor": ["own", "cross"]}
 EVAL_WINDOWS = ("tune", "backtest")
+# Days of each row in each calendar month (rows never cross a year end), for seasonal exposure (D-22).
+MONTH_DAYS = ", ".join(
+    f"greatest(0, date_diff('day', greatest(period_start, make_date(yr, {m}, 1)), "
+    f"least(period_end, last_day(make_date(yr, {m}, 1)))) + 1) AS d{m}" for m in range(1, 13))
 
 
 def resolve(cfg: dict, v) -> list[str]:
@@ -128,11 +132,31 @@ class LineModel:
 class Line:
     def __init__(self, name: str, df: pd.DataFrame, claims: pd.DataFrame, cfg: dict):
         self.name, self.cfg, self.spec = name, cfg, cfg["glm_lines"]["models"][name]
-        self.df = df.assign(y_full=df.claim_cost_dev + df.excess_dev)
+        self.df = df.assign(y_full=df.claim_cost_dev + df.excess_dev,
+                            exposure_plain=df.exposure)  # reported rates always use plain exposure
         self.claims = claims
         self.train, self.test = self.df[self.df.src == "train"], self.df[self.df.src == "test"]
         self.p = cfg["model"]["tweedie_power"]
         self.expected = {}  # window -> E columns by row_id (sql/13)
+        self.month_days, self.claim_months, self.weights = None, None, {}  # seasonal exposure (D-22), if used
+
+    def use_window(self, window: str) -> None:
+        """For a line with seasonal exposure (D-22): set every row's exposure to its days weighted by the month's
+        claim frequency relative to the year, estimated on the window's fitting years only. A no-op otherwise.
+        The fitting years keep their total exposure."""
+        if self.month_days is None:
+            return
+        years = WINDOWS[window][0]
+        fit = (self.df.src.eq("train") & self.df.yr.isin(years)).to_numpy()
+        days = self.month_days[fit].sum(0)
+        n = (self.claim_months[self.claim_months.yr.isin(years)].groupby("m").n.sum()
+             .reindex(range(1, 13), fill_value=0).to_numpy())
+        rate = np.divide(n, days, out=np.full(12, n.sum() / days.sum()), where=days > 0)  # empty month: no change
+        w = rate / (n.sum() / days.sum())
+        self.df["exposure"] = self.month_days @ w / 365
+        self.train, self.test = self.df[self.df.src == "train"], self.df[self.df.src == "test"]
+        assert abs(self.df.exposure[fit].sum() / self.df.exposure_plain[fit].sum() - 1) < 1e-9
+        self.weights[window] = w
 
     def rows(self, years) -> pd.DataFrame:
         return self.train[self.train.yr.isin(years)]
@@ -246,6 +270,7 @@ def run_line(line: Line) -> dict:
     gl, sp = line.cfg["glm_lines"], line.spec
     out = {"tuning": [], "credibility": [], "backtest": []}
     years, val_year = WINDOWS["tune"]
+    line.use_window("tune")
     val = line.rows([val_year])
     thresholds = gl["thresholds"] if sp["split"] else [None]
     alphas = gl["alpha_grid"] if sp["small"] == "glm" else [None]
@@ -274,7 +299,8 @@ def run_line(line: Line) -> dict:
         print(f"  {line.name} credibility {grp}: k {ks[grp]} (D2 {scores[ks[grp]]:.4f}, "
               f"no history {scores[np.inf]:.4f})", flush=True)
 
-    # CANN (A20): adopted only if it improves both out-of-time years on the full pipeline.
+    # CANN (A20): adopted only if it improves both out-of-time years on the full pipeline and, under D-23 (A22), its
+    # two-year mean gain is significant.
     trees_by_threshold = {threshold: tree_spec}
 
     def trees_for(th):
@@ -286,20 +312,38 @@ def run_line(line: Line) -> dict:
 
     base, with_cann = {}, {}
     out["cann"] = []
+    bs = gl["bootstrap"]
     for w in EVAL_WINDOWS:
         yrs, yv = WINDOWS[w]
+        line.use_window(w)
         v = line.rows([yv])
         base[w] = line.build(yrs, threshold, alpha, tree_spec)
-        row = {"line": line.name, "score_year": yv,
-               "d2_without_cann": line.score(line.predict(base[w], w, ks, v, year=yv), v)["d2_vs_developed"]}
+        p_without = line.predict(base[w], w, ks, v, year=yv)
+        row = {"line": line.name, "score_year": yv, "d2_without_cann": line.score(p_without, v)["d2_vs_developed"]}
         if gl["cann"]["enabled"]:
             with_cann[w] = line.add_cann(base[w], yrs, threshold)
-            row["d2_with_cann"] = line.score(line.predict(with_cann[w], w, ks, v, year=yv), v)["d2_vs_developed"]
+            p_with = line.predict(with_cann[w], w, ks, v, year=yv)
+            row["d2_with_cann"] = line.score(p_with, v)["d2_vs_developed"]
+            diff = significance.paired_cluster_bootstrap(v.y_full.to_numpy(), p_with, p_without,
+                                                         v[bs["cluster"]].to_numpy(), line.p, bs["n"], bs["seed"])
+            summ = significance.summarise(diff, row["d2_with_cann"] - row["d2_without_cann"])
+            row.update({"ci_low_95": summ["ci_low_95"], "ci_high_95": summ["ci_high_95"]})
         out["cann"].append(row)
         print(f"  {line.name} CANN {yv}: without {row['d2_without_cann']:.5f}, "
               f"with {row.get('d2_with_cann', np.nan):.5f}", flush=True)
-    adopt_cann = bool(with_cann) and all(r["d2_with_cann"] > r["d2_without_cann"] for r in out["cann"])
+    two_year = bool(with_cann) and all(r["d2_with_cann"] > r["d2_without_cann"] for r in out["cann"])
+    adopt_cann = two_year
+    if with_cann:
+        mean, lo, hi = significance.two_year_interval([r["d2_with_cann"] - r["d2_without_cann"] for r in out["cann"]],
+                                                      [r["ci_low_95"] for r in out["cann"]],
+                                                      [r["ci_high_95"] for r in out["cann"]])
+        adopt_cann = two_year and (lo > 0 or not gl["cann"]["require_significance"])
+        print(f"  {line.name} CANN two-year mean {mean:+.5f} ({lo:+.5f}, {hi:+.5f}): "
+              f"{'adopted' if adopt_cann else 'not adopted'}", flush=True)
     for r in out["cann"]:
+        r["passes_two_year_rule"] = two_year
+        if with_cann:
+            r["two_year_mean"], r["two_year_ci_low_95"], r["two_year_ci_high_95"] = mean, lo, hi
         r["adopted"] = adopt_cann
 
     def variant(w, **change):
@@ -313,6 +357,7 @@ def run_line(line: Line) -> dict:
     out["preds"] = {}
     for w in EVAL_WINDOWS:
         yrs, yv = WINDOWS[w]
+        line.use_window(w)
         v = line.rows([yv])
         chosen = with_cann[w] if adopt_cann else base[w]
         cols = {"chosen": line.predict(chosen, w, ks, v, year=yv)}
@@ -348,6 +393,7 @@ def run_line(line: Line) -> dict:
     level["level_factor"] = float(np.exp(np.mean(np.log(list(k.values()))))) if level["adopted"] else 1.0
 
     f_years, f_year = WINDOWS["final"]
+    line.use_window("final")
     final = line.build(f_years, threshold, alpha, tree_spec)
     if adopt_cann:
         final = line.add_cann(final, f_years, threshold)
@@ -378,7 +424,7 @@ def run_line(line: Line) -> dict:
     tilt = tilt_raw if unc["tilt_adopted"] else 1.0
     pred = pred * tilt
     z = line.cfg["glm_lines"]["level"]["z90"]
-    rate = pred.sum() / line.test.exposure.sum()
+    rate = pred.sum() / line.test.exposure_plain.sum()
     out["uncertainty"] = {**unc, "uncertainty_tilt": tilt,
                           "rate_2025": rate, "rate_2025_p05": rate * np.exp(-z * np.sqrt(sigma2)),
                           "rate_2025_p95": rate * np.exp(z * np.sqrt(sigma2))}
@@ -386,7 +432,7 @@ def run_line(line: Line) -> dict:
 
     cf = line.credibility(line.test, "final", ks)
     last = line.rows([2024])
-    rate_2024 = last.y_full.sum() / last.exposure.sum()
+    rate_2024 = last.y_full.sum() / last.exposure_plain.sum()
     out["summary"] = {"line": line.name, "small_model": sp["small"], "cann": adopt_cann, "threshold": threshold,
                       "alpha": alpha, "n_trees": tree_spec[0] if tree_spec else None,
                       "trend_pa": np.expm1(final.small.slope), **{f"k_{g}": kv for g, kv in ks.items()},
@@ -399,6 +445,10 @@ def run_line(line: Line) -> dict:
     if final.tail:
         out["tail"] = {"line": line.name, **final.tail}
     out["pred"] = pd.Series(pred, index=line.test.row_id.to_numpy())
+    if line.weights:
+        out["seasonal"] = [{"line": line.name, "window": w, "fit_years": f"{WINDOWS[w][0][0]}-{WINDOWS[w][0][-1]}",
+                            "month": m + 1, "relative_frequency": float(wt[m])}
+                           for w, wt in line.weights.items() for m in range(12)]
     return out
 
 
@@ -468,6 +518,15 @@ def prepare(con, cfg: dict, rec: dict, out_dir: Path | None = None) -> tuple[dic
             df = df.merge(con.execute(f"SELECT row_id, {extra} FROM contents_model").df(), on="row_id")
         claims = con.execute(f"SELECT row_id, net_cost, dev_factor FROM line_claims_dev WHERE line = '{name}'").df()
         lines[name] = Line(name, df, claims, cfg)
+        if gl["models"][name].get("seasonal_exposure"):
+            md = con.execute(f"SELECT row_id, {MONTH_DAYS} FROM line_rows WHERE line = '{name}'").df()
+            md = md.set_index("row_id").reindex(df.row_id.astype(md.row_id.dtype).to_numpy())
+            if md.isna().any().any():
+                raise ValueError(f"{name}: rows missing from line_rows")
+            line = lines[name]
+            line.month_days = md.to_numpy(dtype=float)
+            line.claim_months = con.execute(f"""SELECT yr, month(loss_date) AS m, count(*) AS n FROM line_claims
+                                                WHERE line = '{name}' GROUP BY ALL""").df()
     for window in WINDOWS:
         expected_history(con, lines, window, expected_sql)
     return lines, outputs
@@ -509,7 +568,8 @@ def main() -> None:
                     write_csv(cat("cann"), out_dir / "ev_g7_cann_two_year.csv"),
                     write_csv(boot, out_dir / "ev_g8_bootstrap_significance.csv"),
                     write_csv(cat("level"), out_dir / "ev_g9_level_factor.csv"),
-                    write_csv(cat("uncertainty"), out_dir / "ev_g10_level_uncertainty.csv")]
+                    write_csv(cat("uncertainty"), out_dir / "ev_g10_level_uncertainty.csv"),
+                    write_csv(cat("seasonal"), out_dir / "ev_g14_seasonal_exposure_weights.csv")]
 
         prefixes = {name: cfg["lines"]["models"][name]["prefix"] for name in results}
         sub = make_submission.build_submission(sample, {prefixes[k]: r["pred"] for k, r in results.items()})

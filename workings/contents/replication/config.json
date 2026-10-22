@@ -167,7 +167,8 @@
     "sql_files": ["sql/12_claim_history.sql"],
     "cann": {
       "_about": "A20. CANN correction of each line's small-claim model, adopted per line only if it improves both 2023 and 2024. Architecture fixed in advance, not tuned.",
-      "enabled": true, "n_seeds": 20, "hidden": [128, 64, 32], "dropout": 0.1, "learning_rate": 0.001,
+      "_d23": "D-23 (A22): a discretionary addition, so it must also have a significant two-year mean gain (approximate 95% interval from the yearly paired bootstraps).",
+      "enabled": true, "require_significance": true, "n_seeds": 20, "hidden": [128, 64, 32], "dropout": 0.1, "learning_rate": 0.001,
       "batch_size": 16384, "max_epochs": 40, "patience": 4, "val_share": 0.1, "seed": 2026,
       "features": {"buildings": "lines.models.buildings", "contents": "xgboost.feature_sets.raw", "motor": "lines.models.motor"}
     },
@@ -200,6 +201,8 @@
       },
       "contents": {
         "split": false, "small": "glm",
+        "seasonal_exposure": true,
+        "_seasonal_note": "D-22 (A22): exposure is days weighted by the month's relative claim frequency, estimated on each window's fitting years; plain exposure is kept for reported rates.",
         "numeric": ["policyholder_age", "elevation_m", "distance_to_river_km"],
         "categorical": ["f_flood_zone", "f_tenure", "f_region", "f_segment", "f_prior_claims", "f_missed_pay", "f_vol_xs", "f_credit", "f_security", "f_hvi", "f_ad_cover", "f_bike", "f_wfh", "f_lodgers", "f_urban", "f_prop_type"],
         "continuous": "model.numeric", "n_bands": 10, "smooth": "all", "n_knots": 4,
