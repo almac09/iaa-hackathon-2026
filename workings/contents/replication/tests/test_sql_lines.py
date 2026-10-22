@@ -29,14 +29,14 @@ def cfg():
     return common.load_config()
 
 
-def build(cfg):
+def build(cfg, extra_motor=(), extra_claims=()):
     y = lambda yr: (date(yr, 1, 1), date(yr, 12, 31))  # noqa: E731
     buildings = pd.DataFrame([
         row("B1", "PB1", *y(2024), sum_insured=1_061_000.0, construction_type="BRICK "),
         row("B2", "PB2", *y(2024), sum_insured=52_000_000.0, construction_type="Brick"),
     ]).assign(renewal_decision="renewed")
     motor = pd.DataFrame([row("M1", "PM1", *y(2021)), row("M2", "PM1", *y(2024)), row("M3", "PM2", *y(2021)),
-                          row("M4", "PM2", *y(2024))]).assign(renewal_decision="renewed")
+                          row("M4", "PM2", *y(2024)), *extra_motor]).assign(renewal_decision="renewed")
     claims = pd.DataFrame([
         # Own damage: two old claims at lags 1 and 10, and a 2024 claim aged 5 days, reported at lag 1.
         claim("C1", "PM1", "motor", "own_damage", pd.Timestamp(2021, 1, 1), 1, 100.0),
@@ -48,6 +48,7 @@ def build(cfg):
         claim("C6", "PM2", "motor", "bodily_injury", pd.Timestamp(2024, 3, 1), 5, 1000.0, status="open"),
         claim("C7", "PB1", "buildings", "fire", pd.Timestamp(2024, 3, 1), 5, 700.0),
         claim("C8", "PB1", "buildings", "fire", pd.Timestamp(2023, 3, 1), 5, 700.0),  # no row covers 2023
+        *extra_claims,
     ])
     empty_rows = pd.DataFrame({"src": pd.Series(dtype=str), "row_id": pd.Series(dtype=str),
                                "policy_id": pd.Series(dtype=str), "period_start": pd.Series(dtype="datetime64[us]"),
@@ -103,3 +104,20 @@ def test_ibner_applies_to_motor_bodily_injury_only_and_can_be_switched_off(cfg):
     off["decisions"]["D10_develop_ibnr"]["apply"] = False
     c = build(off).execute("SELECT * FROM line_claims_dev").df().set_index("claim_id")
     assert c.dev_factor.tolist() == [1.0] * len(c)
+
+
+def test_bornhuetter_ferguson_for_an_immature_year_with_a_mature_prior(cfg):
+    # A mature 2023 own-damage year (600, fully reported) makes F(5) = 1 - 300/1000 = 0.7, so 2024 is only 70%
+    # reported: below bf_max_reported_share, so BF fills the missing 30% from 2023's 600 per year of exposure.
+    extra_row = [row("M5", "PM3", date(2023, 1, 1), date(2023, 12, 31))]
+    extra_claim = [claim("C9", "PM3", "motor", "own_damage", pd.Timestamp(2023, 1, 1), 1, 600.0)]
+    con = build(cfg, extra_row, extra_claim)
+    c = con.execute("SELECT * FROM line_claims_dev").df().set_index("claim_id")
+    expo_2024 = 2 * 366 / 365  # rows M2 and M4, exposure recomputed from the dates of a leap year
+    expo_2023 = 1.0
+    assert c.loc["C3", "dev_factor"] == pytest.approx((50 + 0.3 * 600 / expo_2023 * expo_2024) / 50)
+    assert c.loc["C9", "dev_factor"] == pytest.approx(1.0)  # the mature year keeps its chain-ladder factor
+    off = copy.deepcopy(cfg)
+    off["decisions"]["D17_bf_slow_perils"]["apply"] = False
+    c = build(off, extra_row, extra_claim).execute("SELECT * FROM line_claims_dev").df().set_index("claim_id")
+    assert c.loc["C3", "dev_factor"] == pytest.approx(1 / 0.7)

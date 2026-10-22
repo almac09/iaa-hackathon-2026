@@ -73,13 +73,53 @@ SELECT c.line, c.peril, year(c.loss_date) AS ay, quarter(c.loss_date) AS aq,
 FROM dev_claims c JOIN dev_factor_by_age f USING (line, peril, age)
 GROUP BY ALL;
 
+-- Bornhuetter-Ferguson for immature slow perils (D-17). Backtested as at 2023-12-31 (A17), the chain ladder above
+-- overstated 2023 for the two perils that are under half reported after a year: subsidence by 18% and motor bodily
+-- injury by 32% (like for like, no IBNER), against 1-4% and 14-18% for BF. Where under bf_max_reported_share of a
+-- loss year's cost is reported, the unreported share is filled from a prior instead: the chain-ladder cost per
+-- exposure of the up to two preceding years that are at least bf_mature_share reported, with no trend, and with
+-- claims capped at large_claim_cap so a single catastrophe (the 11.9m 2023 bodily injury claim) does not set it.
+CREATE OR REPLACE TABLE bf_year AS
+WITH e AS (SELECT line, yr AS ay, sum(exposure) AS expo FROM line_rows WHERE src = 'train' GROUP BY ALL),
+r AS (
+    SELECT c.line, c.peril, year(c.loss_date) AS ay,
+           sum(c.net_cost * coalesce(i.applied, 1.0)) AS reported,
+           sum(c.net_cost * coalesce(i.applied, 1.0) * q.f_cost) AS cl_ultimate,
+           sum(least(c.net_cost * coalesce(i.applied, 1.0), getvariable('large_claim_cap')) * q.f_cost) AS cl_ultimate_capped
+    FROM dev_claims c
+    JOIN ibnr_factor_by_quarter q
+      ON q.line = c.line AND q.peril = c.peril AND q.ay = year(c.loss_date) AND q.aq = quarter(c.loss_date)
+    LEFT JOIN ibner_factor i ON i.line = c.line AND i.peril = c.peril AND i.ay = year(c.loss_date)
+    GROUP BY ALL
+),
+s AS (SELECT r.*, e.expo, r.reported / r.cl_ultimate AS reported_share FROM r JOIN e USING (line, ay)),
+p AS (
+    SELECT a.line, a.peril, a.ay, sum(b.cl_ultimate_capped) / sum(b.expo) AS prior_rate
+    FROM s a JOIN s b ON b.line = a.line AND b.peril = a.peril AND b.ay BETWEEN a.ay - 2 AND a.ay - 1
+    WHERE b.reported_share >= getvariable('bf_mature_share')
+    GROUP BY ALL
+)
+SELECT s.*, p.prior_rate,
+       CASE WHEN getvariable('d10_develop_ibnr') AND getvariable('d17_bf_slow_perils')
+                 AND s.reported_share < getvariable('bf_max_reported_share') AND p.prior_rate IS NOT NULL
+            THEN (s.reported + (1 - s.reported_share) * p.prior_rate * s.expo) / s.reported END AS bf_factor
+FROM s LEFT JOIN p USING (line, peril, ay);
+
 CREATE OR REPLACE TABLE line_claims_dev AS
-SELECT c.*,
-       CASE WHEN getvariable('d10_develop_ibnr') THEN q.f_cost ELSE 1.0 END * coalesce(i.applied, 1.0) AS dev_factor,
-       c.net_cost * CASE WHEN getvariable('d10_develop_ibnr') THEN q.f_cost ELSE 1.0 END * coalesce(i.applied, 1.0) AS net_cost_dev
+SELECT c.*, f.factor AS dev_factor, c.net_cost * f.factor AS net_cost_dev
 FROM dev_claims c
 JOIN ibnr_factor_by_quarter q ON q.line = c.line AND q.peril = c.peril AND q.ay = year(c.loss_date) AND q.aq = quarter(c.loss_date)
-LEFT JOIN ibner_factor i ON i.line = c.line AND i.peril = c.peril AND i.ay = year(c.loss_date);
+LEFT JOIN ibner_factor i ON i.line = c.line AND i.peril = c.peril AND i.ay = year(c.loss_date)
+LEFT JOIN bf_year b ON b.line = c.line AND b.peril = c.peril AND b.ay = year(c.loss_date)
+CROSS JOIN LATERAL (SELECT coalesce(i.applied, 1.0) * coalesce(b.bf_factor,
+                           CASE WHEN getvariable('d10_develop_ibnr') THEN q.f_cost ELSE 1.0 END) AS factor) f;
+
+CREATE OR REPLACE TABLE ev_10_bornhuetter_ferguson AS
+SELECT line, peril, ay, round(expo, 1) AS exposure, round(reported, 0) AS reported_cost,
+       round(reported_share, 4) AS reported_share, round(cl_ultimate, 0) AS chain_ladder_ultimate,
+       round(prior_rate, 2) AS prior_cost_per_exposure, round(bf_factor, 4) AS bf_factor,
+       round(reported * coalesce(bf_factor, cl_ultimate / reported), 0) AS ultimate_used
+FROM bf_year WHERE reported_share < 0.95;
 
 -- Evidence: reported vs developed by line, peril and loss year, with the count-based IBNR for comparison.
 CREATE OR REPLACE TABLE ev_10_development AS
