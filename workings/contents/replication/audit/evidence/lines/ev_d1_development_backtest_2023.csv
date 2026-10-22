@@ -1,0 +1,16 @@
+line,peril,reported_share_at_2023,chain_ladder_over_actual,method_used_over_actual,bf_applied
+buildings,accidental_damage,0.9791,0.9904,0.9904,False
+buildings,escape_of_water,0.9161,1.0244,1.0244,False
+buildings,fire,0.9819,0.9651,0.9651,False
+buildings,flood,0.9758,0.984,0.984,False
+buildings,storm,0.9446,0.9819,0.9819,False
+buildings,subsidence,0.5658,1.179,1.0143,True
+contents,accidental_damage,0.9771,0.986,0.986,False
+contents,escape_of_water,0.9395,0.9894,0.9894,False
+contents,flood,0.9618,0.9816,0.9816,False
+contents,theft,0.9904,0.9937,0.9937,False
+motor,bodily_injury,0.5,1.324,1.1388,True
+motor,glass_hail,0.9686,0.9974,0.9974,False
+motor,own_damage,0.9671,0.997,0.997,False
+motor,theft,0.9879,0.9836,0.9836,False
+motor,third_party_prop,0.9344,0.9999,0.9999,False

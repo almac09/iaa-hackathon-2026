@@ -285,3 +285,61 @@
   4. Python only; no R twin.
 - **Checks:** tests 29 pass, including split, Pareto, credibility, history without look-ahead and expected history over the right rows. Lint clean.
 - **Status:** analysis. D-14 to D-16 await sign-off. Submitting is the owner's decision.
+
+### A17 — Model review: development backtest, Bornhuetter–Ferguson, smoothing, two motor factors
+- **When / who:** 2026-10-22, Claude. The owner asked what would improve the GLMs without overfitting, and whether the data is suitable, then asked for recommendations 1–3 to be implemented, each tested with the two-year rule.
+- **Review findings, before the changes:**
+  - **Data structure is clean:** no duplicate rows, zero exposure or overlapping periods; no 2025 category levels unseen in training.
+  - **Left as is:**
+    - 11 home claims above the sum insured (at most 1.48×).
+    - 15,036 zero-mileage motor rows.
+    - 161,822 motor rows (13%) with more NCB years than years licensed. They claim *less* at every licence band (frequency 259 against 312 per 1,000 at 0–2 years licensed), so it is signal, not error.
+  - **No overfitting:** contents D² is 0.101 in sample against 0.094 out of time; coefficients barely move between fitting windows (correlation 0.99, no parameter moves by more than 0.2); the GLM penalty is immaterial.
+  - **Written premium adds nothing:** −0.0007 to +0.0002 D² across both years and both lines tested, although it is strongly predictive on its own. D-05 costs no score.
+  - **Features that look strong in one year but fail out of time:** previous insurer, campaign code and occupation (−0.001 to −0.003).
+- **The two-year rule:** a change is kept only if D² against the developed actual improves both on 2023 (fit 2021–22) and on 2024 (fit 2021–23). Scores are comparable only within one development basis.
+- **1. Development backtest (`python/backtest_development.py`, `ev_d1`):** the position is rebuilt as at 2023-12-31 from report dates, 2023 is developed, and the result is compared with 2023 as now known (current incurred, IBNER off on both sides).
+  - **Chain ladder:** within ±3.5% for every peril except buildings **subsidence (1.179)** and motor **bodily injury (1.324)**. These are the two perils under 60% reported after a year.
+  - Motor bodily injury is reported faster each year (within 365 days: 85.9% → 87.0% → 89.3%), so pooling the years understates how complete recent years are.
+  - **Bornhuetter–Ferguson (D-17):** BF replaces the chain ladder for a loss year under 75% reported. The prior is the cost per exposure of the up to two preceding years that are at least 90% reported, with no trend and claims capped at 1m. In the backtest: **subsidence 1.014, bodily injury 1.139.**
+  - Applied to 2024 only for subsidence (11.3m against 13.3m by chain ladder) and bodily injury (46.0m against 42.8m). Developed 2024 cost per unit of exposure: **buildings 498.1 → 484.8, motor 575.4 → 591.8.**
+  - A hand-worked test was added (`tests/test_sql_lines.py`).
+- **1b. Buildings weather perils:** separate small-claim models for weather perils (storm, flood, escape of water, subsidence) and the rest **failed** on both years (−0.0015, −0.0018). The buildings model already uses each year's weather, so its trend is already net of weather.
+- **2. Smoothing (D-18):** cubic splines with 4 knots at training quantiles, flat beyond the training range, with a missing indicator. The knot count was not tuned.
+
+  | Change | Gain in 2023 | Gain in 2024 | Result |
+  |---|---|---|---|
+  | Motor small-claim GLM: all numerics smoothed, plus credit band and missed payments | +0.0053 | +0.0023 | Adopted |
+  | Contents: GLM A's age, elevation and river-distance bands replaced by splines on the raw values | +0.0011 | +0.0019 | Adopted |
+  | Buildings large-claim GLM smoothed | +0.0010 | +0.0005 | Adopted |
+  | Motor large-claim GLM smoothed | −0.0020 | +0.0004 | Rejected |
+
+  Credit band and missed payments alone gave +0.0015 and +0.0008.
+- **Full run (fit 2021–23, score 2024; D² against developed):**
+
+  | Line | Chosen | No history | No trend | No split | Predicted / developed |
+  |---|---|---|---|---|---|
+  | Buildings | **0.1114** | 0.1097 | 0.1102 | 0.1095 | 0.917 |
+  | Contents | **0.0958** | 0.0959 | 0.0951 | — | 1.047 |
+  | Motor | **0.0801** | 0.0771 | 0.0791 | 0.0751 | 1.056 |
+
+  - **Contents** uses the same development basis as A16, so the two compare directly: **0.0945 → 0.0958**.
+  - **Buildings and motor** targets changed with D-17, so they cannot be compared with A16. Their improvement rests on the two-year tests above, run on the new basis.
+  - **Buildings** now under-predicts 2024 by 8%, against 12% in A16.
+  - **Contents claim history** now scores −0.0001 on 2024 (+0.0017 on 2023), so it would narrowly fail the two-year rule. It is kept under D-14 as the owner asked; the difference is within noise.
+  - Retuned settings: buildings large-claim threshold 50k (was 100k); GLM penalties 1e-4 (contents) and 1e-5 (motor).
+- **2025:**
+
+  | Line | Rate per unit of exposure | A16 | vs developed 2024 | Trend a year |
+  |---|---|---|---|---|
+  | Buildings | 487.5 | 491.8 | 1.006 | 5.4% |
+  | Contents | 129.6 | 129.6 | 1.080 | 4.2% |
+  | Motor | 627.9 | 610.0 | 1.061 | 5.5% |
+
+  Motor rises because Bornhuetter–Ferguson lifts 2024 bodily injury.
+- **Submission:** `work/submissions/submission_all_lines_glm_20261022.csv` has 626,639 rows in sample order, no nulls and a minimum prediction of 0.043. It overwrites A16's same-day file, which can be regenerated from commit 522115f.
+- **Caveats:**
+  - The 2023 and 2024 backtests have now informed many choices, so the reported gains are somewhat optimistic.
+  - The bodily-injury "actual" in the development backtest is itself 49% open.
+- **Checks:** tests 31 pass (pytest); lint clean.
+- **Status:** analysis. D-17 and D-18 await sign-off.
