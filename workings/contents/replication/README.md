@@ -30,6 +30,7 @@ IAA AI-Assisted Hackathon 2026, Part 1. This pack reproduces every step of the h
 | CANN neural correction per line on the Apple GPU, paired customer bootstrap of every component, level factor and 2025 level uncertainty | A20 | `python/cann.py`, `python/cann_torch.py`, `python/significance.py`, `python/level_uncertainty.py`, `python/run_glm_lines.py` |
 | Gap tests from inverting the model: missed-payments leak, adoption by significance, dispersion (double GLM), seasonal exposure | A21 | `python/gap_tests.py` |
 | Techniques from the team's other branches tested out of time (GLM/XGBoost blend, tuned XGBoost, frequency × severity, timber merge); leaderboard A/B file for one line's level | A24 | `python/combined_tests.py`, `python/level_variant.py` |
+| Traditional development methods: recent-weighted patterns in a two-date backtest, fitting with a development offset, Mack's chain-ladder error in the level ranges; run labels | A25 | `python/backtest_development.py`, `python/development_tests.py`, `python/mack.py`, `python/level_uncertainty.py` |
 
 **How the three languages fit together.** The SQL is the single source of truth for data preparation. Python and R both run the same SQL files through DuckDB, so their cleaned data is identical by construction (the reconciliation checks this byte for byte). The modelling is written twice, independently: Python uses scikit-learn's Newton solver and R uses its own penalised IRLS written in base R. Both use the same objective, so the results should agree to within the tolerances set in `config.json`.
 

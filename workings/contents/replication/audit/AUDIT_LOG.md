@@ -549,3 +549,38 @@
 - **Issues:** #148 (timber), #149 (team techniques), #150 (combined run) closed; #151 (motor leaderboard A/B) open.
 - **Checks:** 43 tests pass, including the timber merge with its switch on and off and the level variant; ruff passes.
 - **Status:** D-24 applied; the motor level is open (#151).
+
+### A25 — Traditional development methods: offset fit, recent weighting and Mack
+- **When / who:** 2026-10-22, Claude, at the owner's instruction to test whether chain-ladder and triangle methods improve the model. The owner also asked that the runs be labelled, the audit trail continued for every run, and the latest runs and code pushed to a new branch.
+- **Run labels:** every runner now accepts `--run-label "<text>"`, stored as `label` in its run-log record (`common.run_label`). All A25 runs are labelled "A25 development methods: …". The trail includes:
+  - one `level_uncertainty` run at 20:59 UTC in which my edit adding Mack had not applied, so it reproduced the bootstrap only;
+  - one `development_tests` run at 21:03 that failed. Contents' exposure had already been switched to seasonal (D-22) when the line was copied, and the check in `use_window` caught the mismatch. It was rerun after the copy was built from plain exposure.
+- **(3) Recent-weighted reporting patterns:** `sql/10` gains `pattern_decay`, with each claim weighted decay^(valuation year − loss year). At 1.0 the 2023 and 2024 factors match `ev_u1` to six decimals.
+  - **Method:** `python/backtest_development.py` now rebuilds the position at 2022-12-31 and at 2023-12-31, for decays 1, 0.5 and 0.25 (`ev_d2_pattern_decay_backtest.csv`). `ev_d1` is unchanged.
+  - **Developed / actual, by line:**
+
+    | Line | As at 2022 | As at 2023 |
+    |---|---|---|
+    | Motor | 1.035 → 1.037 → 1.039 | 1.055 → 1.065 → 1.075 |
+    | Contents | 1.002 → 1.003 → 1.003 | 0.988 → 0.988 → 0.987 |
+    | Buildings | 0.992 → 0.993 → 0.994 | 0.993 → 0.997 → 1.000 |
+
+  - **Not adopted:** motor and contents are worse in both years; buildings is better by under 1%, but its subsidence 2023 worsens from 1.012 to 1.065.
+- **(1) Fitting on reported claims with a development offset** (`python/development_tests.py`):
+  - **Method:** the small-claim model is fitted to reported cost with exposure × F as the offset. F is each row's expected reported share: reported / developed cost by line and loss quarter, weighted by the row's days in each quarter (`ev_dv2`). Its mean in 2024 is 0.92 (buildings), 0.97 (contents) and 0.77 (motor).
+  - **Results** (`ev_dv1_offset_fit.csv`, 2023 / 2024): buildings 0.0000 / +0.0002 (interval −0.0003 to +0.0007), contents 0.0000 / 0.0000, motor −0.0002 (significant) / −0.0003. In the tuning window F is close to 1, so 2023 cannot show much.
+  - **Not adopted.**
+- **Mack** (`python/mack.py`): Mack's (1993) standard error of the chain-ladder reserve.
+  - **Check:** the unit test reproduces the published example (Taylor and Ashe triangle, reserve 18,680,856, standard error 2,447,095).
+  - **Method:** `level_uncertainty.py` builds quarterly reporting triangles per line (reported cost by loss quarter and quarters to report, 2021 Q1 to 2024 Q4) and writes the CV of the ultimate for loss years 2023 and 2024 (`ev_u2_mack_development.csv`).
+  - **CV of the 2024 ultimate:** buildings 1.08%, contents 0.56%, motor 5.38%, against 0.84%, 0.39% and 2.96% from the bootstrap.
+  - **CV of the 2024 reserve:** 14% / 18% / 24%, close to the Mack analysis on `main` (13% / 17% / 21%, #101).
+  - **Adopted (D-25):** the level step uses the larger CV per line and loss year (switch `glm_lines.level.include_mack`).
+- **Finding:** the motor development over-estimated the backtest year at both valuation dates (×1.035, ×1.055), mostly through bodily injury (×1.087, ×1.134). Raised on #151 and #140. It points the same way as the lower motor level of the best-scoring leaderboard file.
+- **Full run** (labelled "A25 development methods: full run with Mack uncertainty"): `work/submissions/submission_combined_v2_dev_methods_20261022.csv`.
+  - **Checks:** 626,639 rows in sample order, no nulls, minimum 0.049.
+  - **Predictions:** identical to combined v1 for contents and motor; buildings within 0.003% (adjustment ×1.0043, was ×1.0042).
+  - **2025 90% ranges:** buildings 423–573, contents 117–142, motor 494–797 (was 500–788). Motor σ is 14.5% (was 13.8%).
+- **Issues:** #152 (closed) records A25; progress comments on #140 and #151.
+- **Checks:** 45 tests pass (new: Mack against the published example, the offset line's reported targets); ruff passes.
+- **Status:** D-25 applied; recent weighting and the offset fit are rejected. Pushed to the new branch `contents/gerard-a25-development`.
