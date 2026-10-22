@@ -1,11 +1,11 @@
 # Home and motor claims cost model: technical documentation
 
-IAA AI-Assisted Hackathon 2026, Part 1. This documents the model behind `work/submissions/submission_all_lines_glm_20261022.csv`, every data issue we found and how it was resolved, and how the model was validated. It reflects the pack as of audit entry A21 (22 October 2026).
+IAA AI-Assisted Hackathon 2026, Part 1. This documents the model behind `work/submissions/submission_all_lines_glm_20261022.csv`, every data issue we found and how it was resolved, and how the model was validated. It reflects the pack as of audit entry A22 (22 October 2026).
 
 - **Owner:** Gerard Murphy. **AI assistance:** Claude Code (Claude Opus 5.5).
 - **Code:** `workings/contents/replication`, branch `contents/gerard`. Every figure here comes from a logged run (`audit/run_log.jsonl`) and an evidence file under `audit/evidence/`.
 - **Decisions** are numbered D-01 to D-23 and are recorded in `audit/DECISIONS.md`. Their switches are in `config.json`. None is formally signed off yet.
-- **Audit entries** A01 to A21 are in `audit/AUDIT_LOG.md`. This document summarises them; the log has the full detail.
+- **Audit entries** A01 to A22 are in `audit/AUDIT_LOG.md`. This document summarises them; the log has the full detail.
 
 ## 1. Summary
 
@@ -23,7 +23,9 @@ The model has five parts:
    | Motor | Tweedie GLM | Tweedie GLM above 50k, scaled to a generalised Pareto tail |
 
 3. **Claim history** as a Poisson–gamma credibility factor: claims a customer actually had, against claims the model expected for them.
-4. **A neural correction (CANN)** of the small-claim model for buildings and contents: a 20-network ensemble that starts at the GLM or XGBoost prediction and learns what it missed. Motor's failed the two-year rule.
+4. **A neural correction (CANN)** of the buildings small-claim model: a 20-network ensemble that starts at the XGBoost prediction and learns what it missed. Contents' was not significant over two years (D-23) and motor's failed the two-year rule.
+
+Contents also counts exposure seasonally (D-22): a day in winter carries more expected cost than a day in summer.
 5. **A 2025 projection:** the trend carried forward one year, using the 2025 weather and risk mix in the test file, with the level's uncertainty quantified. Buildings carries a +0.5% mean adjustment for that uncertainty.
 
 **2024 backtest** (fitted on 2021–23; D² against developed 2024):
@@ -31,12 +33,12 @@ The model has five parts:
 | Line | D² | Without CANN | Without history | Without trend | Without large-claim split | Predicted / actual |
 |---|---|---|---|---|---|---|
 | Buildings | **0.1110** | 0.1109 | 0.1093 | 0.1094 | 0.1095 | 0.915 |
-| Contents | **0.0965** | 0.0965 | 0.0960 | 0.0958 | — | 1.047 |
+| Contents | **0.0968** | (not adopted: 0.0968) | 0.0963 | 0.0960 | — | 1.039 |
 | Motor | **0.0806** | (not adopted: 0.0813) | 0.0777 | 0.0796 | 0.0757 | 1.053 |
 
-**2025 cost per unit of exposure** (90% range for the level in brackets): buildings 491.4 (419–577), contents 129.9 (118–143), motor 627.4 (500–788).
+**2025 cost per unit of exposure** (90% range for the level in brackets): buildings 491.4 (419–577), contents 129.2 (117–142), motor 627.4 (500–788).
 
-Of the changes behind these figures, the bootstrap (section 5.4) finds the claim history, the A17 changes and the motor large-claim split clearly significant on at least one year. The CANN gains of +0.00005 are not significant in three of four tests.
+Of the changes behind these figures, the bootstrap (section 5.4) finds the claim history, the A17 changes and the motor large-claim split clearly significant on at least one year. CANN is kept for buildings only, where its small gain (+0.00005) is consistent enough across the two years to be significant (D-23).
 
 ## 2. Data
 
@@ -126,7 +128,7 @@ The chain ladder failed for the slow perils for two reasons. It gives too much w
 ## 4. The models
 
 All three lines share:
-- **Offset:** log of exposure, so every prediction is cost for the row's period.
+- **Offset:** log of exposure, so every prediction is cost for the row's period. For contents, exposure is seasonal (section 4.1).
 - **Metric and objective:** Tweedie power 1.5, matching the score.
 - **Fitting windows:** tune on 2021–22 against 2023; backtest on 2021–23 against 2024; final fit on 2021–24 to predict 2025.
 
@@ -140,6 +142,11 @@ Code: `python/run_glm_lines.py`, `python/glm_lines.py`, `python/xgb_models.py`, 
 - **Trend:** a linear calendar-year term.
 - **Penalty:** L2 at 10⁻⁴, tuned on 2023; it makes almost no difference.
 - **No large-claim split.** Contents claims top out at 113k, and A09 showed splitting by size or peril lowers D².
+- **Seasonal exposure (D-22, A22):** each day of a row counts by its month's claim frequency relative to the year, estimated on the fitting years only. The fitting years keep their total exposure, and reported rates use plain exposure.
+  - Weights from 2021–24, used for 2025: January 1.11, February 1.13, December 1.07; March to November 0.94–1.00.
+  - It matters for part-year rows: a row covering only winter months expects up to about 13% more than plain days imply.
+  - D² gain: +0.0010 on 2023, +0.0003 on 2024. Buildings and motor were tested too and failed (A21).
+  - Weights: `audit/evidence/glm_lines/ev_g14_seasonal_exposure_weights.csv`.
 
 ### 4.2 Buildings: XGBoost for small claims, GLM for large claims
 
@@ -172,9 +179,9 @@ Each claim is split at the threshold on its *reported* cost, and both parts then
 
 ### 4.5 Trend (D-13)
 
-The trend is a log-linear calendar-year term fitted jointly with each line's small-claim model. It is projected from the fitted line to 2025: buildings +5.6% a year, contents +4.3%, motor +5.5%.
+The trend is a log-linear calendar-year term fitted jointly with each line's small-claim model. It is projected from the fitted line to 2025: buildings +5.6% a year, contents +4.2%, motor +5.5%.
 
-The trend is net of the rating factors and, for buildings, of weather. In the backtest it improves all three lines: buildings 0.1110 against 0.1094 without it, contents 0.0965 against 0.0958, motor 0.0806 against 0.0796. In the earlier A15 run the motor trend over-predicted 2024; the owner chose to keep it then.
+The trend is net of the rating factors and, for buildings, of weather. In the backtest it improves all three lines: buildings 0.1110 against 0.1094 without it, contents 0.0968 against 0.0960, motor 0.0806 against 0.0796. In the earlier A15 run the motor trend over-predicted 2024; the owner chose to keep it then.
 
 ### 4.6 Claim history: credibility (D-14)
 
@@ -209,15 +216,15 @@ A copula would change the spread of combined losses, which matters for capital o
   - **Architecture**, fixed in advance and not tuned: hidden layers of 128, 64 and 32 units, SiLU activation, 10% dropout.
   - **Training:** Tweedie loss with p = 1.5, Adam at learning rate 0.001, batches of 16,384 rows, gradients clipped at norm 1. Training stops early on a random 10% of the fitting rows, with a patience of 4 epochs.
 - **Ensemble:** 20 networks that differ only in their random seed. The correction is their mean log output (the "nagging" predictor of Richman and Wüthrich), rebalanced so the fitting rows keep the incumbent's total.
-- **Adoption** under the two-year rule, per line:
+- **Adoption:** under the two-year rule and, as a discretionary addition, only if the two-year mean gain is significant (D-23):
 
-  | Line | 2023 without / with | 2024 without / with | Adopted |
-  |---|---|---|---|
-  | Buildings | 0.11170 / 0.11175 | 0.11090 / 0.11095 | Yes |
-  | Contents | 0.09438 / 0.09444 | 0.09645 / 0.09650 | Yes |
-  | Motor | 0.10097 / 0.10078 | 0.08062 / 0.08128 | No |
+  | Line | 2023 without / with | 2024 without / with | Two-year mean gain (95% interval) | Adopted |
+  |---|---|---|---|---|
+  | Buildings | 0.11170 / 0.11175 | 0.11090 / 0.11095 | +0.00005 (+0.00002, +0.00009) | Yes |
+  | Contents (seasonal exposure) | 0.09538 / 0.09543 | 0.09677 / 0.09682 | +0.00005 (−0.00019, +0.00030) | No |
+  | Motor | 0.10097 / 0.10078 | 0.08062 / 0.08128 | +0.00024 (−0.00023, +0.00071) | No (fails 2023) |
 
-- **How much it matters:** very little. The adopted gains are +0.00005 a year. The bootstrap finds only buildings 2023 significant. CANN also raises contents' 2024 prediction by 0.3%. Motor's swing between years (−0.0002, +0.0007) is larger than any adopted gain. An earlier probe trained the seeds one after another rather than in one batch, and it passed for motor (+0.00015 and +0.00054). The motor effect is at the level of seed noise.
+- **How much it matters:** very little. The buildings gain is +0.00005 a year. Contents' identical-looking gain was dropped because its interval is about seven times wider. When it was adopted (A20), CANN had also raised contents' 2024 prediction by 0.3%. Motor's swing between years (−0.0002, +0.0007) is larger than any adopted gain. An earlier probe trained the seeds one after another rather than in one batch, and it passed for motor (+0.00015 and +0.00054). The motor effect is at the level of seed noise.
 - **Engineering:**
   - The networks train on the Apple GPU (PyTorch, MPS backend). All 20 seeds train at once as one batched network, with weights stacked along a seed axis. Each seed keeps its own initialisation, batch order, gradient clipping and early stopping. During training GPU utilisation is about 96%, and one 20-seed fit on 900,000 rows takes roughly 10–60 seconds, depending on when early stopping ends it.
   - PyTorch runs in a separate worker process (`python/cann_torch.py`), which is started as a plain subprocess. PyTorch and XGBoost each load their own OpenMP runtime on macOS, and the two crash or deadlock in one process (A20).
@@ -226,7 +233,7 @@ A copula would change the spread of combined losses, which matters for capital o
 ### 4.9 Level and its uncertainty (D-21)
 
 - **Level factor:** the deviance-optimal scale k = Σ y μ^(1−p) / Σ μ^(2−p) is measured on each backtest year. This is not the ratio of totals, because the log link is not canonical for p = 1.5. A level factor is adopted only if each year's k improves the *other* year.
-  - k is 1.005 and 1.050 for buildings, 1.114 and 0.981 for contents, 1.022 and 0.973 for motor (2023 and 2024).
+  - k is 1.005 and 1.050 for buildings, 1.112 and 0.986 for contents, 1.022 and 0.973 for motor (2023 and 2024).
   - On every line, one year's k makes the other year worse, so no level factor is applied. Year-to-year level noise is larger than any stable bias.
 - **Uncertainty in the 2025 level** has three parts:
   - **Development:** 200 bootstrap resamples of the training rows, each re-running the whole development step (`python/level_uncertainty.py`). The coefficient of variation of the development factor for 2024 is 0.8% (buildings), 0.4% (contents) and 3.0% (motor); for 2023 it is 0.1%, 0.04% and 4.3%.
@@ -246,7 +253,7 @@ For each 2025 row:
 
 > prediction = [ small-claim model at 2025 × CANN correction + large-claim GLM × Pareto adjustment × trend to 2025 ] × claim-history factor × rebalancing constant × uncertainty tilt
 
-Contents has no large-claim term. The CANN correction applies to buildings and contents. The tilt applies to buildings (×1.0048).
+Contents has no large-claim term, and its exposure is seasonal. The CANN correction applies to buildings only. The tilt applies to buildings (×1.0048).
 
 ## 5. Validation
 
@@ -276,6 +283,7 @@ Contents has no large-claim term. The CANN correction applies to buildings and c
 | Correcting NCB to at most years licensed | Not fitted: the "impossible" rows carry signal | A17 |
 | Copula between buildings and contents | Not fitted: residual correlation −0.0025 | A16 |
 | CANN on motor | 2023 −0.0002, 2024 +0.0007 | A20 |
+| CANN on contents | +0.00005 a year, but the two-year interval includes zero (D-23) | A22 |
 | CANN on all claims, not just small ones (5 seeds, motor probe) | −0.0012 and +0.0008 | A20 |
 | Residual boosting on the GLM, isotonic recalibration, frequency boosting, credibility-encoded make and model, a GLM + XGBoost blend | Each failed the two-year rule in scratch probes; no evidence files kept | A20 |
 | A level factor from the other backtest year | Worse on the other year, every line | A20 |
@@ -293,8 +301,8 @@ Each kept component is compared with the chosen model without it, on the same ro
 |---|---|---|---|---|---|---|
 | Buildings | 2023 | **+0.00005** (0.00001, 0.00010) | **+0.0010** (0.0001, 0.0019) | +0.00005 (−0.0006, 0.0007) | +0.0014 (−0.0014, 0.0042) | **+0.0017** (0.0009, 0.0026) |
 | Buildings | 2024 | +0.00005 (−0.00000, 0.00011) | **+0.0017** (0.0007, 0.0029) | **+0.0016** (0.0005, 0.0027) | +0.0015 (−0.0010, 0.0038) | **+0.0010** (0.0001, 0.0019) |
-| Contents | 2023 | +0.00006 (−0.00002, 0.00013) | **+0.0016** (0.0003, 0.0032) | **+0.0001** (0.00006, 0.00018) | — | +0.0010 (−0.0004, 0.0026) |
-| Contents | 2024 | +0.00005 (−0.00042, 0.00056) | +0.0005 (−0.0011, 0.0020) | +0.0007 (−0.0005, 0.0020) | — | **+0.0019** (0.0003, 0.0039) |
+| Contents | 2023 | not adopted: +0.00006 (−0.00003, 0.00014) | **+0.0017** (0.0003, 0.0032) | **+0.0001** (0.00004, 0.00013) | — | +0.0010 (−0.0004, 0.0026) |
+| Contents | 2024 | not adopted: +0.00005 (−0.00042, 0.00056) | +0.0005 (−0.0010, 0.0020) | +0.0008 (−0.0003, 0.0021) | — | **+0.0019** (0.0003, 0.0039) |
 | Motor | 2023 | not adopted: −0.0002 (−0.0009, 0.0004) | +0.0010 (−0.0009, 0.0025) | +0.0041 (−0.0019, 0.0121) | −0.0011 (−0.0033, 0.0008) | **+0.0056** (0.0001, 0.0130) |
 | Motor | 2024 | not adopted: **+0.0007** (0.00003, 0.0014) | **+0.0030** (0.0018, 0.0044) | +0.0011 (−0.0013, 0.0040) | **+0.0049** (0.0016, 0.0084) | **+0.0020** (0.0007, 0.0034) |
 
@@ -307,15 +315,15 @@ The model was examined for what would make it wrong (section 8 lists what remain
 | Gap | What was tested | Result |
 |---|---|---|
 | Missed payments may partly record the period's outcome: its claimant gap is 1.3–2.2× larger for the same year's claims than for next year's | The previous row's value (known before the period), and dropping the feature | Both worse on every line; dropping is worse than lagging. The feature carries genuine signal. A leak can't be ruled out from the backtest, but it would be worth at most about 0.0004 on 2024. **Kept.** |
-| Gains near noise pass the two-year rule about a quarter of the time | Adoption only if the two-year mean gain is also significant | Would drop CANN for contents, the buildings split and the contents and motor trends. Suitable for discretionary additions such as CANN, not for structural components like the trend (proposed D-23). |
+| Gains near noise pass the two-year rule about a quarter of the time | Adoption only if the two-year mean gain is also significant | Would drop CANN for contents, the buildings split and the contents and motor trends. Suitable for discretionary additions such as CANN, not for structural components like the trend. **Adopted for CANN (D-23, A22): contents CANN dropped.** |
 | Frequency and severity move in opposite directions for several factors, so one Tweedie dispersion weights rows wrongly | A double GLM: the mean refitted with weights from a gamma GLM of its deviances | Contents +0.0009 / −0.0004, motor −0.0002 / −0.0001. **Fails.** |
-| Claims are seasonal (buildings 1.26–1.43 in December to February), but exposure counts every day the same | Exposure weighted by the month's relative frequency, estimated on the fitting years | **Contents passes: +0.0010 / +0.0003**, and its two-year mean (+0.00065, interval +0.00008 to +0.00123) is significant. Buildings and motor fail. Proposed D-22; not yet applied. |
+| Claims are seasonal (buildings 1.26–1.43 in December to February), but exposure counts every day the same | Exposure weighted by the month's relative frequency, estimated on the fitting years | **Contents passes: +0.0010 / +0.0003**, and its two-year mean (+0.00065, interval +0.00008 to +0.00123) is significant. Buildings and motor fail. **Adopted for contents (D-22, A22).** |
 
 ## 6. Submission
 
-- **File:** `work/submissions/submission_all_lines_glm_20261022.csv`, kept out of git (`work/` is ignored). It has 626,639 rows, with row_ids and order identical to `sample_submission.csv`, no nulls, and every prediction above zero (minimum 0.043). A zero would make the deviance infinite on any row with a claim.
-- **Mean prediction per row:** buildings 400.9, contents 104.0, motor 492.1.
-- **2025 cost per unit of exposure against developed 2024:** buildings 491.4 against 484.7, contents 129.9 against 120.0, motor 627.4 against 591.4.
+- **File:** `work/submissions/submission_all_lines_glm_20261022.csv`, kept out of git (`work/` is ignored). It has 626,639 rows, with row_ids and order identical to `sample_submission.csv`, no nulls, and every prediction above zero (minimum 0.049). A zero would make the deviance infinite on any row with a claim.
+- **Mean prediction per row:** buildings 400.9, contents 103.4, motor 492.1.
+- **2025 cost per unit of exposure against developed 2024:** buildings 491.4 against 484.7, contents 129.2 against 120.0, motor 627.4 against 591.4.
 
 ## 7. Decisions
 
@@ -341,6 +349,8 @@ The model was examined for what would make it wrong (section 8 lists what remain
 | D-19 | De-duplicate claims; pad motor customer IDs | Applied |
 | D-20 | CANN correction per line, adopted under the two-year rule (buildings, contents) | Owner asked for it (implementation 1) |
 | D-21 | Level factor and uncertainty tilt, each under the two-year rule (tilt kept for buildings only) | Owner asked for it (implementation 3) |
+| D-22 | Seasonal exposure for contents | Adopted by the owner (A22) |
+| D-23 | Significance required for discretionary additions such as CANN (contents CANN dropped) | Adopted by the owner (A22) |
 
 D-08 records the XGBoost feature set used in A13 only. No decision is formally signed off.
 
@@ -356,8 +366,8 @@ D-08 records the XGBoost feature set used in A13 only. No decision is formally s
 3. **Trends rest on four years.** Year-to-year noise around the fitted trend is 3.7% (contents) to 8.4% (motor); see section 4.9.
    - The 90% range for the 2025 level runs from −15% to +17% (buildings), −9% to +10% (contents) and −20% to +26% (motor), before any allowance for development method error.
 4. **Selection on the same years.** 2023 and 2024 have informed many choices, so the backtest gains are somewhat optimistic. The leaderboard is the independent check, but it should confirm choices, not drive them.
-5. **Seasonality** is not in the submitted model. Weighting contents exposure by month passes the two-year rule (+0.0010 / +0.0003) and awaits a decision (D-22).
-6. **Small gains near the noise.** CANN's +0.00005 for buildings and contents is not significant in three of four tests. Under the two-year rule, a change with no real effect passes roughly a quarter of the time (if the two years behave independently), so significance is reported alongside it (section 5.4).
+5. **Seasonality** is modelled for contents only. Buildings has the stronger winter peak, but seasonal exposure made it worse on both years (A21). The reason is not established.
+6. **Small gains near the noise.** Buildings' CANN gain of +0.00005 is significant over two years but negligible in size. Under the two-year rule, a change with no real effect passes roughly a quarter of the time (if the two years behave independently), so significance is reported alongside it (section 5.4).
 7. **Implementation coverage.** The new models are implemented in Python only. GLM A, the contents benchmark, has an independent R implementation that reconciles (100 checks, 0 failed).
 8. **Synthetic data.** It has no shared events between buildings and contents. A real portfolio would, and the independence assumption would need revisiting for Week 2.
 9. **Data in a public repository** (section 2.2, issue 17) is unresolved.

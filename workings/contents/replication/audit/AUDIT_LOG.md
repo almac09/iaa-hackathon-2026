@@ -455,3 +455,35 @@
     - **Buildings:** −0.0005 / −0.0004 with baseline trees, so it fails despite the strongest seasonality. A possible reason, not tested: the winter peak comes from year-specific weather that the annual weather features already carry, and frequency weights do not match cost seasonality.
     - **Motor:** +0.0002 / −0.0007 (2024 significantly worse). It fails.
 - **Status:** analysis. Nothing is changed in the model. The one candidate is seasonal exposure for contents, which needs the owner's decision, a full run and a new submission. Proposed decision: D-22.
+
+### A22 — Seasonal exposure for contents (D-22) and significance for CANN (D-23)
+- **When / who:** 2026-10-22, Claude, at the owner's instruction to adopt D-22 and D-23, run the full pipeline and regenerate the submission.
+- **D-22 in the runner:** `Line.use_window()` sets each row's exposure to its days by month (from `line_rows`) weighted by the month's claim frequency relative to the year. The weights come from the window's fitting years only:
+  - tuning: 2021–22;
+  - backtest: 2021–23;
+  - final: 2021–24.
+
+  The fitting years keep their total exposure, which is asserted in code. Reported rates use the plain exposure, kept as `exposure_plain`. The expected claims behind the credibility factor (sql/13) still use plain exposure, as in the A21 test.
+  - **Weights:** for the backtest windows they are identical to A21's. The final (2021–24) weights are January 1.108, February 1.127, December 1.066 and March to November 0.943–1.002 (`ev_g14_seasonal_exposure_weights.csv`).
+  - **Switch:** `glm_lines.models.contents.seasonal_exposure`.
+- **D-23 in the runner:** CANN is adopted only if it passes the two-year rule *and* its two-year mean gain has a 95% interval above zero. The yearly paired bootstraps now run inside the CANN step (`ev_g7` gains their intervals). Switch: `glm_lines.cann.require_significance`.
+
+  | Line | Two-year mean gain (95% interval) | Outcome |
+  |---|---|---|
+  | Buildings | +0.00005 (+0.00002, +0.00009) | Adopted |
+  | Contents | +0.00005 (−0.00019, +0.00030) | Not adopted |
+  | Motor | +0.00024 (−0.00023, +0.00071) | Not adopted (fails 2023) |
+
+- **Contents results:** the D² baseline (without CANN) moves from 0.09438 to 0.09538 on 2023 and from 0.09645 to 0.09677 on 2024, exactly the A21 gap test.
+  - The chosen model scores 0.0968 on the 2024 backtest (0.0965 in A20).
+  - Predicted / actual on 2024 is 1.039 (was 1.047).
+  - The uncertainty tilt still fails for contents. The trend is 4.2% a year.
+- **Unchanged:** buildings and motor give the same D², settings and 2025 rates as A20. The only difference in their evidence is buildings' largest prediction, at the ninth significant figure (10,970.508372 against 10,970.508369): floating-point noise from the GPU.
+- **2025 rates:** buildings 491.4, contents 129.2 (was 129.9; 90% range 117–142), motor 627.4.
+- **Submission:** `work/submissions/submission_all_lines_glm_20261022.csv` has 626,639 rows in sample order, no nulls and a minimum of 0.049. Mean prediction: buildings 400.9, contents 103.4 (was 104.0), motor 492.1.
+- **Code also changed:**
+  - `prepare()` is shared with `gap_tests.py`; this run is its first full use in production.
+  - `significance.two_year_interval()` is shared by the runner and the gap tests.
+  - An empty calendar month no longer turns the seasonal weights into NaN; a unit test found this.
+- **Checks:** 41 tests pass, including seasonal exposure keeping the fitting total, weighting winter rows up and leaving other lines untouched. Ruff passes.
+- **Status:** applied. D-22 and D-23 were adopted by the owner in session; formal sign-off is outstanding.
