@@ -1,6 +1,6 @@
 line,score_year,d2_without_cann,d2_with_cann,ci_low_95,ci_high_95,passes_two_year_rule,two_year_mean,two_year_ci_low_95,two_year_ci_high_95,adopted
-buildings,2023,0.111702,0.111755,1.3e-05,9.6e-05,True,5.3e-05,1.8e-05,8.9e-05,True
-buildings,2024,0.110897,0.110952,-1e-06,0.000114,True,5.3e-05,1.8e-05,8.9e-05,True
+buildings,2023,0.111024,0.111165,2.4e-05,0.00026,True,0.000194,5.4e-05,0.000335,True
+buildings,2024,0.110464,0.110713,1.4e-05,0.000522,True,0.000194,5.4e-05,0.000335,True
 contents,2023,0.095378,0.095433,-2.6e-05,0.000138,True,5.4e-05,-0.000194,0.000302,False
 contents,2024,0.096767,0.09682,-0.000418,0.000561,True,5.4e-05,-0.000194,0.000302,False
 motor,2023,0.10097,0.100784,-0.000939,0.000396,False,0.00024,-0.000229,0.00071,False

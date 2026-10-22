@@ -182,7 +182,7 @@
     "expected_sql": "sql/13_history_expected.sql",
     "credibility_k_grid": [0.5, 1, 2, 4, 8, 16, 32, 64],
     "freq_alpha": 0.001,
-    "out_file": "work/submissions/submission_all_lines_glm_{date}.csv",
+    "out_file": "work/submissions/submission_combined_v1_{date}.csv",
     "alpha_grid": [0.00001, 0.0001, 0.001],
     "excess_alpha": 0.001,
     "thresholds": [25000, 50000, 100000],
