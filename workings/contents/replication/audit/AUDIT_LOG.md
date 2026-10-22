@@ -516,3 +516,36 @@
 - **Not raised:** the competition data in the public repository (A02, A18). A public issue would draw attention to the possible breach, so it is left to the team.
 - **Documentation:** a risk register (section 8.1) maps each risk to its issue.
 - **Status:** done.
+
+### A24 — Combining the best techniques from every branch
+- **When / who:** 2026-10-22, Claude, at the owner's instruction to look through all the branches, combine the best ideas into a new model and run it. The plan was signed off as written.
+- **Review** (two read-only agents, plus a check of each claim used):
+  - Alan's `main`: GLM/XGBoost blends and chain-ladder development (Benktander selected).
+  - Bridget's `hackathon-bridget`: GLM per line scaled to the 2024 level, GLM/XGBoost blend, XGBoost tuning harness.
+  - Cian's `data-cian`: 2025 benchmark per line and the data contract.
+  - The team's issues.
+- **Recorded leaderboard scores**, all Bridget's: v008 −0.12546 (trained on renewed policies only), v009 +0.00101, v013 0.10829, v014 0.10916. The leader then was 0.12996. No score is recorded for any of this pack's files.
+- **Data fix found (D-24):** buildings `construction_type` `T` appears only in 2021–22 and `W` only from 2023, about 22,000 rows a year each. Every 2025 test row is `W`.
+  - Merged as `timber` in sql/09, raw value kept; switch `D24_merge_timber`.
+  - A scan of all 31 text fields on the three lines found no other year-specific level.
+  - Source: the data workstream's mapping (#54).
+- **Tests** (`python/combined_tests.py`, `ev_c1_combined_tests.csv`, `ev_c2_blend_weight_grid.csv`). Baseline: the production model without CANN. Blend weights chosen on one year and scored on the other. Results as D² change on 2023 / 2024:
+  - **Timber merge:** −0.0007 / −0.0004, not significant. Re-tuning took buildings from 144 to 131 trees. Applied as a data correction, as the plan set out.
+  - **GLM + XGBoost blend:** best weights on the alternative were 0.0 / 0.2 (buildings), 0.0 / 0.0 (contents) and 0.0 / 0.2 (motor). Crosswise scoring: buildings −0.0004 / 0.0000, contents 0.0000 / 0.0000, motor −0.0020 / 0.0000. Fails everywhere.
+  - **XGBoost with the harness's best settings** (depth 4, min_child_weight 10, colsample 0.7, lambda 3, 500 trees), on its own: contents −0.089 / −0.036, motor −0.039 / −0.012. Early stopping on 2023 would have kept only 55 and 99 trees.
+    - A first run used those early-stopped counts (contents −0.018 / −0.015, motor −0.020 / −0.011). It was repeated with Bridget's fixed 500 trees to give her settings a fair test.
+  - **Smoothed GLM for buildings small claims:** −0.0071 / −0.0041.
+  - **Frequency × severity GLM** (Poisson × gamma, each with its own trend): contents −0.0006 / −0.0009, motor −0.0010 / +0.0007. Fails.
+    - The first attempt crashed on motor rows whose claims cost nothing. Such claims are now left out of the count, consistently in both parts.
+- **Why the other branches rated these higher:** random customer folds over all four years, and blend weights chosen on the scored year, both reward fitting year-specific noise.
+- **Cross-check:** this pack's 2024 development factors (1.079 / 1.027 / 1.303) agree with the Benktander factors on `main` (1.081 / 1.037 / 1.293).
+- **Combined model:** the A22 model plus D-24.
+  - **Buildings:** CANN now gains +0.00014 / +0.00025, significant both years (two-year mean +0.00019, interval +0.00005 to +0.00034). The chosen model scores 0.11116 / 0.11071 against 0.11175 / 0.11095 before the merge. 131 trees, trend +5.9% a year, tilt ×1.0042.
+  - **Contents and motor:** contents changes only through the cross-line history; motor is identical.
+  - **2025 rates (90% range):** buildings 492.3 (423–573), contents 129.2 (117–142), motor 627.4 (500–788).
+- **Submission:** `work/submissions/submission_combined_v1_20261022.csv`. It has 626,639 rows in sample order, no nulls and a minimum of 0.049. Buildings correlates 0.9989 with the A22 file.
+  - **Leaderboard A/B file:** `submission_combined_v1_20261022_motor_at_v014_level.csv`, identical except that motor is ×0.8635 to v014's mean of 424.91 (`python/level_variant.py`, logged).
+  - **Earlier output files** were renamed by the owner and are untouched.
+- **Issues:** #148 (timber), #149 (team techniques), #150 (combined run) closed; #151 (motor leaderboard A/B) open.
+- **Checks:** 43 tests pass, including the timber merge with its switch on and off and the level variant; ruff passes.
+- **Status:** D-24 applied; the motor level is open (#151).
