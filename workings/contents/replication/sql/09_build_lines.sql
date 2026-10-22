@@ -23,7 +23,10 @@ SELECT * EXCLUDE (exposure, sum_insured, construction_type),
        CASE WHEN getvariable('d02_rescale_sum_insured') AND sum_insured >= getvariable('bld_si_threshold')
             THEN sum_insured / getvariable('si_divisor') ELSE sum_insured END AS sum_insured,
        construction_type AS construction_type_raw,
-       lower(trim(construction_type)) AS construction_type
+       -- D-24 (A24): timber is coded T in 2021-22 and W from 2023 (every 2025 row is W), a recode rather than a
+       -- different risk; left apart, the code stands in for the later years.
+       CASE WHEN getvariable('d24_merge_timber') AND lower(trim(construction_type)) IN ('t', 'w') THEN 'timber'
+            ELSE lower(trim(construction_type)) END AS construction_type
 FROM stacked;
 
 -- Motor customer_id is stored without leading zeros on 10% of rows (98,110 training rows; A18), so they found no
@@ -62,10 +65,11 @@ SELECT 'buildings' AS line, src,
        count(*) FILTER (WHERE abs(exposure_raw - exposure) > 0.0005) AS n_exposure_changed,
        count(*) FILTER (WHERE sum_insured_raw <> sum_insured) AS n_sum_insured_rescaled,
        max(sum_insured) AS max_sum_insured_after,
-       count(*) FILTER (WHERE construction_type_raw <> construction_type) AS n_construction_type_recased
+       count(*) FILTER (WHERE construction_type_raw <> construction_type) AS n_construction_type_recased,
+       count(*) FILTER (WHERE construction_type = 'timber') AS n_timber_merged
 FROM buildings_rows GROUP BY ALL
 UNION ALL
-SELECT 'motor', src, count(*) FILTER (WHERE abs(exposure_raw - exposure) > 0.0005), 0, NULL, 0
+SELECT 'motor', src, count(*) FILTER (WHERE abs(exposure_raw - exposure) > 0.0005), 0, NULL, 0, 0
 FROM motor_rows GROUP BY ALL;
 
 CREATE OR REPLACE TABLE ev_09_motor_customer_padding AS

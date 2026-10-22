@@ -81,6 +81,18 @@ def test_buildings_sum_insured_threshold_and_casing(cfg):
     assert b.loc["B1", "construction_type_raw"] == "BRICK "
 
 
+def test_timber_codes_t_and_w_merged_and_switchable(cfg):
+    # D-24: T (2021-22) and W (2023 onwards) are the same timber category recoded.
+    con = duckdb.connect()
+    con.register("rows_df", pd.DataFrame({"construction_type": ["T", " w", "Brick"]}))
+    sql = SQL[0][SQL[0].index("CASE WHEN getvariable('d24_merge_timber')"):SQL[0].index("AS construction_type\nFROM")]
+    for apply, expected in ((True, ["timber", "timber", "brick"]), (False, ["t", "w", "brick"])):
+        on = copy.deepcopy(cfg)
+        on["decisions"]["D24_merge_timber"]["apply"] = apply
+        common.set_sql_variables(con, on)
+        assert con.execute(f"SELECT {sql} FROM rows_df").df().iloc[:, 0].tolist() == expected
+
+
 def test_motor_customer_id_padded_to_customers_format(cfg):
     m = build(cfg).execute("SELECT * FROM motor_rows").df()
     assert set(m.customer_id) == {"00004521"} and set(m.customer_id_raw) == {"4521"}
