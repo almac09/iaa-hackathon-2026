@@ -177,7 +177,7 @@
     "bootstrap": {"n": 1000, "seed": 2025, "cluster": "customer_id"},
     "level": {
       "_about": "A20. Deviance-optimal level factor per line, adopted only if each year's factor improves the other year; then the uncertainty premium exp(sigma^2/2).",
-      "uncertainty_evidence": "audit/evidence/glm_lines/ev_u1_development_bootstrap.csv",
+      "uncertainty_evidence": "audit/evidence/glm_lines/ev_u1_development_bootstrap.csv", "mack_evidence": "audit/evidence/glm_lines/ev_u2_mack_development.csv", "include_mack": true,
       "n_boot": 200, "seed": 77, "workers": 14, "z90": 1.645
     },
     "expected_sql": "sql/13_history_expected.sql",

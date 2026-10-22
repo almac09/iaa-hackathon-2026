@@ -406,7 +406,12 @@ def run_line(line: Line) -> dict:
     resid = np.log(by_year.y / by_year.mu)
     sigma_year = float(np.sqrt((resid ** 2).sum() / (len(resid) - 2)))
     dev = line.cfg["_dev_uncertainty"]
-    cv = {ay: float(dev[(dev.line == line.name) & (dev.ay == ay)].cv.iloc[0]) for ay in (2023, 2024)}
+    cv_boot = {ay: float(dev[(dev.line == line.name) & (dev.ay == ay)].cv.iloc[0]) for ay in (2023, 2024)}
+    cv = dict(cv_boot)
+    if line.cfg["glm_lines"]["level"].get("include_mack"):  # A25: the larger of the bootstrap and Mack's error
+        mk = line.cfg["_mack"]
+        cv_mack = {ay: float(mk[(mk.line == line.name) & (mk.ay == ay)].mack_cv_of_ultimate.iloc[0]) for ay in (2023, 2024)}
+        cv = {ay: max(cv_boot[ay], cv_mack[ay]) for ay in cv}
     # The OLS projection from 2021-24 to 2025 weights 2024 by 1.0 and 2023 by 0.5; the projection's own variance plus
     # a new year's noise is 2.5 sigma^2.
     sigma2 = cv[2024] ** 2 + 0.25 * cv[2023] ** 2 + 2.5 * sigma_year ** 2
@@ -414,6 +419,7 @@ def run_line(line: Line) -> dict:
     # The tilt is a change of level like any other, so it faces the two-year rule: kept only if it improves D2 on
     # both backtest years (on top of any level factor).
     unc = {"line": line.name, "dev_cv_2024": cv[2024], "dev_cv_2023": cv[2023],
+           "bootstrap_cv_2024": cv_boot[2024], "bootstrap_cv_2023": cv_boot[2023],
            "year_residuals": "; ".join(f"{y}: {r:+.4f}" for y, r in resid.items()),
            "sigma_year": sigma_year, "sigma_level_2025": float(np.sqrt(sigma2)), "tilt_computed": tilt_raw}
     for w in EVAL_WINDOWS:
@@ -507,6 +513,10 @@ def prepare(con, cfg: dict, rec: dict, out_dir: Path | None = None) -> tuple[dic
                                 "run python/level_uncertainty.py first.")
     rec["dev_uncertainty_sha256"] = common.sha256_file(dev_path)
     cfg["_dev_uncertainty"] = pd.read_csv(dev_path)
+    if gl["level"].get("include_mack"):
+        mack_path = common.PACK_ROOT / gl["level"]["mack_evidence"]
+        rec["mack_sha256"] = common.sha256_file(mack_path)
+        cfg["_mack"] = pd.read_csv(mack_path)
     lines = {}
     for name in gl["models"]:
         table = cfg["lines"]["models"][name]["table"]
