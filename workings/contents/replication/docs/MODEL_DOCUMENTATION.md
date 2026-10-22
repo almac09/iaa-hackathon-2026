@@ -1,11 +1,11 @@
 # Home and motor claims cost model: technical documentation
 
-IAA AI-Assisted Hackathon 2026, Part 1. This documents the model behind `work/submissions/submission_all_lines_glm_20261022.csv`, every data issue we found and how it was resolved, and how the model was validated. It reflects the pack as of audit entry A20 (22 October 2026).
+IAA AI-Assisted Hackathon 2026, Part 1. This documents the model behind `work/submissions/submission_all_lines_glm_20261022.csv`, every data issue we found and how it was resolved, and how the model was validated. It reflects the pack as of audit entry A21 (22 October 2026).
 
 - **Owner:** Gerard Murphy. **AI assistance:** Claude Code (Claude Opus 5.5).
 - **Code:** `workings/contents/replication`, branch `contents/gerard`. Every figure here comes from a logged run (`audit/run_log.jsonl`) and an evidence file under `audit/evidence/`.
-- **Decisions** are numbered D-01 to D-21 and are recorded in `audit/DECISIONS.md`. Their switches are in `config.json`. None is formally signed off yet.
-- **Audit entries** A01 to A20 are in `audit/AUDIT_LOG.md`. This document summarises them; the log has the full detail.
+- **Decisions** are numbered D-01 to D-23 and are recorded in `audit/DECISIONS.md`. Their switches are in `config.json`. None is formally signed off yet.
+- **Audit entries** A01 to A21 are in `audit/AUDIT_LOG.md`. This document summarises them; the log has the full detail.
 
 ## 1. Summary
 
@@ -280,6 +280,10 @@ Contents has no large-claim term. The CANN correction applies to buildings and c
 | Residual boosting on the GLM, isotonic recalibration, frequency boosting, credibility-encoded make and model, a GLM + XGBoost blend | Each failed the two-year rule in scratch probes; no evidence files kept | A20 |
 | A level factor from the other backtest year | Worse on the other year, every line | A20 |
 | Uncertainty tilt for contents and motor | Worse on 2024 | A20 |
+| Missed payments from the previous row (a guard against a same-year leak) | Contents −0.0014 / +0.0000, motor −0.0003 / −0.0003, buildings −0.0004 / −0.0003 | A21 |
+| Missed payments dropped | Worse on both years for contents and motor; buildings −0.0011 / −0.0004 | A21 |
+| Double GLM (dispersion modelled) | Contents +0.0009 / −0.0004, motor −0.0002 / −0.0001 | A21 |
+| Seasonal exposure for buildings and motor | Buildings −0.0005 / −0.0004, motor +0.0002 / −0.0007 | A21 |
 
 ### 5.4 Significance: paired customer bootstrap (A20)
 
@@ -295,6 +299,17 @@ Each kept component is compared with the chosen model without it, on the same ro
 | Motor | 2024 | not adopted: **+0.0007** (0.00003, 0.0014) | **+0.0030** (0.0018, 0.0044) | +0.0011 (−0.0013, 0.0040) | **+0.0049** (0.0016, 0.0084) | **+0.0020** (0.0007, 0.0034) |
 
 Reading: claim history and the A17 changes (smoothing, the motor factors) are real on most line-years. The trend and the large-claim split are mostly real but noisy, because single large claims dominate the interval. CANN is at the edge of detection: for motor it is significantly better on 2024 and (not significantly) worse on 2023, which is why the two-year rule rejects it. Motor's split loses on 2023 (the year of the 11.9m claim) and wins clearly on 2024. Source: `audit/evidence/glm_lines/ev_g8_bootstrap_significance.csv`.
+
+### 5.5 Inverting the model: four gaps tested (A21)
+
+The model was examined for what would make it wrong (section 8 lists what remains). Four gaps were not covered, and each was tested under the two-year rule against the chosen model without CANN (`python/gap_tests.py`, `ev_g11`–`ev_g13`):
+
+| Gap | What was tested | Result |
+|---|---|---|
+| Missed payments may partly record the period's outcome: its claimant gap is 1.3–2.2× larger for the same year's claims than for next year's | The previous row's value (known before the period), and dropping the feature | Both worse on every line; dropping is worse than lagging. The feature carries genuine signal. A leak can't be ruled out from the backtest, but it would be worth at most about 0.0004 on 2024. **Kept.** |
+| Gains near noise pass the two-year rule about a quarter of the time | Adoption only if the two-year mean gain is also significant | Would drop CANN for contents, the buildings split and the contents and motor trends. Suitable for discretionary additions such as CANN, not for structural components like the trend (proposed D-23). |
+| Frequency and severity move in opposite directions for several factors, so one Tweedie dispersion weights rows wrongly | A double GLM: the mean refitted with weights from a gamma GLM of its deviances | Contents +0.0009 / −0.0004, motor −0.0002 / −0.0001. **Fails.** |
+| Claims are seasonal (buildings 1.26–1.43 in December to February), but exposure counts every day the same | Exposure weighted by the month's relative frequency, estimated on the fitting years | **Contents passes: +0.0010 / +0.0003**, and its two-year mean (+0.00065, interval +0.00008 to +0.00123) is significant. Buildings and motor fail. Proposed D-22; not yet applied. |
 
 ## 6. Submission
 
@@ -341,10 +356,11 @@ D-08 records the XGBoost feature set used in A13 only. No decision is formally s
 3. **Trends rest on four years.** Year-to-year noise around the fitted trend is 3.7% (contents) to 8.4% (motor); see section 4.9.
    - The 90% range for the 2025 level runs from −15% to +17% (buildings), −9% to +10% (contents) and −20% to +26% (motor), before any allowance for development method error.
 4. **Selection on the same years.** 2023 and 2024 have informed many choices, so the backtest gains are somewhat optimistic. The leaderboard is the independent check, but it should confirm choices, not drive them.
-5. **Small gains near the noise.** CANN's +0.00005 for buildings and contents is not significant in three of four tests. Under the two-year rule, a change with no real effect passes roughly a quarter of the time (if the two years behave independently), so significance is reported alongside it (section 5.4).
-6. **Implementation coverage.** The new models are implemented in Python only. GLM A, the contents benchmark, has an independent R implementation that reconciles (100 checks, 0 failed).
-7. **Synthetic data.** It has no shared events between buildings and contents. A real portfolio would, and the independence assumption would need revisiting for Week 2.
-8. **Data in a public repository** (section 2.2, issue 17) is unresolved.
+5. **Seasonality** is not in the submitted model. Weighting contents exposure by month passes the two-year rule (+0.0010 / +0.0003) and awaits a decision (D-22).
+6. **Small gains near the noise.** CANN's +0.00005 for buildings and contents is not significant in three of four tests. Under the two-year rule, a change with no real effect passes roughly a quarter of the time (if the two years behave independently), so significance is reported alongside it (section 5.4).
+7. **Implementation coverage.** The new models are implemented in Python only. GLM A, the contents benchmark, has an independent R implementation that reconciles (100 checks, 0 failed).
+8. **Synthetic data.** It has no shared events between buildings and contents. A real portfolio would, and the independence assumption would need revisiting for Week 2.
+9. **Data in a public repository** (section 2.2, issue 17) is unresolved.
 
 ## 9. How to reproduce
 
@@ -377,9 +393,10 @@ python -m pytest -q tests
 
 - `level_uncertainty.py` must run first: it writes the development bootstrap (`ev_u1`) that `run_glm_lines.py` reads. It takes about a minute on 14 processes.
 - `run_glm_lines.py` needs `work/sample_submission.csv`, the competition's sample file. It takes about 20 minutes on an M3 Max and writes the submission and the `audit/evidence/glm_lines/` tables. The CANN networks use the Apple GPU when PyTorch finds it (MPS) and fall back to the CPU otherwise, which is much slower.
+- `python python/gap_tests.py` (optional, about 10 minutes) repeats the A21 gap tests; it reads `ev_g6` and `ev_g8` from the last full run.
 - PyTorch runs only in its own worker process (`python/cann_torch.py`). Do not import torch in any process that uses XGBoost (A20).
 - Each run appends a record to `audit/run_log.jsonl`: input, SQL and code hashes, decision switches, package versions and headline metrics.
-- **Expected results:** reconciliation ends with `0 failed`; the 2024 backtest matches section 1; 38 tests pass.
+- **Expected results:** reconciliation ends with `0 failed`; the 2024 backtest matches section 1; 39 tests pass.
 
 ## 10. Where to find things
 
@@ -389,6 +406,7 @@ python -m pytest -q tests
 | Current model | `python/run_glm_lines.py`, `python/glm_lines.py` |
 | CANN correction | `python/cann.py` (client), `python/cann_torch.py` (GPU worker) |
 | Significance and level uncertainty | `python/significance.py`, `python/level_uncertainty.py` |
+| Gap tests from inverting the model | `python/gap_tests.py` |
 | Earlier XGBoost runs | `python/run_xgb.py` (A13), `python/run_lines.py` (A15) |
 | Development backtest | `python/backtest_development.py` |
 | Parameters and decision switches | `config.json` |

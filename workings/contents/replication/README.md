@@ -28,6 +28,7 @@ IAA AI-Assisted Hackathon 2026, Part 1. This pack reproduces every step of the h
 | Split models: contents GLM, buildings XGBoost (depth 3) and motor GLM for small claims, large claims by GLM with a generalised Pareto tail, claim history as a credibility factor, buildings–contents correlation check, combined 2025 submission | A16 | `sql/12`–`13`, `python/run_glm_lines.py` |
 | Backtest of the development method as at 2023-12-31 (chain ladder against Bornhuetter–Ferguson) | A17 | `python/backtest_development.py` |
 | CANN neural correction per line on the Apple GPU, paired customer bootstrap of every component, level factor and 2025 level uncertainty | A20 | `python/cann.py`, `python/cann_torch.py`, `python/significance.py`, `python/level_uncertainty.py`, `python/run_glm_lines.py` |
+| Gap tests from inverting the model: missed-payments leak, adoption by significance, dispersion (double GLM), seasonal exposure | A21 | `python/gap_tests.py` |
 
 **How the three languages fit together.** The SQL is the single source of truth for data preparation. Python and R both run the same SQL files through DuckDB, so their cleaned data is identical by construction (the reconciliation checks this byte for byte). The modelling is written twice, independently: Python uses scikit-learn's Newton solver and R uses its own penalised IRLS written in base R. Both use the same objective, so the results should agree to within the tolerances set in `config.json`.
 

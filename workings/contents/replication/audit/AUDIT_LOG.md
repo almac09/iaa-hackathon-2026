@@ -414,3 +414,44 @@
 - **Submission:** `work/submissions/submission_all_lines_glm_20261022.csv` has 626,639 rows in sample order, no nulls and a minimum of 0.043. Mean prediction: buildings 400.9, contents 104.0, motor 492.1.
 - **Checks:** 38 tests pass; ruff passes with the project settings.
 - **Status:** analysis. D-20 and D-21 await sign-off. Recommendation: given the significance results, the owner may prefer to drop CANN for buildings and contents. The model would be simpler and score within 0.0001 of the current one.
+
+### A21 — Inverting the model: what would make it wrong, and four gaps tested
+- **When / who:** 2026-10-22, Claude. The owner asked what would make the model bad or less accurate, then asked for the open gaps to be tested under the two-year rule.
+- **Checks on the data (ad hoc DuckDB queries, no evidence files):**
+  - **Train and test rows are built the same way.** By start month, the 2024 training and 2025 test rows match in count and mean length (for example, motor January starts: 204,567 against 205,065 rows, 318 days each).
+    - An apparent difference in the quarterly exposure mix was an artefact of sampling in the query.
+    - 2024 rows end on 30 December because periods are 365 days and 2024 is a leap year. No policy covers 31 December 2024 and no claim is dated then, so nothing is lost.
+  - **Leak scan.** For every numeric feature: the gap between claimants and others, and the shift from 2024 to 2025. A pure outcome leak shifts the test mean by −(claim share × gap).
+    - Customer service contacts matches exactly (ratio 1.02–1.11 on all lines), which confirms D-04.
+    - `missed_payments_12m` gives 0.5–1.3, but its shifts are within noise.
+    - Same-year against next-year claims: the missed-payments gap is 1.3–2.2× larger for the same year on every line. For contacts it is 40× larger. For voluntary excess and telematics the two are equal; NCB is driven by the previous year, as it should be.
+  - **Frequency and severity move in opposite directions** for several factors. For example, motor third-party-only cover has 0.55× the frequency and 1.75–2.6× the severity; contents accidental damage has 1.37× and 0.80×.
+  - **Seasonality.** Claim frequency by month, relative to the year:
+    - Buildings: 1.26–1.43 in December to February, 0.82–0.92 the rest of the year.
+    - Contents: 1.09–1.16 in December to February.
+    - Motor: 0.96–1.06, rising towards the year end.
+  - **Premium index.** Like-for-like renewal premium rises by the same amount every year: buildings +6.5%, contents +5.8%, motor +3.2%. That suggests a fixed premium index in the generator. It mixes in risk ageing, so it is not used as evidence of claims inflation.
+  - **Scoring.** The rules define the D² baseline as a constant *rate*; the pack uses a constant mean. Model comparisons are unaffected, but the pack's D² will not match the leaderboard. The leaderboard probably pools all three lines.
+- **Gap tests** (`python/gap_tests.py`, `ev_g11_gap_tests.csv`; three runs, the last two identical to five decimals):
+  - **Baseline:** the chosen model without CANN, with the last full run's tuned settings. It reproduces that run's D² exactly (buildings 0.11170 and 0.11090).
+  - **Method:** each variant changes one thing and is compared with a paired customer bootstrap. Buildings' tree count is re-tuned for each variant as in the full run, and also held at the baseline's 144, because re-tuning alone moved the tree count from 133 to 175.
+  - **G1, missed payments** (lagged = the previous row's value, known before the period; 71–72% of rows have one):
+
+    | Line | Lagged 2023 / 2024 | Dropped 2023 / 2024 |
+    |---|---|---|
+    | Buildings (baseline trees) | −0.0004 / −0.0003 | −0.0011 / −0.0004 |
+    | Contents | −0.0014 / +0.0000 | −0.0012 / −0.0008 |
+    | Motor | −0.0003 / −0.0003 | −0.0005 / −0.0002 |
+
+    All fail. Dropping loses more than lagging on every line, so the feature carries genuine signal. The backtest rows would carry any leak as well, so this cannot rule one out. But the most a leak could be adding is about the gap between the current and lagged value, at most 0.0004 on 2024. **Kept as is.**
+  - **G2, adoption by significance** (`ev_g12_significance_rule.csv`): a component is kept only if it passes the two-year rule *and* its two-year mean gain has a 95% interval above zero. The interval is approximated from the per-year intervals, treating the years as independent; they share customers, so it is if anything too narrow.
+    - **Would be dropped:** CANN for contents (−0.0002 to +0.0003), the buildings large-claim split (−0.0004 to +0.0033), and the trend for contents and motor.
+    - **Stays:** CANN for buildings (+0.00002 to +0.00009: tiny but consistent).
+    - **Also shown:** the motor large-claim split fails even the plain two-year rule (−0.0011 on 2023, the year of the 11.9m claim). It is kept under D-15.
+    - **Conclusion:** the rule suits discretionary statistical additions (CANN), not structural components with a prior rationale. Dropping the trend would price 2025 at the 2021–24 average.
+  - **G3, dispersion (double GLM):** contents +0.0009 / −0.0004, motor −0.0002 / −0.0001. Both fail. Reweighting rows by a fitted dispersion does not improve the mean at this volume of data.
+  - **G4, seasonal exposure** (days weighted by the month's relative frequency, estimated on the fitting years; fitting-year exposure totals are preserved exactly; `ev_g13_seasonal_weights.csv`):
+    - **Contents: +0.0010 (significant) / +0.0003. Passes** the two-year rule and the significance rule (two-year mean +0.00065, 95% interval +0.00008 to +0.00123).
+    - **Buildings:** −0.0005 / −0.0004 with baseline trees, so it fails despite the strongest seasonality. A possible reason, not tested: the winter peak comes from year-specific weather that the annual weather features already carry, and frequency weights do not match cost seasonality.
+    - **Motor:** +0.0002 / −0.0007 (2024 significantly worse). It fails.
+- **Status:** analysis. Nothing is changed in the model. The one candidate is seasonal exposure for contents, which needs the owner's decision, a full run and a new submission. Proposed decision: D-22.
