@@ -365,3 +365,52 @@
 - **When / who:** 2026-10-22, Claude, at the owner's instruction: post the issues on the public repo as closed, and push `contents/gerard` so their links work. The owner gave this instruction after being told that the repo is public and holds the competition data (A18).
 - **What:** 22 issues, #105–#121 and #123–#127, each created and closed as completed. They follow the team template (AI interaction log, tasks, notes), carry the team's labels and cross-reference the data workstream's issues (#51–#56, #59–#64, #66–#72, #83, #86–#87, #96, #100, #102, #104). #122 is not part of this set. `contents/gerard` was pushed (ef86154..abfed31); the push contained no data or submission files.
 - **Status:** done. The public-data question (A02, A18) remains open for the team.
+
+### A20 — CANN ensembles, bootstrap significance and the 2025 level under uncertainty
+- **When / who:** 2026-10-22, Claude, at the owner's instruction to implement three items under the two-year rule: (1) CANN ensembles per line, (2) significance by bootstrap and (3) the level set under uncertainty. The owner had earlier asked for full use of the M3 Max GPU.
+- **Probes before implementation (scratch, no evidence kept):** residual boosting on the GLM, isotonic recalibration, frequency boosting, credibility-encoded make and model, and a GLM + XGBoost blend each failed the two-year rule.
+  - A CANN on *all* motor claims with 5 seeds failed: −0.0012 on 2023, +0.0008 on 2024.
+  - A CANN on small claims with 20 seeds, trained one after another, passed for motor: +0.00015 and +0.00054.
+- **(1) CANN (D-20):** the incumbent small-claim model's log prediction is the offset, and a network with a zero-initialised output layer learns a log correction.
+  - **Network:** embeddings for categories; hidden layers 128/64/32 with SiLU and 10% dropout; Tweedie loss with p = 1.5; Adam at 0.001, batches of 16,384; early stopping on 10% of the rows with a patience of 4.
+  - **Ensemble:** 20 seeds, mean log correction, rebalanced to the incumbent's total on the fitting rows. The architecture was fixed in advance, not tuned.
+  - **Results (2023 / 2024 D², without → with):**
+
+    | Line | 2023 | 2024 | Outcome |
+    |---|---|---|---|
+    | Buildings | 0.11170 → 0.11175 | 0.11090 → 0.11095 | Adopted |
+    | Contents | 0.09438 → 0.09444 | 0.09645 → 0.09650 | Adopted |
+    | Motor | 0.10097 → 0.10078 | 0.08062 → 0.08128 | Rejected |
+
+    Evidence: `ev_g7_cann_two_year.csv`.
+  - **Adopted gains are at the edge of noise:** only buildings 2023 is significant (below). With the batched training the motor probe's result reversed, a sign that the motor effect is seed noise.
+- **Engineering, including two failures:**
+  - **OpenMP conflict.** PyTorch and XGBoost each load their own OpenMP runtime on macOS. With both in one process, XGBoost segfaulted, and the test run deadlocked depending on import order. Torch was moved into a separate worker process.
+  - **First worker design crashed.** It used a `multiprocessing` spawn pool, but a spawned child re-imports the calling script, so XGBoost's runtime was loaded beside torch's anyway. The worker segfaulted 4 s into the first fit (macOS crash report at 17:08:53). The pool replaced the dead worker and lost its task, so the run waited 78 minutes with no CPU use until it was stopped.
+  - **Fix.** `cann.py` now starts `cann_torch.py` as a plain subprocess and talks to it over a pipe. If the worker dies, the next call raises immediately. A regression test imports XGBoost in the caller and checks that the worker never loads it.
+  - **GPU.** All 20 seeds now train as one batched network, with weights stacked on a seed axis. Each seed keeps its own initialisation, batch order, per-seed gradient clipping and early stopping; a test checks that seeds cannot influence each other.
+    - GPU utilisation is about 96% during training. A synthetic 900,000-row, 20-seed benchmark ran at about 1.45 s per epoch.
+    - CANN takes about 6 of the full run's 20 minutes. The rest is SQL, GLM and XGBoost work on the CPU.
+  - **Reproducibility.** Two full runs gave identical D² to five decimals.
+- **(2) Significance:** a paired bootstrap that resamples whole customers (1,000 times) and compares D² of the chosen model with each variant on the same rows. Evidence: `ev_g8_bootstrap_significance.csv`.
+  - **Significant (95% interval above zero):**
+    - Claim history: buildings both years, contents 2023, motor 2024.
+    - A17 changes: buildings both years, contents 2024, motor both years.
+    - Trend: buildings 2024, contents 2023.
+    - Motor large-claim split: 2024.
+  - **Not significant:** CANN except buildings 2023; contents history on 2024; the trend on motor.
+  - Motor CANN is significantly better on 2024 (+0.0007, interval 0.00003 to 0.0014), but the two-year rule rejects it on 2023.
+- **(3) Level (D-21):**
+  - **Level factor.** The deviance-optimal scale k = Σyμ^(1−p) / Σμ^(2−p) on each backtest year was tested on the *other* year. k (2023 / 2024) is 1.005 / 1.050 (buildings), 1.114 / 0.981 (contents) and 1.022 / 0.973 (motor). It fails on every line, so no factor is applied (`ev_g9_level_factor.csv`).
+  - **Development uncertainty** (`python/level_uncertainty.py`, `ev_u1_development_bootstrap.csv`): 200 resamples of training rows, each re-running sql/10 in full, on 14 processes in 56 s. The CV of the development factor for 2024 / 2023 is 0.84% / 0.09% (buildings), 0.39% / 0.04% (contents) and 3.0% / 4.3% (motor). Motor 2024's factor is 1.303, with a 90% range of 1.238 to 1.369.
+  - **Level variance for 2025:** CV₂₀₂₄² + 0.25·CV₂₀₂₃² + 2.5·σ_year², with σ_year from the final model's log actual/expected by year on 2 degrees of freedom. σ is 9.7% (buildings), 5.8% (contents) and 13.8% (motor).
+  - **Tilt.** exp(σ²/2) is +0.48% (buildings), +0.17% (contents) and +0.96% (motor). The first full run applied it without a test, which was found on review. It was then put under the two-year rule and is kept for buildings only, because contents and motor over-predicted 2024 (`ev_g10_level_uncertainty.csv`).
+  - **2025 rates (90% ranges):** buildings 491.4 (419–577), contents 129.9 (118–143), motor 627.4 (500–788).
+  - **Caveats:**
+    - The development bootstrap covers sampling error only, not method error (13% on bodily injury in the A17 backtest).
+    - Buildings' year residuals are all positive (+1% to +6%), so σ_year there includes bias.
+- **Correction:** `docs/MODEL_DOCUMENTATION.md` §8 said under-prediction costs far more D² than over-prediction (0.0015 against 0.0003 for ±8% on contents 2024). That was a misreading with no audit entry. For p = 1.5 the deviance excess of a scale error r is proportional to 2·cosh(ln r / 2) − 2, which is symmetric in ln r. So 8% low costs about 18% more than 8% high, not five times more. The document now says so.
+- **Backtest 2024 (chosen model):** buildings 0.1110, contents 0.0965, motor 0.0806.
+- **Submission:** `work/submissions/submission_all_lines_glm_20261022.csv` has 626,639 rows in sample order, no nulls and a minimum of 0.043. Mean prediction: buildings 400.9, contents 104.0, motor 492.1.
+- **Checks:** 38 tests pass; ruff passes with the project settings.
+- **Status:** analysis. D-20 and D-21 await sign-off. Recommendation: given the significance results, the owner may prefer to drop CANN for buildings and contents. The model would be simpler and score within 0.0001 of the current one.

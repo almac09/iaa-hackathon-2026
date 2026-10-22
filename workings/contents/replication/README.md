@@ -27,6 +27,7 @@ IAA AI-Assisted Hackathon 2026, Part 1. This pack reproduces every step of the h
 | All three lines: buildings and motor data layer, development to ultimate (IBNR, motor bodily injury IBNER), large-claim cap, XGBoost per line with a backfitted year trend, 2024 backtest, combined 2025 submission | A15 | `sql/09`–`11`, `python/run_lines.py` |
 | Split models: contents GLM, buildings XGBoost (depth 3) and motor GLM for small claims, large claims by GLM with a generalised Pareto tail, claim history as a credibility factor, buildings–contents correlation check, combined 2025 submission | A16 | `sql/12`–`13`, `python/run_glm_lines.py` |
 | Backtest of the development method as at 2023-12-31 (chain ladder against Bornhuetter–Ferguson) | A17 | `python/backtest_development.py` |
+| CANN neural correction per line on the Apple GPU, paired customer bootstrap of every component, level factor and 2025 level uncertainty | A20 | `python/cann.py`, `python/cann_torch.py`, `python/significance.py`, `python/level_uncertainty.py`, `python/run_glm_lines.py` |
 
 **How the three languages fit together.** The SQL is the single source of truth for data preparation. Python and R both run the same SQL files through DuckDB, so their cleaned data is identical by construction (the reconciliation checks this byte for byte). The modelling is written twice, independently: Python uses scikit-learn's Newton solver and R uses its own penalised IRLS written in base R. Both use the same objective, so the results should agree to within the tolerances set in `config.json`.
 
@@ -81,6 +82,9 @@ python python/run_lines.py
 python python/backtest_development.py
 ```
 ```bash
+python python/level_uncertainty.py
+```
+```bash
 python python/run_glm_lines.py
 ```
 ```bash
@@ -92,7 +96,7 @@ Rscript -e "testthat::test_dir('tests/testthat')"
 
 `fetch_data.py` exports the parquet files from the team's Databricks Git folder into `data/` and stops if any file's SHA-256 differs from `audit/expected_inputs.sha256`. Use `--from-dir <folder>` to copy from an existing local copy instead. The runners check the hashes again before doing anything.
 
-**Expected result:** `reconcile.py` ends with `0 failed`. The Python run takes about 1–2 minutes. The R run takes a few minutes. `run_xgb.py` is independent of the reconciliation: it writes to `audit/evidence/xgboost/` and has no R twin, because an R xgboost run would not agree closely enough to reconcile. It is checked against GLM A on the same split instead. `run_lines.py` covers all three lines despite the folder's name. It runs `sql/09`–`11` after the shared SQL, writes to `audit/evidence/lines/`, and writes the combined submission to `work/submissions/`. It needs `work/sample_submission.csv` (from the team repo's `data/`).
+**Expected result:** `reconcile.py` ends with `0 failed`. The Python run takes about 1–2 minutes. The R run takes a few minutes. `run_xgb.py` is independent of the reconciliation: it writes to `audit/evidence/xgboost/` and has no R twin, because an R xgboost run would not agree closely enough to reconcile. It is checked against GLM A on the same split instead. `run_lines.py` covers all three lines despite the folder's name. It runs `sql/09`–`11` after the shared SQL, writes to `audit/evidence/lines/`, and writes the combined submission to `work/submissions/`. It needs `work/sample_submission.csv` (from the team repo's `data/`). `level_uncertainty.py` must run before `run_glm_lines.py`, which reads its development bootstrap. `run_glm_lines.py` takes about 20 minutes on an M3 Max. Its CANN networks train in a separate PyTorch worker process on the Apple GPU (MPS), or on the CPU if no GPU is found.
 
 ## The audit trail
 
