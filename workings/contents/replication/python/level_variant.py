@@ -38,7 +38,7 @@ def main() -> None:
     ap.add_argument("--prefix", required=True)
     ap.add_argument("--target-mean", type=float, required=True)
     ap.add_argument("--label", required=True)
-    args = ap.parse_args()
+    args = ap.parse_known_args()[0]  # --run-label is read by common.new_run_record
     t0 = time.time()
     cfg = common.load_config()
     rec = common.new_run_record(RUNNER, cfg)

@@ -9,6 +9,7 @@ import hashlib
 import json
 import platform
 import subprocess
+import sys
 import uuid
 from pathlib import Path
 
@@ -128,11 +129,19 @@ def append_run_log(cfg: dict, record: dict) -> None:
         f.write(json.dumps(record, default=str) + "\n")
 
 
+def run_label() -> str | None:
+    """The value of a `--run-label <text>` command-line option, if given, so runs can be named in the run log
+    (A25). Read from sys.argv directly so every runner accepts it without its own argument parser."""
+    args = sys.argv[1:]
+    return args[args.index("--run-label") + 1] if "--run-label" in args[:-1] else None
+
+
 def new_run_record(runner: str, cfg: dict) -> dict:
     # Deliberately no host name, user name or absolute paths: the log is meant to be shareable.
     return {
         "run_id": str(uuid.uuid4()),
         "runner": runner,
+        "label": run_label(),
         "started_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
         "platform": platform.system(),
         "git_commit": git_commit(),
