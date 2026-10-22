@@ -584,3 +584,29 @@
 - **Issues:** #152 (closed) records A25; progress comments on #140 and #151.
 - **Checks:** 45 tests pass (new: Mack against the published example, the offset line's reported targets); ruff passes.
 - **Status:** D-25 applied; recent weighting and the offset fit are rejected. Pushed to the new branch `contents/gerard-a25-development`.
+
+### A26 — Geolocation: location information below region
+- **When / who:** 2026-10-22, Claude, at the owner's request to explore geolocation tagging from addresses, on a new branch (`contents/gerard-geolocation`).
+- **What the data holds:**
+  - **No geocoding possible:** `addresses` has 575,983 rows with region (12), urban density, flood zone, distance to river, elevation, soil, and property fields. There are no coordinates, postcode or street. `address_id` is opaque: every ID decile has all 12 regions, a top-region share of 0.158–0.164 and mean elevation 11.5–11.6 m.
+  - **Weather as a location proxy:** `weather` has one row per address and year, 2021–25. Region explains this share of the variance of each address's 2021–25 average: rainfall 0.77, temperature 0.97, freezing days 0.91, wind 0.77, hail 0.59, dry summer 0.95, wildfire 0.83. Urban density adds nothing to region. One address's rainfall correlates 0.81–0.94 between years, so the within-region part is a persistent, sub-regional climate fingerprint.
+  - **Shared addresses:** 553,117 addresses have one customer and 22,866 have more.
+  - These profiles came from ad hoc DuckDB queries; there are no evidence files for them.
+- **Tests** (`python/geo_tests.py`, run labelled "A26 geolocation: residuals and location features"; 357 s):
+  - **L0 residuals:** actual / expected of the production model (without CANN) by region, region × urban and climate quintiles (`ev_geo1_location_residuals.csv`, 85 groups per line and year). z uses a Tweedie variance φμ^p with φ from the Pearson residuals.
+    - No group is off in the same direction on both years with |z| > 2.
+    - Share of groups with |z| > 2: buildings 5.9% / 10.6% (2023 / 2024, different groups each year), contents 0% / 0%, motor 8.2% / 0%. Motor 2023's maximum, z = 9.5, is the group holding the 11.9m claim.
+  - **L1–L3 features** (`ev_geo2_location_feature_tests.csv`, D² change 2023 / 2024):
+    - contents yearly weather +0.0002 / −0.0031 (2024 significant);
+    - contents climate +0.0001 / −0.0002;
+    - contents region × urban −0.0016 / −0.0010 (both significant);
+    - motor yearly weather −0.0063 / −0.0004;
+    - motor climate +0.0003 / −0.0012;
+    - motor region × urban −0.0005 / −0.0005;
+    - buildings climate, with the baseline's 131 trees, −0.0005 / −0.0001.
+
+    None passes the two-year rule.
+- **Conclusion:** the existing location factors already carry the location signal, and nothing is adopted. The model and submission are unchanged, so no full run was needed. With real coordinates, the next test would be spatial smoothing of residuals (territory credibility).
+- **Issue:** #153 (closed).
+- **Checks:** 46 tests pass (new: the feature helpers copy the config); ruff passes.
+- **Status:** analysis only.

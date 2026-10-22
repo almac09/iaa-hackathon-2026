@@ -1,11 +1,11 @@
 # Home and motor claims cost model: technical documentation
 
-IAA AI-Assisted Hackathon 2026, Part 1. This documents the model behind `work/submissions/submission_combined_v2_dev_methods_20261022.csv`, every data issue we found and how it was resolved, and how the model was validated. It reflects the pack as of audit entry A25 (22 October 2026).
+IAA AI-Assisted Hackathon 2026, Part 1. This documents the model behind `work/submissions/submission_combined_v2_dev_methods_20261022.csv`, every data issue we found and how it was resolved, and how the model was validated. It reflects the pack as of audit entry A26 (22 October 2026).
 
 - **Owner:** Gerard Murphy. **AI assistance:** Claude Code (Claude Opus 5.5).
 - **Code:** `workings/contents/replication`, branch `contents/gerard`. Every figure here comes from a logged run (`audit/run_log.jsonl`) and an evidence file under `audit/evidence/`.
 - **Decisions** are numbered D-01 to D-25 and are recorded in `audit/DECISIONS.md`. Their switches are in `config.json`. None is formally signed off yet.
-- **Audit entries** A01 to A25 are in `audit/AUDIT_LOG.md`. This document summarises them; the log has the full detail.
+- **Audit entries** A01 to A26 are in `audit/AUDIT_LOG.md`. This document summarises them; the log has the full detail.
 
 ## 1. Summary
 
@@ -358,6 +358,23 @@ Every branch was reviewed (Alan's on `main`, Bridget's on `hackathon-bridget`, C
 - **Independent check:** this model's 2024 development factors (1.079 / 1.027 / 1.303) agree with the chain-ladder Benktander factors on `main` (1.081 / 1.037 / 1.293).
 - **Level:** buildings and contents agree with Bridget's best-scoring file (v014, 0.10916) within 2%. Motor is 16% higher, and it sits at the data workstream's central 2025 benchmark (#91) while v014's motor is below the low end. A leaderboard A/B that differs only in motor is set up in [#151](https://github.com/almac09/iaa-hackathon-2026/issues/151).
 
+### 5.7 Location below region (A26)
+
+- **What the data holds:** the address table has no coordinates, postcode or street, and `address_id` carries no geography (every ID decile has the same region mix and mean elevation). True geocoding is therefore not possible.
+- **What varies by place:** each address's weather. Region explains 59–97% of an address's 2021–25 averages; the rest is within-region variation that persists (one address's rainfall correlates 0.81–0.94 between years). It works as a sub-regional climate fingerprint.
+- **Residual check:** the production model's actual / expected was examined by region, region × urban density, and quintiles of each address's climate. No group is off in the same direction on both 2023 and 2024 with |z| > 2, on any line.
+- **Features tested** (`python/geo_tests.py`, `ev_geo1`, `ev_geo2`; D² change on 2023 / 2024):
+
+  | Feature | Contents | Motor | Buildings |
+  |---|---|---|---|
+  | Yearly weather (five splines) | +0.0002 / **−0.0031** | −0.0063 / −0.0004 | already in the model |
+  | Address climate, 2021–25 average | +0.0001 / −0.0002 | +0.0003 / −0.0012 | −0.0005 / −0.0001 |
+  | Region × urban density | **−0.0016 / −0.0010** | −0.0005 / −0.0005 | — |
+
+  Bold means significantly worse. None passes.
+- **Shared addresses:** 96% of addresses only ever have one customer, so address-level history from other customers would add little.
+- **Conclusion:** region, urban density, flood zone, elevation, distance to river, soil and, for buildings, each year's weather already carry the location signal. With real coordinates, the next test would be spatial smoothing of residuals (territory credibility). [#153](https://github.com/almac09/iaa-hackathon-2026/issues/153).
+
 ## 6. Submission
 
 - **File:** `work/submissions/submission_combined_v2_dev_methods_20261022.csv` (A25), kept out of git (`work/` is ignored). It has 626,639 rows, with row_ids and order identical to `sample_submission.csv`, no nulls, and every prediction above zero (minimum 0.049). A zero would make the deviance infinite on any row with a claim.
@@ -433,6 +450,7 @@ Each risk found by inverting the model, what has been done, and the GitHub issue
 | Silent failure of the full run | Worker fails loudly; torch kept out of the main process; **no end-to-end test yet** | [#129](https://github.com/almac09/iaa-hackathon-2026/issues/129) (closed), [#145](https://github.com/almac09/iaa-hackathon-2026/issues/145) |
 | Techniques from the team's other branches | Tested out of time; none passes; one data fix adopted (D-24) | [#148](https://github.com/almac09/iaa-hackathon-2026/issues/148), [#149](https://github.com/almac09/iaa-hackathon-2026/issues/149) (closed) |
 | Motor 2025 level (16% above the best-scoring leaderboard file) | **Open**: leaderboard A/B prepared | [#151](https://github.com/almac09/iaa-hackathon-2026/issues/151) |
+| Location information below region | No coordinates in the data; weather-based proxies and region × urban tested; none passes and no residual pattern | [#153](https://github.com/almac09/iaa-hackathon-2026/issues/153) (closed) |
 | Pack D² not comparable with the leaderboard | **Open** (model choices unaffected) | [#146](https://github.com/almac09/iaa-hackathon-2026/issues/146) |
 | Decisions not signed off | **Open** | [#147](https://github.com/almac09/iaa-hackathon-2026/issues/147) |
 
@@ -471,10 +489,11 @@ python -m pytest -q tests
 - `run_glm_lines.py` needs `work/sample_submission.csv`, the competition's sample file. It takes about 20 minutes on an M3 Max and writes the submission and the `audit/evidence/glm_lines/` tables. The CANN networks use the Apple GPU when PyTorch finds it (MPS) and fall back to the CPU otherwise, which is much slower.
 - `python python/gap_tests.py` (optional, about 10 minutes) repeats the A21 gap tests; it reads `ev_g6` and `ev_g8` from the last full run.
 - `python python/combined_tests.py` (optional, about 30 minutes) repeats the A24 tests of the team's techniques; `python python/development_tests.py` (about 5 minutes) repeats the A25 offset-fit test.
+- `python python/geo_tests.py` (about 6 minutes) repeats the A26 location tests.
 - Any runner accepts `--run-label "<text>"`, which is stored in its run-log record (A25).
 - PyTorch runs only in its own worker process (`python/cann_torch.py`). Do not import torch in any process that uses XGBoost (A20).
 - Each run appends a record to `audit/run_log.jsonl`: input, SQL and code hashes, decision switches, package versions and headline metrics.
-- **Expected results:** reconciliation ends with `0 failed`; the 2024 backtest matches section 1; 45 tests pass.
+- **Expected results:** reconciliation ends with `0 failed`; the 2024 backtest matches section 1; 46 tests pass.
 
 ## 10. Where to find things
 
