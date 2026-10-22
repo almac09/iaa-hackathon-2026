@@ -33,7 +33,8 @@
     "lag_cdf_max_loss_year": 2022,
     "min_exposure_persistence": 0.5,
     "bld_si_threshold": 10000000,
-    "large_claim_cap": 1000000
+    "large_claim_cap": 1000000,
+    "hist_large_claim": 5000
   },
 
   "decisions": {
@@ -153,6 +154,47 @@
                         "channel", "payment_method", "new_business", "occupation", "marital_status", "credit_band",
                         "email_domain", "marketing_consent", "document_preference", "previous_insurer", "campaign_code",
                         "branch_id", "marketing_segment", "region", "urban_density"]
+      }
+    }
+  },
+
+  "glm_lines": {
+    "_about": "python/run_glm_lines.py (audit A16). Owner's design, 2026-10-22: contents one GLM (no split); buildings small claims XGBoost at depth 3 plus a large-claim GLM; motor small-claim GLM plus a large-claim GLM. Claim history (sql/12, sql/13) enters every line as a credibility factor (k + n) / (k + E), E from a frequency GLM without history, k tuned on 2023 per group. Large claims: cost above the threshold, developed, modelled by a compact Tweedie GLM and scaled to a generalised Pareto mean. Same protocol and development as A15; the D-12 cap is not used.",
+    "sql_files": ["sql/12_claim_history.sql"],
+    "expected_sql": "sql/13_history_expected.sql",
+    "credibility_k_grid": [0.5, 1, 2, 4, 8, 16, 32, 64],
+    "freq_alpha": 0.001,
+    "out_file": "work/submissions/submission_all_lines_glm_{date}.csv",
+    "alpha_grid": [0.00001, 0.0001, 0.001],
+    "excess_alpha": 0.001,
+    "thresholds": [25000, 50000, 100000],
+    "models": {
+      "buildings": {
+        "split": true, "small": "xgb", "max_depth": 3, "min_child_rows": 20000,
+        "_small_note": "XGBoost features are lines.models.buildings.",
+        "excess": {"numeric": ["flood_zone", "sum_insured", "elevation_m", "year_built", "distance_to_river_km"],
+                   "categorical": ["soil_type", "construction_type"], "n_bands": 5},
+        "freq": {"numeric": ["flood_zone", "sum_insured", "elevation_m", "year_built", "distance_to_river_km",
+                             "dry_summer_index", "freezing_days"],
+                 "categorical": ["region", "construction_type", "soil_type", "occupancy", "energy_rating"],
+                 "continuous": [], "n_bands": 10}
+      },
+      "contents": {
+        "split": false, "small": "glm",
+        "numeric": [], "categorical": "model.factors", "continuous": "model.numeric", "n_bands": 10,
+        "freq": {"numeric": [], "categorical": "model.factors", "continuous": "model.numeric", "n_bands": 10}
+      },
+      "motor": {
+        "split": true, "small": "glm",
+        "numeric": ["ncb_years", "driver_age", "annual_mileage", "years_licensed", "vehicle_age", "telematics_score",
+                    "vehicle_value_group", "voluntary_excess", "prior_claims_5y"],
+        "categorical": ["region", "marketing_segment", "cover_type", "urban_density", "channel", "vehicle_use",
+                        "payment_method"],
+        "continuous": [], "n_bands": 10,
+        "_factor_note": "Features with at least 1% XGBoost gain in A15.",
+        "excess": {"numeric": ["ncb_years", "driver_age", "annual_mileage", "years_licensed"],
+                   "categorical": ["region"], "n_bands": 5},
+        "freq": "same as small"
       }
     }
   },
