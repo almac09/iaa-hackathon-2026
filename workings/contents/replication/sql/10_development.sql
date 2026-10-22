@@ -18,11 +18,17 @@ SELECT line, peril, row_id, claim_id, loss_date, status, net_cost,
        datediff('day', loss_date, getvariable('valuation_date')) AS age
 FROM line_claims;
 
+-- Recent weighting (A25): each claim counts with weight pattern_decay ^ (valuation year - loss year), so a decay
+-- below 1 tilts the pattern towards recent loss years when reporting speeds up. 1 is the unweighted estimator.
 CREATE OR REPLACE TABLE dev_pattern AS
-WITH events AS (
-    SELECT line, peril, lag AS k, 1.0 AS d_cnt, net_cost AS d_cost, 1.0 AS add_cnt, net_cost AS add_cost FROM dev_claims
+WITH wc AS (
+    SELECT *, pow(getvariable('pattern_decay'), year(getvariable('valuation_date')) - year(loss_date)) AS w
+    FROM dev_claims
+),
+events AS (
+    SELECT line, peril, lag AS k, w AS d_cnt, w * net_cost AS d_cost, w AS add_cnt, w * net_cost AS add_cost FROM wc
     UNION ALL
-    SELECT line, peril, age + 1, 0.0, 0.0, -1.0, -net_cost FROM dev_claims
+    SELECT line, peril, age + 1, 0.0, 0.0, -w, -w * net_cost FROM wc
 ),
 by_k AS (
     SELECT line, peril, k, sum(d_cnt) AS d_cnt, sum(d_cost) AS d_cost, sum(add_cnt) AS add_cnt, sum(add_cost) AS add_cost
@@ -36,8 +42,9 @@ risk AS (
 SELECT line, peril, k, d_cnt, n_cnt, d_cost, n_cost,
        -- log of (1 - d/n) for lag k. d = n only at the shortest lag in the data (1 day: nothing is reported
        -- on the loss date), where F is zero below it; every reported claim is older than that, so it is skipped.
-       CASE WHEN d_cnt < n_cnt THEN ln(1 - d_cnt / n_cnt) ELSE 0 END AS log_s_cnt,
-       CASE WHEN d_cost < n_cost THEN ln(1 - d_cost / n_cost) ELSE 0 END AS log_s_cost
+       -- The 1e-9 margin keeps that rule when weights make d and n differ only by rounding.
+       CASE WHEN d_cnt < n_cnt - 1e-9 THEN ln(1 - d_cnt / n_cnt) ELSE 0 END AS log_s_cnt,
+       CASE WHEN d_cost < n_cost - 1e-9 THEN ln(1 - d_cost / n_cost) ELSE 0 END AS log_s_cost
 FROM risk
 WHERE d_cnt > 0;
 

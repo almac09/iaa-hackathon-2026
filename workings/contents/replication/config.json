@@ -36,7 +36,8 @@
     "large_claim_cap": 1000000,
     "hist_large_claim": 5000,
     "bf_max_reported_share": 0.75,
-    "bf_mature_share": 0.9
+    "bf_mature_share": 0.9,
+    "pattern_decay": 1.0
   },
 
   "decisions": {
