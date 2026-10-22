@@ -23,6 +23,7 @@ import datetime as dt
 import itertools
 import sys
 import time
+from importlib import metadata
 from pathlib import Path
 
 import numpy as np
@@ -527,11 +528,10 @@ def main() -> None:
         rec["error"] = f"{type(exc).__name__}: {exc}"
         raise
     finally:
-        import duckdb, scipy, sklearn, torch, xgboost  # noqa: E401  versions recorded for the audit trail
-        rec["versions"] = {"python": sys.version.split()[0], "duckdb": duckdb.__version__, "pandas": pd.__version__,
-                           "numpy": np.__version__, "scikit-learn": sklearn.__version__, "scipy": scipy.__version__,
-                           "torch": torch.__version__,
-                           "xgboost": xgboost.__version__}
+        # Versions from package metadata: importing torch here would load its OpenMP runtime next to XGBoost's (A20).
+        rec["versions"] = {"python": sys.version.split()[0], "pandas": pd.__version__, "numpy": np.__version__,
+                           **{pkg: metadata.version(pkg) for pkg in ("duckdb", "scikit-learn", "scipy", "torch",
+                                                                     "xgboost")}}
         rec["finished_utc"] = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
         rec["elapsed_s"] = round(time.time() - t0, 1)
         common.append_run_log(cfg, rec)
