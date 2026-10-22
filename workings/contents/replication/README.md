@@ -6,6 +6,8 @@ IAA AI-Assisted Hackathon 2026, Part 1. This pack reproduces every step of the h
 - **AI assistance:** Claude Code (Claude Opus 5.5)
 - **Status:** analysis and model comparison. No submission model yet. Decisions D-01 to D-06 are **not yet signed off** (see `audit/DECISIONS.md`).
 
+**Full model documentation:** [`docs/MODEL_DOCUMENTATION.md`](docs/MODEL_DOCUMENTATION.md) describes the current model, every data issue and its resolution, the validation and the decisions.
+
 ## What it does
 
 | Step | Audit entry | Where |
