@@ -56,6 +56,10 @@ class GLM:
 
     def _frame(self, d: pd.DataFrame, year=None) -> pd.DataFrame:
         f = self.spec.factors(d)
+        basis = self.spec.basis(d)
+        for c in basis:
+            f[c] = basis[c].to_numpy()
+        self.basis_columns = list(basis.columns)
         for c in self.continuous:
             f[c] = d[c].to_numpy()
         if self.trend:
@@ -65,8 +69,8 @@ class GLM:
     def fit(self, d: pd.DataFrame, y: np.ndarray, p: float) -> "GLM":
         self.centre = float(np.average(d.yr, weights=d.exposure))
         f = self._frame(d)
-        self.levels = models.factor_levels(f, [c for c in f if c not in self.continuous + ["t"]])
-        self.numeric = self.continuous + (["t"] if self.trend else [])
+        self.numeric = self.basis_columns + self.continuous + (["t"] if self.trend else [])
+        self.levels = models.factor_levels(f, [c for c in f if c not in self.numeric])
         X, self.names = models.design_matrix(f, self.levels, self.numeric)
         e = d.exposure.to_numpy()
         self.model = (models.fit_poisson(X, y, e, self.alpha) if self.family == "poisson"
@@ -134,8 +138,9 @@ class Line:
         return t.small_dev.to_numpy(), t.excess_dev.to_numpy()
 
     def glm_spec(self, part: dict, d: pd.DataFrame) -> tuple[glm_lines.FactorSpec, list[str]]:
+        smooth = part["numeric"] if part.get("smooth") == "all" else part.get("smooth", [])
         spec = glm_lines.FactorSpec(d, part["numeric"], resolve(self.cfg, part["categorical"]),
-                                    n_bands=part["n_bands"])
+                                    n_bands=part["n_bands"], smooth=smooth, n_knots=part.get("n_knots", 4))
         return spec, resolve(self.cfg, part.get("continuous", []))
 
     def freq_pred(self, years) -> pd.DataFrame:
@@ -318,7 +323,7 @@ def main() -> None:
             con.execute((common.PACK_ROOT / rel).read_text())
         rec["sql_sha256"][gl["expected_sql"]] = common.sha256_file(common.PACK_ROOT / gl["expected_sql"])
         expected_sql = (common.PACK_ROOT / gl["expected_sql"]).read_text()
-        outputs = common.export_sql_evidence(con, out_dir, prefixes=("ev_12",))
+        outputs = common.export_sql_evidence(con, out_dir, prefixes=("ev_09", "ev_10", "ev_11", "ev_12"))
 
         lines = {}
         for name in gl["models"]:
@@ -326,9 +331,9 @@ def main() -> None:
             df = con.execute(f"""SELECT m.*, h.* EXCLUDE (line, row_id)
                                  FROM {table} m JOIN claim_history h ON h.line = '{name}' AND h.row_id = m.row_id
                                  ORDER BY m.row_id""").df()
-            if name == "contents":  # contents_model_dev has no customer or address; the correlation check needs them
-                keys = con.execute("SELECT row_id, customer_id, address_id FROM contents_rows").df()
-                df = df.merge(keys, on="row_id")
+            if name == "contents":  # contents_model_dev has no customer, address or raw columns
+                extra = ", ".join(["customer_id", "address_id"] + gl["models"][name].get("extra_columns", []))
+                df = df.merge(con.execute(f"SELECT row_id, {extra} FROM contents_model").df(), on="row_id")
             claims = con.execute(f"SELECT row_id, net_cost, dev_factor FROM line_claims_dev WHERE line = '{name}'").df()
             lines[name] = Line(name, df, claims, cfg)
         for window in WINDOWS:

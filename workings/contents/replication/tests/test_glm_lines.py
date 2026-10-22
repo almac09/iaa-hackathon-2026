@@ -39,6 +39,19 @@ def test_factors_band_numerics_and_merge_rare_levels():
     assert f.c.tolist() == ["a", "OTHER", "OTHER"]
 
 
+def test_smoothed_numeric_is_a_flat_extrapolating_curve_with_missing_flag():
+    rng = np.random.default_rng(0)
+    train = pd.DataFrame({"x": np.r_[rng.uniform(0, 100, 999), np.nan], "c": "a", "exposure": 1.0})
+    spec = glm_lines.FactorSpec(train, ["x"], ["c"], smooth=["x"], n_knots=4)
+    assert spec.numeric == []  # smoothed, so not banded
+    b = spec.basis(pd.DataFrame({"x": [50.0, 100.0, 1000.0, np.nan]}))
+    assert list(b.columns) == ["x_s0", "x_s1", "x_s2", "x_s3", "x_s4", "x_missing"]  # 4 knots, cubic, bias dropped
+    assert np.allclose(b.iloc[1, :5], b.iloc[2, :5])   # flat beyond the training range
+    assert b.iloc[3].tolist() == [0, 0, 0, 0, 0, 1]
+    assert glm_lines.FactorSpec(train.assign(x=np.r_[[0.0, 1.0] * 499, 0.0, np.nan]), ["x"], ["c"],
+                                smooth=["x"]).numeric == ["x"]  # two distinct values: banded instead
+
+
 def test_credibility_factor():
     n, e = np.array([0, 2, 0, np.nan]), np.array([0.0, 0.5, 1.0, np.nan])
     assert glm_lines.credibility_factor(n, e, 1.0).tolist() == [1.0, 3 / 1.5, 1 / 2, 1.0]

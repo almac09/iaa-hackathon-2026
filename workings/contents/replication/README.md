@@ -24,6 +24,7 @@ IAA AI-Assisted Hackathon 2026, Part 1. This pack reproduces every step of the h
 | XGBoost (Tweedie, exposure offset) on banded and raw features, against GLM A with a paired bootstrap. Python only | A13 | `python/run_xgb.py` |
 | All three lines: buildings and motor data layer, development to ultimate (IBNR, motor bodily injury IBNER), large-claim cap, XGBoost per line with a backfitted year trend, 2024 backtest, combined 2025 submission | A15 | `sql/09`–`11`, `python/run_lines.py` |
 | Split models: contents GLM, buildings XGBoost (depth 3) and motor GLM for small claims, large claims by GLM with a generalised Pareto tail, claim history as a credibility factor, buildings–contents correlation check, combined 2025 submission | A16 | `sql/12`–`13`, `python/run_glm_lines.py` |
+| Backtest of the development method as at 2023-12-31 (chain ladder against Bornhuetter–Ferguson) | A17 | `python/backtest_development.py` |
 
 **How the three languages fit together.** The SQL is the single source of truth for data preparation. Python and R both run the same SQL files through DuckDB, so their cleaned data is identical by construction (the reconciliation checks this byte for byte). The modelling is written twice, independently: Python uses scikit-learn's Newton solver and R uses its own penalised IRLS written in base R. Both use the same objective, so the results should agree to within the tolerances set in `config.json`.
 
@@ -73,6 +74,9 @@ python python/run_xgb.py
 ```
 ```bash
 python python/run_lines.py
+```
+```bash
+python python/backtest_development.py
 ```
 ```bash
 python python/run_glm_lines.py

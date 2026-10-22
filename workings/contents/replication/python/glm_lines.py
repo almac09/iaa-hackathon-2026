@@ -8,6 +8,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from scipy import stats
+from sklearn.preprocessing import SplineTransformer
 
 # Claim-history groups of sql/12: (count column, expected-count column) per group.
 HISTORY_GROUPS = {"own": ("h_own_n", "e_own"), "home": ("h_home_n", "e_home"), "cross": ("h_cross_n", "e_cross")}
@@ -36,15 +37,27 @@ def _band(x: pd.Series, edges: np.ndarray) -> pd.Series:
 
 
 class FactorSpec:
-    """Turns raw columns into GLM factors: numerics banded and rare categorical levels merged.
+    """Turns raw columns into GLM inputs: numerics banded or smoothed, rare categorical levels merged.
 
-    Everything is fitted on the training rows passed to the constructor and then applied unchanged.
+    Numerics in `smooth` get a cubic B-spline basis instead of bands (knots at training quantiles, flat beyond the
+    training range, one basis column dropped against the intercept) plus a missing indicator, so a curve of a few
+    parameters replaces one free coefficient per band (A17). Everything is fitted on the training rows passed to
+    the constructor and then applied unchanged.
     """
 
     def __init__(self, train: pd.DataFrame, numeric: list[str], categorical: list[str],
-                 min_level_share: float = 0.005, n_bands: int = 10):
-        self.numeric, self.categorical = numeric, categorical
-        self.edges = fit_bands(train, numeric, n_bands)
+                 min_level_share: float = 0.005, n_bands: int = 10, smooth: list[str] = (), n_knots: int = 4):
+        self.categorical = categorical
+        self.splines = {}
+        for c in smooth:
+            x = train[c].dropna().to_numpy(dtype=float)
+            knots = np.unique(np.quantile(x, np.linspace(0, 1, n_knots)))
+            if len(knots) >= 3:  # too few distinct values for a curve: keep the column banded
+                self.splines[c] = SplineTransformer(degree=3, knots=knots.reshape(-1, 1), extrapolation="constant",
+                                                    include_bias=False).fit(x.reshape(-1, 1))
+        self.has_missing = {c: bool(train[c].isna().any()) for c in self.splines}
+        self.numeric = [c for c in numeric if c not in self.splines]
+        self.edges = fit_bands(train, self.numeric, n_bands)
         share = {c: train.groupby(train[c].astype("string").fillna("MISSING"), dropna=False).exposure.sum()
                  / train.exposure.sum() for c in categorical}
         self.keep = {c: set(s.index[s >= min_level_share]) for c, s in share.items()}
@@ -57,6 +70,20 @@ class FactorSpec:
             s = df[c].astype("string").fillna("MISSING")
             out[c] = s.where(s.isin(self.keep[c]), "OTHER")
         return pd.DataFrame(out, index=df.index).astype(str)
+
+    def basis(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Spline columns for the smoothed numerics (all zero where the value is missing, flagged separately)."""
+        out = {}
+        for c, st in self.splines.items():
+            x = df[c].to_numpy(dtype=float)
+            miss = np.isnan(x)
+            b = st.transform(np.where(miss, np.nanmedian(x) if (~miss).any() else 0.0, x).reshape(-1, 1))
+            b[miss] = 0.0
+            for j in range(b.shape[1]):
+                out[f"{c}_s{j}"] = b[:, j]
+            if self.has_missing[c]:
+                out[f"{c}_missing"] = miss.astype(float)
+        return pd.DataFrame(out, index=df.index)
 
 
 def split_targets(claims: pd.DataFrame, threshold: float) -> pd.DataFrame:

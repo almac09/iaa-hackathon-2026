@@ -34,7 +34,9 @@
     "min_exposure_persistence": 0.5,
     "bld_si_threshold": 10000000,
     "large_claim_cap": 1000000,
-    "hist_large_claim": 5000
+    "hist_large_claim": 5000,
+    "bf_max_reported_share": 0.75,
+    "bf_mature_share": 0.9
   },
 
   "decisions": {
@@ -48,6 +50,7 @@
     "D10_develop_ibnr": {"apply": true, "sql_variable": "d10_develop_ibnr", "note": "Three-line run only (sql/10): every reported claim grossed up by 1/F(age), F the cost-weighted report-lag distribution by line and peril. The GLM pack (run_all.py) is unchanged.", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
     "D11_ibner_motor_bi": {"apply": true, "sql_variable": "d11_ibner_motor_bi", "note": "Motor bodily injury only: each loss year lifted to the 2021 claim size of claims reported within 90 days, no inflation (lower bound).", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
     "D12_cap_large_claims": {"apply": true, "sql_variable": "d12_cap_large_claims", "note": "Developed claims capped at sql_variables.large_claim_cap; the line's excess is spread back as a multiplicative loading. Added during the run (A15), not in the approved plan.", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D17_bf_slow_perils": {"apply": true, "sql_variable": "d17_bf_slow_perils", "note": "Bornhuetter-Ferguson instead of the chain ladder for a loss year with under bf_max_reported_share of its cost reported (2024 subsidence and motor bodily injury); prior from the preceding mature years, no trend.", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
     "D13_trend_to_2025": {"apply": true, "note": "Log-linear calendar-year trend per line, fitted jointly with XGBoost by backfitting the year term into the offset, projected to the 2025 rows. Approved by Gerard Murphy in session 2026-10-21.", "signed_off": false, "signed_off_by": null, "signed_off_date": null}
   },
 
@@ -173,7 +176,7 @@
         "split": true, "small": "xgb", "max_depth": 3, "min_child_rows": 20000,
         "_small_note": "XGBoost features are lines.models.buildings.",
         "excess": {"numeric": ["flood_zone", "sum_insured", "elevation_m", "year_built", "distance_to_river_km"],
-                   "categorical": ["soil_type", "construction_type"], "n_bands": 5},
+                   "categorical": ["soil_type", "construction_type"], "n_bands": 5, "smooth": "all", "n_knots": 4},
         "freq": {"numeric": ["flood_zone", "sum_insured", "elevation_m", "year_built", "distance_to_river_km",
                              "dry_summer_index", "freezing_days"],
                  "categorical": ["region", "construction_type", "soil_type", "occupancy", "energy_rating"],
@@ -181,16 +184,21 @@
       },
       "contents": {
         "split": false, "small": "glm",
-        "numeric": [], "categorical": "model.factors", "continuous": "model.numeric", "n_bands": 10,
+        "numeric": ["policyholder_age", "elevation_m", "distance_to_river_km"],
+        "categorical": ["f_flood_zone", "f_tenure", "f_region", "f_segment", "f_prior_claims", "f_missed_pay", "f_vol_xs", "f_credit", "f_security", "f_hvi", "f_ad_cover", "f_bike", "f_wfh", "f_lodgers", "f_urban", "f_prop_type"],
+        "continuous": "model.numeric", "n_bands": 10, "smooth": "all", "n_knots": 4,
+        "extra_columns": ["policyholder_age", "elevation_m", "distance_to_river_km"],
+        "_smooth_note": "A17: GLM A's age, elevation and river-distance bands replaced by cubic splines on the raw values (+0.0011 D2 on 2023, +0.0019 on 2024).",
         "freq": {"numeric": [], "categorical": "model.factors", "continuous": "model.numeric", "n_bands": 10}
       },
       "motor": {
         "split": true, "small": "glm",
         "numeric": ["ncb_years", "driver_age", "annual_mileage", "years_licensed", "vehicle_age", "telematics_score",
-                    "vehicle_value_group", "voluntary_excess", "prior_claims_5y"],
+                    "vehicle_value_group", "voluntary_excess", "prior_claims_5y", "missed_payments_12m"],
         "categorical": ["region", "marketing_segment", "cover_type", "urban_density", "channel", "vehicle_use",
-                        "payment_method"],
-        "continuous": [], "n_bands": 10,
+                        "payment_method", "credit_band"],
+        "continuous": [], "n_bands": 10, "smooth": "all", "n_knots": 4,
+        "_smooth_note": "A17: numerics as cubic splines, plus missed payments and credit band (+0.0053 D2 on 2023, +0.0023 on 2024). The large-claim GLM stays banded: smoothing it failed on 2023.",
         "_factor_note": "Features with at least 1% XGBoost gain in A15.",
         "excess": {"numeric": ["ncb_years", "driver_age", "annual_mileage", "years_licensed"],
                    "categorical": ["region"], "n_bands": 5},
