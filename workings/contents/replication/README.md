@@ -4,7 +4,7 @@ IAA AI-Assisted Hackathon 2026, Part 1. This pack reproduces every step of the h
 
 - **Owner:** Gerard Murphy (contents line)
 - **AI assistance:** Claude Code (Claude Opus 5.5)
-- **Status:** analysis and model comparison. No submission model yet. Decisions D-01 to D-06 are **not yet signed off** (see `audit/DECISIONS.md`).
+- **Status:** final candidate ready (A28): `work/submissions/submission_final_candidate_20261023.csv`, public score 0.12805 (the best so far). Decisions D-01 to D-30 are **not yet formally signed off** (see `audit/DECISIONS.md`); D-26 to D-30 were adopted on the owner's go-ahead and await sign-off. The public leaderboard is the independent check.
 
 **Full model documentation:** [`docs/MODEL_DOCUMENTATION.md`](docs/MODEL_DOCUMENTATION.md) describes the current model, every data issue and its resolution, the validation and the decisions.
 
@@ -33,6 +33,7 @@ IAA AI-Assisted Hackathon 2026, Part 1. This pack reproduces every step of the h
 | Traditional development methods: recent-weighted patterns in a two-date backtest, fitting with a development offset, Mack's chain-ladder error in the level ranges; run labels | A25 | `python/backtest_development.py`, `python/development_tests.py`, `python/mack.py`, `python/level_uncertainty.py` |
 | Location below region: residuals by region and address climate, weather and climate features, region × urban density | A26 | `python/geo_tests.py` |
 | Final review (26-agent sweep), leaderboard results, visual report of the whole project | A27 | `docs/FINAL_REPORT.html`, `audit/evidence/final_review/` |
+| Final run: address corrections, buildings peril interactions, bodily-injury lift off, motor credibility on capped claims; each tested, then combined into the final candidate | A28 | `python/final_tests.py`, `python/run_glm_lines.py` |
 
 **How the three languages fit together.** The SQL is the single source of truth for data preparation. Python and R both run the same SQL files through DuckDB, so their cleaned data is identical by construction (the reconciliation checks this byte for byte). The modelling is written twice, independently: Python uses scikit-learn's Newton solver and R uses its own penalised IRLS written in base R. Both use the same objective, so the results should agree to within the tolerances set in `config.json`.
 
@@ -136,7 +137,7 @@ The pack reproduces the exploratory numbers within ±0.002 D² (checked by `reco
 
 ## Limitations
 
-- The 2024 target is not developed to ultimate. The ~3% IBNR uplift is estimated but not applied (D-03).
-- The persistence A/E controls for flood zone only. Experience rating has not yet been measured against the full GLM.
+- The original contents GLM pack (`python/run_all.py`, `R/run_all.R`) does not develop the 2024 target to ultimate: the ~3% IBNR uplift is estimated in `sql/04` but not applied (D-03). The three-line models and the final candidate do develop every line to ultimate (D-10, with Bornhuetter–Ferguson for the slow perils under D-17). The A28 2024 factors are 1.079 for buildings, 1.027 for contents and 1.236 for motor, and the 2024 backtest is scored against developed claims.
+- The persistence A/E controls for flood zone only. Experience rating has since been measured against the full model: since A16 (D-14), claim history is applied as a credibility factor (k + n) / (k + E) on top of each line's full model. In the A28 final run, switching it off costs +0.0008 / +0.0016 D² for buildings, +0.0016 / +0.0005 for contents and +0.0009 / +0.0041 for motor on 2023 / 2024; those gains are significant at 95% for buildings 2024, contents 2023 and motor 2024 only. Own-line k is 4 for buildings, 2 for contents and 4 for motor.
 - The split-test D² differences between models A, B and D have not been tested for significance.
 - Databricks serverless notebooks may not support R (this workspace showed no classic clusters). The R runner has been tested locally only.

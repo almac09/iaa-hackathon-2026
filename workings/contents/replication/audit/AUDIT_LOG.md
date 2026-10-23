@@ -662,3 +662,59 @@
   Its data come from the evidence files.
 - **Issues:** #154–#160 (open), #161 (closed, this review).
 - **Status:** analysis only. The model and submission are unchanged; the recommended final run awaits the owner's sign-off.
+
+### A28 — Final run: the final review's items 1–6, tested and combined into a final candidate
+- **When / who:** 2026-10-23, Claude, at the owner's instruction: "Go ahead with the recommended final run (items 1-6 in the report), each tested under the usual rules, then produce a final candidate submission."
+- **Implementation:** every change has its own switch, so each can be turned off.
+  - **D-26 and D-27, the address corrections:** a view `addresses_clean` in `sql/03`, used by `sql/03` and `sql/11`. It converts R11 elevation from feet and imputes year built 1900 from energy rating, keeping `elevation_m_raw` and `year_built_raw`.
+  - **Buildings interactions:** `x_clay_dry` and `x_fz3_rain` in `sql/11`. They are used through `lines.models.buildings.numeric` and `glm_lines.models.buildings.excess.continuous`; the large-claim GLM now accepts continuous columns.
+  - **Contents flag:** `f_direct` in `sql/08`.
+  - **Motor credibility:** `glm_lines.credibility_tuning_cap` caps the target when tuning k.
+  - **Prediction shape:** the step in `run_glm_lines.py` (`shape_adjust`, `fit_shape`; switch `glm_lines.posthoc`) applies a calibration power and a short-row factor. Each is estimated on one backtest year and scored on the other; 2025 uses the average.
+  - **D-11:** switched off.
+  - **Tests:** 51 pass. New tests cover the address view with its switch on and off, `shape_adjust` and `fit_shape`.
+- **Tests:** `python/final_tests.py`, three labelled processes ("A28 final run: T1", "T2-T3", "T4-T6"); evidence `ev_f1`–`ev_f6`. The base is the production model without CANN. Buildings averages four XGBoost seeds with the tree count fixed. The SQL behind all three runs: `sql/03` df1d0989…, `sql/08` 73c3ee8b…, `sql/11` 52229dc9… (sha256 prefixes). These records lack the SQL hashes, a defect since fixed (below). Gains are D² change on 2023 / 2024.
+  - **T1, address corrections:**
+    - Buildings, both corrections: +0.00020 / +0.00131.
+    - R11 elevation only: +0.00020 / +0.00061.
+    - Year built only: +0.00046 / +0.00046, two-year mean significant (+0.00006 to +0.00086).
+    - Contents: +0.00031 / +0.00017. Motor: no change (it uses neither field).
+    - **Applied as corrections.**
+  - **T2, buildings peril interactions:**
+    - XGBoost only: +0.00105 / +0.00091, two-year mean +0.00098 (+0.00025 to +0.00171).
+    - Large-claim GLM only: +0.00023 / +0.00045 (+0.00009 to +0.00059).
+    - **Both: +0.00110 / +0.00121, two-year mean +0.00115 (+0.00030 to +0.00200). Adopted (D-29).**
+  - **T3, buildings prediction shape** (fitted power 1.04 / 1.07, factor 0.48 / 0.42; 7,508 / 7,402 short rows):
+    - Calibration power: +0.00003 / +0.00026, two-year mean +0.00015 (−0.00027 to +0.00057). **Fails significance.**
+    - Short-row factor: +0.00047 / +0.00063, two-year mean +0.00055 (+0.000002 to +0.00111). **Passes, just.**
+    - Both: +0.00047 / +0.00089 (−0.00004 to +0.00140). Fails.
+    - Configured as the short-row factor only (`fit_power` false); the production step then re-tests it on the final model (below).
+  - **T4, motor credibility:** tuned on 2023 capped at 1m, it chooses k = 4.
+    - Against k = 8: −0.00017 / +0.00131 on the full target. Capped at 1m: +0.00066 / +0.00122. Without rows of 10m or more: +0.00072 / +0.00131.
+    - k = 6: +0.00004 / +0.00057.
+    - **The pre-registered rule takes k = 4 (D-30).**
+  - **T5, contents direct-channel flag:** +0.00055 / +0.00069, two-year mean +0.00062 (−0.00004 to +0.00128). **Fails the significance rule; not adopted.**
+  - **T6, D-11 off:** against the actual with the lift, −0.00118 / −0.00046; against the actual without it, +0.00045 / +0.00124. Each model wins on its own yardstick, so the backtest cannot settle it. **Adopted (D-28)** on the structural evidence (closed claims fell as much as open ones) and the leaderboard evidence (motor about 7% high).
+- **Independent code review** (a 12-agent workflow: three reviewers, then a skeptic per finding). Two defects were confirmed and fixed:
+  - **Low:** the "no A17 changes" variant would have dropped the large-claim interactions. It now keeps them (`Line.build`).
+  - **Medium:** `final_tests.py` did not record the SQL hashes in its run records. It now merges what `prepare()` writes (`PROVENANCE`) and rejects unknown test names. The hashes for the three runs above are recorded in this entry.
+
+  Seven other findings were refuted with reasons: the cap reproduces T4; the order of shape and tilt; ev_g8 coverage; T4 deployability; T2's tree count; T3's fitting; unknown test names, which is now fixed anyway.
+- **Development uncertainty rerun** with D-11 off (labelled): motor's development factor falls from 1.1231 to 1.0294 for 2023 and from 1.3032 to 1.2361 for 2024. Motor's bootstrap CV falls from 4.31% to 0.42% (2023) and from 2.96% to 1.28% (2024). Mack is unchanged, since it uses reported claims.
+- **GLM pack rerun** (the contents SQL changed): reconciliation 101 checks, 0 failed. GLM A 2024 D² moves from 0.0933 to 0.0934.
+- **Final run** ("A28 final run: final candidate"):
+  - **Buildings:** 194 trees, trend +5.3% a year. CANN is no longer significant (+0.00001) and is dropped. The short-row factor narrowly fails on the final model (two-year mean +0.00056, −0.00002 to +0.00114) and is not applied.
+  - **Buildings level factor adopted** (×1.0334): k = 1.031 on 2023 and 1.036 on 2024, each improving the other year.
+  - **Contents:** unchanged (k = 2, trend +4.2%, no CANN).
+  - **Motor:** k_own = 4 and trend +3.8% a year (was +5.5% with the lift); CANN not adopted; uncertainty tilt adopted (×1.0054). Predicted / developed 2024 is now 1.005 (was 1.053).
+- **2024 backtest D²:**
+  - buildings **0.1138** (was 0.1107);
+  - contents **0.0969** (was 0.0968);
+  - motor **0.0832**. Motor is not comparable with 0.0806, because the actual changed with D-11.
+- **2025 rates (90% range):** buildings 500.3 (437–573), contents 129.2 (117–142), motor **581.3** (490–690; was 627.4).
+- **Submission:** `work/submissions/submission_final_candidate_20261023.csv`. 626,639 rows in sample order, no nulls, minimum 0.050.
+  - Mean per row, against the best-scoring A22 file: buildings 408.2 (×1.018, correlation 0.977), contents 103.4 (×1.000), **motor 455.9 (×0.927)**.
+  - The motor level lands on the ×0.93 that the leaderboard pair implied (A27), without being tuned to it.
+- **Not adopted:** the contents direct-channel flag; the buildings calibration power; the short-row factor, on the final model's own test; CANN on every line.
+- **Status:** final candidate ready. D-26 to D-30 were adopted on the owner's go-ahead and await formal sign-off. The public leaderboard is the independent check.
+- **Leaderboard result** (reported by the owner, 23 October 2026): the final candidate scored **0.12805**, the best public score so far, against 0.12753 for the A22 file. The leader was still at 0.13050. The gain of +0.00052 is consistent in sign with the backtest gains and with the motor level the A27 pair implied, but a single public score on part of the test set cannot attribute it to any one change. Recorded in `ev_r4_leaderboard_scores.csv`.

@@ -1,44 +1,45 @@
 # Home and motor claims cost model: technical documentation
 
-IAA AI-Assisted Hackathon 2026, Part 1. This documents the model behind `work/submissions/submission_combined_v2_dev_methods_20261022.csv`, every data issue we found and how it was resolved, and how the model was validated. It reflects the pack as of audit entry A27 (23 October 2026). A visual summary of the whole project, with charts, is in [`FINAL_REPORT.html`](FINAL_REPORT.html).
+IAA AI-Assisted Hackathon 2026, Part 1. This documents the model behind `work/submissions/submission_final_candidate_20261023.csv`, every data issue we found and how it was resolved, and how the model was validated. It reflects the pack as of audit entry A28 (23 October 2026). A visual summary of the whole project, with charts, is in [`FINAL_REPORT.html`](FINAL_REPORT.html).
 
 - **Owner:** Gerard Murphy. **AI assistance:** Claude Code (Claude Opus 5.5).
-- **Code:** `workings/contents/replication`, branch `contents/gerard`. Every figure here comes from a logged run (`audit/run_log.jsonl`) and an evidence file under `audit/evidence/`.
-- **Decisions** are numbered D-01 to D-25 and are recorded in `audit/DECISIONS.md`. Their switches are in `config.json`. None is formally signed off yet.
-- **Audit entries** A01 to A27 are in `audit/AUDIT_LOG.md`. This document summarises them; the log has the full detail.
+- **Code:** `workings/contents/replication`, branch `contents/gerard-final-review`. Every figure here comes from a logged run (`audit/run_log.jsonl`) and an evidence file under `audit/evidence/`.
+- **Decisions** are numbered D-01 to D-30 and are recorded in `audit/DECISIONS.md`. Their switches are in `config.json`. None is formally signed off yet.
+- **Audit entries** A01 to A28 are in `audit/AUDIT_LOG.md`. This document summarises them; the log has the full detail.
 
 ## 1. Summary
 
 The task is to predict the expected ultimate claim cost of every 2025 policy row in three lines: home contents, home buildings and private motor. Ultimate cost means all claims with a loss in the row's period, net of excess and recoveries, excluding declined claims. The score is Tweedie deviance D² with power 1.5.
 
-The model has five parts:
+The model has four parts:
 
-1. **A cleaned target.** Data errors are fixed. Claims are developed to ultimate: a chain ladder by peril, Bornhuetter–Ferguson for the two slow perils, and an uplift for motor bodily injury open-claim estimates.
+1. **A cleaned target.** Data errors are fixed, including two in the address table found in the final review (R11 elevation in feet; a placeholder year built). Claims are developed to ultimate: a chain ladder by peril and Bornhuetter–Ferguson for the two slow perils. The earlier uplift for motor bodily-injury claim size was switched off in A28: closed claims fell as much as open ones, so the fall was real.
 2. **One model per line,** with a log-exposure offset and a calendar-year trend:
 
    | Line | Small claims | Large claims |
    |---|---|---|
-   | Contents | Tweedie GLM (no split) | — |
-   | Buildings | XGBoost, trees of depth 3 | Tweedie GLM above 50k, scaled to a generalised Pareto tail |
+   | Contents | Tweedie GLM (no split), seasonal exposure | — |
+   | Buildings | XGBoost, trees of depth 3, with two peril interactions | Tweedie GLM above 50k with the same interactions, scaled to a generalised Pareto tail |
    | Motor | Tweedie GLM | Tweedie GLM above 50k, scaled to a generalised Pareto tail |
 
 3. **Claim history** as a Poisson–gamma credibility factor: claims a customer actually had, against claims the model expected for them.
-4. **A neural correction (CANN)** of the buildings small-claim model: a 20-network ensemble that starts at the XGBoost prediction and learns what it missed. Contents' was not significant over two years (D-23) and motor's failed the two-year rule.
+4. **A 2025 projection:** the trend carried forward one year with the 2025 weather and risk mix, and a level adjustment where both backtest years support it: buildings ×1.033 and, for uncertainty, motor ×1.005. The level's 90% range is reported per line.
 
-Contents also counts exposure seasonally (D-22): a day in winter carries more expected cost than a day in summer.
-5. **A 2025 projection:** the trend carried forward one year, using the 2025 weather and risk mix in the test file, with the level's uncertainty quantified. Buildings carries a +0.5% mean adjustment for that uncertainty.
+A neural correction (CANN) was built and tested on every line. In the final model its two-year mean gain is not significant on any line, and motor's gain, although significant on 2024, is worse on 2023 and fails the two-year rule, so none is used.
 
 **2024 backtest** (fitted on 2021–23; D² against developed 2024):
 
-| Line | D² | Without CANN | Without history | Without trend | Without large-claim split | Predicted / actual |
-|---|---|---|---|---|---|---|
-| Buildings | **0.1107** | 0.1105 | 0.1090 | 0.1087 | 0.1097 | 0.919 |
-| Contents | **0.0968** | (not adopted: 0.0968) | 0.0963 | 0.0960 | — | 1.039 |
-| Motor | **0.0806** | (not adopted: 0.0813) | 0.0777 | 0.0796 | 0.0757 | 1.053 |
+| Line | D² | Without history | Without trend | Without large-claim split | Predicted / actual |
+|---|---|---|---|---|---|
+| Buildings | **0.1138** | 0.1122 | 0.1131 | 0.1117 | 0.934 |
+| Contents | **0.0969** | 0.0964 | 0.0961 | — | 1.039 |
+| Motor | **0.0832** | 0.0791 | 0.0823 | 0.0798 | 1.005 |
 
-**2025 cost per unit of exposure** (90% range for the level in brackets): buildings 492.3 (423–573), contents 129.2 (117–142), motor 627.4 (494–797).
+Motor's actual changed when the bodily-injury lift was switched off (A28), so its D² is not comparable with earlier entries; buildings (0.1107 before A28) and contents (0.0968) are.
 
-Of the changes behind these figures, the bootstrap (section 5.4) finds the claim history, the A17 changes and the motor large-claim split clearly significant on at least one year. CANN is kept for buildings only, where its small gain (+0.00014 on 2023, +0.00025 on 2024) is significant (D-23).
+**2025 cost per unit of exposure** (90% range for the level in brackets): buildings 500.3 (437–573), contents 129.2 (117–142), motor 581.3 (490–690).
+
+**Leaderboard:** the final candidate scored **0.12805**, the best public score so far, against 0.12753 for the A22 file; the leader had 0.13050. The final candidate's motor level is ×0.927 of the A22 file's, close to the ×0.93 the leaderboard implied (audit log A27; scores in section 6), without being tuned to it.
 
 **The team's other branches** were reviewed for techniques to combine (A24). Blends of GLM and XGBoost, tuned XGBoost and frequency × severity models all failed out-of-time testing; one data fix (timber construction recoded in 2023) was adopted. Section 5.6 has the detail.
 
@@ -82,8 +83,8 @@ Every input file is pinned by SHA-256 (`audit/expected_inputs.sha256`) and check
 | 16 | **A step in claim cost from 2023, and inflation.** | Contents cost per unit of exposure is 105 in 2021–22 and 117 in 2023–24, with flat frequency. Claim-size quantiles rise 3.9–4.4% a year. | Calendar-year trend in every model, projected to 2025. | D-13; A13–A14 |
 | 17 | **Competition data in the public GitHub repo.** | `data/*.parquet` is on `main` (and on `hackathon-bridget` and `data-cian`) of a public repository. A02 raised the risk on day one. | **Open.** Needs a team decision: make the repo private, or remove the files and their history (rules §5b). | A02, A18 |
 | 18 | **Buildings timber construction recoded in 2023.** | `T` appears only in 2021–22 and `W` only from 2023 (about 22,000 rows a year each); every 2025 test row is `W`. The same buildings switch code: 16,954 of the 17,621 policies coded `T` in 2022 (96%) are `W` in 2023, against about 2% code changes between any other pair of years (A27). A scan of all 31 text fields on the three lines found no other year-specific recode. | Merged as `timber`; the raw value is kept. Left apart, `W` stands in for "2023 or later". Found by the data workstream (#54). | D-24; A24 |
-| 19 | **Region R11 elevation recorded in feet.** | All 49,046 R11 addresses run 3.25–3.30× every other region at the 10th, 50th and 90th percentiles and within every flood zone; the other regions cap at 60.0 and R11 at 196.9 (60 × 3.28). R11's river distance and flood zones match the others. | **Not yet corrected:** proposed conversion to metres behind a switch ([#154](https://github.com/almac09/iaa-hackathon-2026/issues/154)). Found in the final review. | A27 |
-| 20 | **`year_built = 1900` is a placeholder.** | 19,014 addresses (10.8× any neighbouring year); their energy ratings and claim rates match houses of all ages, yet the models price them as pre-1900. | **Not yet corrected:** proposed imputation from energy rating ([#155](https://github.com/almac09/iaa-hackathon-2026/issues/155)). Found in the final review. | A27 |
+| 19 | **Region R11 elevation recorded in feet.** | All 49,046 R11 addresses run 3.25–3.30× every other region at the 10th, 50th and 90th percentiles and within every flood zone; the other regions cap at 60.0 and R11 at 196.9 (60 × 3.28). R11's river distance and flood zones match the others. | Converted to metres in a cleaned address view, raw value kept ([#154](https://github.com/almac09/iaa-hackathon-2026/issues/154)). Found in the final review. | D-26; A27, A28 |
+| 20 | **`year_built = 1900` is a placeholder.** | 19,014 addresses (10.8× any neighbouring year); their energy ratings and claim rates match houses of all ages, yet the models price them as pre-1900. | Replaced by the typical year built for the energy rating, raw value kept ([#155](https://github.com/almac09/iaa-hackathon-2026/issues/155)). Found in the final review. | D-27; A27, A28 |
 
 **Checks that found no problem:** unique row and claim IDs; no duplicate rows, zero or negative exposure, or overlapping periods for any policy; every buildings, contents and padded motor row joins to customer, address and weather; no category level in 2025 unseen in training; policyholder age matches date of birth on every home row; drift into 2025 matches the trends already modelled (sum insured about +2% a year, premium about +5%).
 
@@ -118,9 +119,9 @@ The chain ladder failed for the slow perils for two reasons. It gives too much w
 ### 3.3 Open-claim estimates on motor bodily injury (IBNER, D-11)
 
 - **The problem:** the data is one snapshot, so movement on reported claims cannot be observed directly.
-- **Evidence:** for every peril except motor bodily injury, the current average cost of claims reported within 90 days rises with inflation from year to year. For bodily injury it falls as the open share rises: 21,049 (2021, 10% open) → 19,564 → 17,325 → 18,098 (2024, 74% open).
+- **Evidence:** for every peril except motor bodily injury, the current average cost of claims reported within 90 days rises with inflation from year to year. For bodily injury it falls as the open share rises: 21,049 (2021, 10% open) → 19,392 → 17,325 → 18,098 (2024, 74% open).
 - **Fix:** each bodily injury loss year is lifted to the 2021 level with no inflation: ×1.085, ×1.215 and ×1.163 for 2022–24 (×1.076 for 2022 before the duplicate claims were removed in A18; corrected in A27).
-- **Challenged (A27):** closed claims, which cannot develop, fell by as much as open ones in 2023, so the fall in claim size looks like real severity rather than under-reserving. Switching the lift off would lower motor's 2025 level by about 5–8% ([#156](https://github.com/almac09/iaa-hackathon-2026/issues/156)). Not yet changed. This is a deliberate lower bound, because inflation is left to the trend.
+- **Switched off (A28, D-28):** closed claims, which cannot develop, fell in size by as much as open ones in 2023, so the fall is real severity rather than under-reserving. Bodily injury is now developed for IBNR only. Motor's development factor falls from ×1.303 to ×1.236 for 2024 and from ×1.123 to ×1.029 for 2023 ([#156](https://github.com/almac09/iaa-hackathon-2026/issues/156)).
 
 ### 3.4 Traditional methods tested (A25)
 
@@ -144,9 +145,11 @@ Three further chain-ladder ideas were tested; runs are labelled "A25 development
 | Year | Buildings | Contents | Motor |
 |---|---|---|---|
 | 2021 | 383.9 | 105.5 | 564.5 |
-| 2022 | 403.1 | 105.5 | 599.4 |
-| 2023 | 433.8 | 117.2 | 659.8 (including the 11.9m claim) |
-| 2024 | 484.7 | 120.0 | 591.4 |
+| 2022 | 403.1 | 105.5 | 578.8 |
+| 2023 | 433.8 | 117.2 | 604.8 (including the 11.9m claim) |
+| 2024 | 484.7 | 120.0 | 561.0 |
+
+Motor is developed without the bodily-injury lift (D-28).
 
 ## 4. The models
 
@@ -175,8 +178,8 @@ Code: `python/run_glm_lines.py`, `python/glm_lines.py`, `python/xgb_models.py`, 
 
 - **Small claims** (each claim up to 50k):
   - XGBoost with depth-3 trees (the owner's choice) and a leaf minimum of 20,000 rows' worth of hessian. The other settings: η 0.05, subsampling 0.8, L2 1.
-  - 131 trees, set by early stopping on 2023 (144 before the timber merge, A24).
-  - 53 raw features: policy, customer, address and that year's weather.
+  - 194 trees, set by early stopping on 2023 (131 before the A28 changes, 144 before the timber merge).
+  - 53 raw features (policy, customer, address and that year's weather) plus two peril interactions (A28, D-29): clay soil × dry-summer index (subsidence) and flood zone 3 or above, or missing, × rainfall (flood). The large-claim GLM takes the same two as linear terms. Together they add +0.0011 / +0.0012 (two-year mean +0.00115, significant).
   - The year trend sits in the offset, fitted jointly with the trees by backfitting, because trees cannot extrapolate a year feature.
 - **Large claims** (cost above 50k):
   - Tweedie GLM on spline curves for flood zone, sum insured, elevation, year built and distance to river, plus soil type and construction type. L2 penalty 10⁻³.
@@ -202,9 +205,9 @@ Each claim is split at the threshold on its *reported* cost, and both parts then
 
 ### 4.5 Trend (D-13)
 
-The trend is a log-linear calendar-year term fitted jointly with each line's small-claim model. It is projected from the fitted line to 2025: buildings +5.9% a year, contents +4.2%, motor +5.5%.
+The trend is a log-linear calendar-year term fitted jointly with each line's small-claim model. It is projected from the fitted line to 2025: buildings +5.3% a year, contents +4.2%, motor +3.8% (final model, A28; motor was +5.5% with the bodily-injury lift).
 
-The trend is net of the rating factors and, for buildings, of weather. In the backtest it improves all three lines: buildings 0.1107 against 0.1087 without it, contents 0.0968 against 0.0960, motor 0.0806 against 0.0796. In the earlier A15 run the motor trend over-predicted 2024; the owner chose to keep it then.
+The trend is net of the rating factors and, for buildings, of weather. In the final model's backtest it improves all three lines: buildings 0.1138 against 0.1131 without it, contents 0.0969 against 0.0961, motor 0.0832 against 0.0823. In the earlier A15 run the motor trend over-predicted 2024; the owner chose to keep it then.
 
 ### 4.6 Claim history: credibility (D-14)
 
@@ -214,11 +217,11 @@ The trend is net of the rating factors and, for buildings, of weather. In the ba
   - **Motor and home across:** same customer.
 - **Expected** (`sql/13`): E is the number of claims a frequency GLM *without* history expects over the same prior rows.
 - **Factor:** (k + n) / (k + E) per group, multiplied together and rebalanced so the fitted rows keep their total. k is tuned on 2023; infinite k switches a group off.
-  - Own line: k = 4 (buildings), 2 (contents), 8 (motor).
+  - Own line: k = 4 (buildings), 2 (contents), 4 (motor). Motor's k is tuned on 2023 claims capped at 1m per row (A28, D-30), so the single 15.25m claim does not choose it; it was 8 before.
   - Other home line: off for buildings, k = 8 for contents.
   - Motor and home across: off for buildings and motor, k = 8 for contents.
-  - In 2025 the factor ranges from 0.67 to 3.40.
-- **Why it matters:** claim frequency per 1,000 by prior own-line claims (0 / 1 / 2 / 3 or more) is 43 / 69 / 108 / 185 for buildings, 38 / 64 / 81 / 140 for contents and 116 / 196 / 291 / 470 for motor.
+  - In 2025 the factor ranges from 0.59 to 3.70 (buildings 0.84–2.58, contents 0.68–3.40, motor 0.59–3.70).
+- **Why it matters:** claim frequency per 1,000 by prior own-line claims (0 / 1 / 2 / 3 or more) is 42 / 68 / 117 / 166 for buildings, 38 / 64 / 84 / 134 for contents and 115 / 195 / 292 / 476 for motor.
 - **Rejected approach:** history as ordinary model factors. History length grows with the calendar year (none for 2021, up to four years for 2025), so the factors became a stand-in for the trend, and the 2025 rows fell outside the training range. Contents D² dropped to 0.0614 (A16).
 
 ### 4.7 Buildings–contents correlation (D-16)
@@ -243,11 +246,17 @@ A copula would change the spread of combined losses, which matters for capital o
 
   | Line | 2023 without / with | 2024 without / with | Two-year mean gain (95% interval) | Adopted |
   |---|---|---|---|---|
-  | Buildings | 0.11102 / 0.11116 | 0.11046 / 0.11071 | +0.00019 (+0.00005, +0.00034) | Yes |
-  | Contents (seasonal exposure) | 0.09538 / 0.09543 | 0.09677 / 0.09682 | +0.00005 (−0.00019, +0.00030) | No |
-  | Motor | 0.10097 / 0.10078 | 0.08062 / 0.08128 | +0.00024 (−0.00023, +0.00071) | No (fails 2023) |
+  In the final model (A28, `ev_g7_cann_two_year.csv`):
 
-- **How much it matters:** very little. The buildings gain is +0.00014 and +0.00025 (it was +0.00005 before the timber merge, which it partly makes up for). Contents' identical-looking gain was dropped because its interval is about seven times wider. When it was adopted (A20), CANN had also raised contents' 2024 prediction by 0.3%. Motor's swing between years (−0.0002, +0.0007) is larger than any adopted gain. An earlier probe trained the seeds one after another rather than in one batch, and it passed for motor (+0.00015 and +0.00054). The motor effect is at the level of seed noise.
+  | Line | 2023 without / with | 2024 without / with | Two-year mean gain (95% interval) | Adopted |
+  |---|---|---|---|---|
+  | Buildings | 0.11277 / 0.11278 | 0.11378 / 0.11378 | +0.00001 (−0.00001, +0.00002) | No (not significant) |
+  | Contents (seasonal exposure) | 0.09568 / 0.09574 | 0.09694 / 0.09697 | +0.00005 (−0.00021, +0.00030) | No |
+  | Motor | 0.09981 / 0.09975 | 0.08318 / 0.08409 | +0.00043 (−0.00008, +0.00093) | No (fails 2023) |
+
+  Before A28, buildings passed (0.11102 / 0.11116 and 0.11046 / 0.11071, +0.00019 (+0.00005, +0.00034)) and was adopted. After the address corrections and peril interactions its gain is no longer significant, so CANN is dropped on every line. Whether the interactions capture what the network found was not tested directly.
+
+- **How much it matters:** very little. In the final model the buildings gain is +0.000009 on 2023 and +0.000004 on 2024. Before A28 it was +0.00014 and +0.00025, and +0.00005 before the timber merge, which that partly made up for. Contents' identical-looking gain was dropped because its interval is about seven times wider. When it was adopted (A20), CANN had also raised contents' 2024 prediction by 0.3%. Motor's swing between years (−0.0001, +0.0009) is larger than the gain that was ever adopted for any line. An earlier probe trained the seeds one after another rather than in one batch, and it passed for motor (+0.00015 and +0.00054). The motor effect is at the level of seed noise.
 - **Engineering:**
   - The networks train on the Apple GPU (PyTorch, MPS backend). All 20 seeds train at once as one batched network, with weights stacked along a seed axis. Each seed keeps its own initialisation, batch order, gradient clipping and early stopping. During training GPU utilisation is about 96%, and one 20-seed fit on 900,000 rows takes roughly 10–60 seconds, depending on when early stopping ends it.
   - PyTorch runs in a separate worker process (`python/cann_torch.py`), which is started as a plain subprocess. PyTorch and XGBoost each load their own OpenMP runtime on macOS, and the two crash or deadlock in one process (A20).
@@ -256,28 +265,28 @@ A copula would change the spread of combined losses, which matters for capital o
 ### 4.9 Level and its uncertainty (D-21)
 
 - **Level factor:** the deviance-optimal scale k = Σ y μ^(1−p) / Σ μ^(2−p) is measured on each backtest year. This is not the ratio of totals, because the log link is not canonical for p = 1.5. A level factor is adopted only if each year's k improves the *other* year.
-  - k is 1.020 and 1.046 for buildings, 1.112 and 0.986 for contents, 1.022 and 0.973 for motor (2023 and 2024).
-  - On every line, one year's k makes the other year worse, so no level factor is applied. Year-to-year level noise is larger than any stable bias.
+  - In the final model (A28), k is 1.031 and 1.036 for buildings, 1.111 and 0.987 for contents, 1.003 and 1.021 for motor (2023 and 2024).
+  - Until A28 no line passed. With the address corrections and interactions, buildings' two years agree, and each improves the other (+0.00012 / +0.00016), so buildings takes ×1.033. Contents and motor still fail.
 - **Uncertainty in the 2025 level** has three parts:
-  - **Development:** 200 bootstrap resamples of the training rows, each re-running the whole development step (`python/level_uncertainty.py`). The coefficient of variation of the development factor for 2024 is 0.8% (buildings), 0.4% (contents) and 3.0% (motor); for 2023 it is 0.1%, 0.04% and 4.3%.
-  - **Year-to-year noise:** σ_year, from the final model's log actual/expected by year (2 degrees of freedom lost to the level and trend). It is 5.8% (buildings), 3.7% (contents) and 8.4% (motor).
+  - **Development:** 200 bootstrap resamples of the training rows, each re-running the whole development step (`python/level_uncertainty.py`). The coefficient of variation of the development factor for 2024 is 0.8% (buildings), 0.4% (contents) and 1.3% (motor); for 2023 it is 0.1%, 0.04% and 0.4%.
+  - **Year-to-year noise:** σ_year, from the final model's log actual/expected by year (2 degrees of freedom lost to the level and trend). It is 5.1% (buildings), 3.7% (contents) and 5.6% (motor).
   - **Projection:** the least-squares trend projects 2025 from weights of 1.0 on 2024 and 0.5 on 2023. The variance of the 2025 level is therefore CV₂₀₂₄² + 0.25·CV₂₀₂₃² + 2.5·σ_year².
-  - **Mack (A25, D-25):** the development CV used for each line and loss year is the larger of the bootstrap and Mack's standard error of the chain-ladder reserve on quarterly reporting triangles (`python/mack.py`, `ev_u2_mack_development.csv`). Mack adds the process error of claims still to be reported. For 2024 it gives 1.1% (buildings), 0.6% (contents) and **5.4% (motor, against 3.0% from the bootstrap)**. Its CV of the 2024 reserve (14% / 18% / 24%) is close to the Mack analysis on `main` (13% / 17% / 21%).
-  - This gives σ of 9.2% (buildings), 5.8% (contents) and 14.5% (motor), and the 90% ranges in section 1.
+  - **Mack (A25, D-25):** the development CV used for each line and loss year is the larger of the bootstrap and Mack's standard error of the chain-ladder reserve on quarterly reporting triangles (`python/mack.py`, `ev_u2_mack_development.csv`). Mack adds the process error of claims still to be reported. For 2024 it gives 1.1% (buildings), 0.6% (contents) and **5.4% (motor, against 1.3% from the bootstrap)**. Its CV of the 2024 reserve (14% / 18% / 24%) is close to the Mack analysis on `main` (13% / 17% / 21%).
+  - This gives σ of 8.2% (buildings), 5.8% (contents) and 10.4% (motor) in the final model, and the 90% ranges in section 1. Motor's falls from 14.5% because, without the lift, the 11.9m claim no longer swings its development.
 - **Mean adjustment ("tilt"):** if the projected level is the median of a lognormal, the mean is higher by exp(σ²/2). With p = 1.5 the deviance-optimal prediction is the mean of the uncertain level (section 8, item 2).
-  - The tilt is +0.43% (buildings), +0.17% (contents) and +1.06% (motor).
-  - Like any level change it faced the two-year rule, and it is kept for buildings only. Contents and motor over-predicted 2024, so the tilt made 2024 worse.
+  - In the final model the tilt is +0.34% (buildings), +0.17% (contents) and +0.54% (motor).
+  - Like any level change it faces the two-year rule. In the final model it is kept for motor only (×1.0054); buildings' now worsens 2023 (−0.000003) and gains only +0.000001 on 2024, so it fails the rule.
 - **Caveats:**
   - Neither the bootstrap nor Mack measures method error: the development backtests over-estimated motor by 3.5% and 5.5% (section 3.4), so the motor range is still somewhat narrow ([#140](https://github.com/almac09/iaa-hackathon-2026/issues/140)).
-  - Buildings' year residuals are all positive (+1.5% to +5.8%), so its σ_year mixes in a bias as well as noise.
+  - Buildings' year residuals are all positive (+2.3% to +4.8%), so its σ_year mixes in a bias as well as noise.
 
 ### 4.10 The 2025 prediction
 
 For each 2025 row:
 
-> prediction = [ small-claim model at 2025 × CANN correction + large-claim GLM × Pareto adjustment × trend to 2025 ] × claim-history factor × rebalancing constant × uncertainty tilt
+> prediction = [ small-claim model at 2025 + large-claim GLM × Pareto adjustment × trend to 2025 ] × claim-history factor × rebalancing constant × level factor × uncertainty tilt
 
-Contents has no large-claim term, and its exposure is seasonal. The CANN correction applies to buildings only. The tilt applies to buildings (×1.0043).
+Contents has no large-claim term, and its exposure is seasonal. The level factor applies to buildings (×1.0334) and the tilt to motor (×1.0054); no CANN correction is used.
 
 ## 5. Validation
 
@@ -319,18 +328,18 @@ Contents has no large-claim term, and its exposure is seasonal. The CANN correct
 | Recent-weighted reporting patterns | Motor and contents developed worse in both backtests | A25 |
 | Fitting on reported claims with a development offset | Motor −0.0002 / −0.0003, others neutral | A25 |
 
-### 5.4 Significance: paired customer bootstrap (A20)
+### 5.4 Significance: paired customer bootstrap (A20; figures from the final model, A28)
 
 Each kept component is compared with the chosen model without it, on the same rows. Whole customers are resampled (1,000 times), so claims of one customer are never split across resamples. The table gives the D² gain and its 95% interval; **bold** means the interval excludes zero.
 
 | Line | Year | CANN | Claim history | Trend | Large-claim split | A17 changes |
 |---|---|---|---|---|---|---|
-| Buildings | 2023 | **+0.00014** (0.00002, 0.00026) | **+0.0010** (0.0001, 0.0019) | +0.0002 (−0.0004, 0.0008) | +0.0019 (−0.0008, 0.0048) | **+0.0017** (0.0008, 0.0026) |
-| Buildings | 2024 | **+0.00025** (0.00001, 0.00052) | **+0.0017** (0.0007, 0.0028) | **+0.0020** (0.0007, 0.0033) | +0.0010 (−0.0014, 0.0034) | **+0.0010** (0.0001, 0.0019) |
-| Contents | 2023 | not adopted: +0.00006 (−0.00003, 0.00014) | **+0.0017** (0.0003, 0.0032) | **+0.0001** (0.00004, 0.00013) | — | +0.0010 (−0.0004, 0.0026) |
-| Contents | 2024 | not adopted: +0.00005 (−0.00042, 0.00056) | +0.0005 (−0.0010, 0.0020) | +0.0008 (−0.0003, 0.0021) | — | **+0.0019** (0.0003, 0.0039) |
-| Motor | 2023 | not adopted: −0.0002 (−0.0009, 0.0004) | +0.0010 (−0.0009, 0.0025) | +0.0041 (−0.0019, 0.0121) | −0.0011 (−0.0033, 0.0008) | **+0.0056** (0.0001, 0.0130) |
-| Motor | 2024 | not adopted: **+0.0007** (0.00003, 0.0014) | **+0.0030** (0.0018, 0.0044) | +0.0011 (−0.0013, 0.0040) | **+0.0049** (0.0016, 0.0084) | **+0.0020** (0.0007, 0.0034) |
+| Buildings | 2023 | not adopted: +0.00001 (−0.00000, 0.00002) | +0.0008 (−0.0000, 0.0017) | +0.0001 (−0.0005, 0.0007) | +0.0011 (−0.0014, 0.0035) | **+0.0011 (0.0002, 0.0022)** |
+| Buildings | 2024 | not adopted: +0.00000 (−0.00002, 0.00003) | **+0.0016 (0.0006, 0.0028)** | +0.0007 (−0.0004, 0.0019) | +0.0021 (−0.0004, 0.0044) | +0.0006 (−0.0005, 0.0016) |
+| Contents | 2023 | not adopted: +0.00006 (−0.00001, 0.00013) | **+0.0016 (0.0003, 0.0031)** | **+0.0001 (0.0001, 0.0002)** | — | **+0.0014 (0.0000, 0.0030)** |
+| Contents | 2024 | not adopted: +0.00004 (−0.00045, 0.00055) | +0.0005 (−0.0010, 0.0020) | +0.0008 (−0.0003, 0.0021) | — | **+0.0020 (0.0003, 0.0040)** |
+| Motor | 2023 | not adopted: −0.00006 (−0.00080, 0.00053) | +0.0009 (−0.0024, 0.0035) | +0.0017 (−0.0021, 0.0069) | −0.0010 (−0.0030, 0.0007) | +0.0048 (−0.0001, 0.0117) |
+| Motor | 2024 | **not adopted: +0.00091 (0.00020, 0.00170)** | **+0.0041 (0.0021, 0.0066)** | +0.0009 (−0.0002, 0.0023) | **+0.0034 (0.0004, 0.0066)** | **+0.0023 (0.0011, 0.0036)** |
 
 Reading: claim history and the A17 changes (smoothing, the motor factors) are real on most line-years. The trend and the large-claim split are mostly real but noisy, because single large claims dominate the interval. CANN is at the edge of detection: for motor it is significantly better on 2024 and (not significantly) worse on 2023, which is why the two-year rule rejects it. Motor's split loses on 2023 (the year of the 11.9m claim) and wins clearly on 2024. Source: `audit/evidence/glm_lines/ev_g8_bootstrap_significance.csv`.
 
@@ -392,18 +401,30 @@ A last sweep for anything missed: eight reviewers with different lenses (target 
 | Calibration power; short part-year rows | Buildings | +0.0005 / +0.0006; +0.0005 / +0.0007 | Worth testing | [#158](https://github.com/almac09/iaa-hackathon-2026/issues/158) |
 | Direct-channel flag | Contents | +0.0006 / +0.0007 | Borderline | [#159](https://github.com/almac09/iaa-hackathon-2026/issues/159) |
 | Net open own-damage/theft claims of expected recoveries | Motor | target definition; −1.2% on 2024 | Worth testing | [#160](https://github.com/almac09/iaa-hackathon-2026/issues/160) |
+| Named young driver and quoted-on-inception-day flag (small-claim GLM) | Motor | −0.00015 / −0.00004 on the full target; +0.00057 / +0.00037 with claims capped at 50k | Narrow: passes only on the capped basis | — (no issue raised) |
 | Large-claim GLM at power 1.9; log knots; more trees and seed bagging; count-weighted or quarterly BF development | Motor / buildings | various | Rejected: one-claim or seed artefacts, selected peaks | [#161](https://github.com/almac09/iaa-hackathon-2026/issues/161) |
 
-None of these is in the model yet: each needs a labelled full run under the two-year rule and the owner's sign-off.
+**Final run (A28).** Items 1–6 were then implemented behind switches and tested under the usual rules (`python/final_tests.py`, `ev_f1`–`ev_f6`; buildings averaged over four XGBoost seeds with the tree count fixed):
+
+| Change | 2023 / 2024 | Two-year mean (95%) | Outcome |
+|---|---|---|---|
+| Address corrections (D-26, D-27) | buildings +0.0002 / +0.0013; contents +0.0003 / +0.0002 | buildings +0.00075 (−0.00012, +0.00163) | Applied as corrections |
+| Buildings peril interactions, both models (D-29) | +0.0011 / +0.0012 | +0.00115 (+0.00030, +0.00200) | **Adopted** |
+| Bodily-injury lift off (D-28) | −0.0012 / −0.0005 on the lifted actual; +0.0005 / +0.0012 on the unlifted | — | **Adopted** on the structural and leaderboard evidence |
+| Motor own-line k = 4 (D-30) | −0.0002 / +0.0013 (capped at 1m +0.0007 / +0.0012) | — | **Adopted** by the pre-registered rule |
+| Buildings short-row factor | +0.0005 / +0.0006 | +0.00055 (+0.000002, +0.00111) in the test; +0.00056 (−0.00002, +0.00114) on the final model | Not adopted: fails on the final model |
+| Buildings calibration power | +0.00003 / +0.0003 | +0.00015 (−0.00027, +0.00057) | Not adopted |
+| Contents direct-channel flag | +0.0006 / +0.0007 | +0.00062 (−0.00004, +0.00128) | Not adopted |
+
 
 ## 6. Submission
 
-- **File:** `work/submissions/submission_combined_v2_dev_methods_20261022.csv` (A25), kept out of git (`work/` is ignored). It has 626,639 rows, with row_ids and order identical to `sample_submission.csv`, no nulls, and every prediction above zero (minimum 0.049). A zero would make the deviance infinite on any row with a claim.
-- **Mean prediction per row:** buildings 401.7, contents 103.4, motor 492.1.
-- **A/B file for the leaderboard:** `submission_combined_v1_20261022_motor_at_v014_level.csv` is identical except that motor is scaled ×0.8635 to a mean of 424.91 ([#151](https://github.com/almac09/iaa-hackathon-2026/issues/151)).
+- **File:** `work/submissions/submission_final_candidate_20261023.csv` (A28), kept out of git (`work/` is ignored). It has 626,639 rows, with row_ids and order identical to `sample_submission.csv`, no nulls, and every prediction above zero (minimum 0.050). A zero would make the deviance infinite on any row with a claim.
+- **Mean prediction per row:** buildings 408.2, contents 103.4, motor 455.9. Against the best-scoring A22 file: ×1.018, ×1.000 and ×0.927.
+- **A/B file for the leaderboard:** `submission_combined_v1_20261022_motor_at_v014_level.csv` is combined v1 (`submission_combined_v1_20261022.csv`) with motor scaled ×0.8635 to a mean of 424.91; its buildings and contents are identical to v1. It is not a variant of the final candidate above, which differs from it on all three lines ([#151](https://github.com/almac09/iaa-hackathon-2026/issues/151)).
 - **Earlier files** (A20–A22 outputs, renamed by the owner) are kept beside it.
-- **Public leaderboard** (A27): the A22 file scored **0.12753** (best), combined v1 0.12727, this A25 file 0.12727 (the same predictions as v1 apart from buildings within 0.003%), and combined v1 with motor ×0.8635 0.12725. The leader was 0.13050.
-- **2025 cost per unit of exposure against developed 2024:** buildings 492.3 against 484.7, contents 129.2 against 120.0, motor 627.4 against 591.4.
+- **Public leaderboard:** the A28 final candidate scored **0.12805** (best). Earlier (A27): the A22 file 0.12753, combined v1 0.12727, the A25 file (`submission_combined_v2_dev_methods_20261022.csv`) 0.12727 (the same predictions as v1 apart from buildings within 0.003%), and combined v1 with motor ×0.8635 0.12725. The leader was 0.13050.
+- **2025 cost per unit of exposure against developed 2024:** buildings 500.3 against 484.7, contents 129.2 against 120.0, motor 581.3 against 561.0 (motor's developed 2024 is lower without the bodily-injury lift).
 
 ## 7. Decisions
 
@@ -418,7 +439,7 @@ None of these is in the model yet: each needs a labelled full run under the two-
 | D-07 | Exposure offset; earned premium for loss ratios only | Chosen by the owner |
 | D-09 | D-01, D-02 and D-04 extended to buildings and motor | Applied |
 | D-10 | IBNR by peril, product-limit pattern | Applied |
-| D-11 | Motor bodily injury IBNER lift (lower bound) | Applied |
+| D-11 | Motor bodily injury IBNER lift (lower bound); switched off by D-28 | Superseded (switched off in A28) |
 | D-12 | 1m cap and loading (XGBoost run only); replaced by D-15 | Superseded |
 | D-13 | Trend to 2025 | Approved; motor trend confirmed after the backtest |
 | D-14 | Claim history as credibility | Owner asked for full use of history |
@@ -427,12 +448,17 @@ None of these is in the model yet: each needs a labelled full run under the two-
 | D-17 | Bornhuetter–Ferguson for immature slow perils | Owner asked for recommendation 1 |
 | D-18 | Spline smoothing; two motor factors | Owner asked for recommendations 2 and 3 |
 | D-19 | De-duplicate claims; pad motor customer IDs | Applied |
-| D-20 | CANN correction per line, adopted under the two-year rule (buildings, contents) | Owner asked for it (implementation 1) |
-| D-21 | Level factor and uncertainty tilt, each under the two-year rule (tilt kept for buildings only) | Owner asked for it (implementation 3) |
+| D-20 | CANN correction per line under the two-year rule: adopted for buildings and contents in A20, contents dropped in A22 (D-23), buildings dropped in A28; not used on any line in the final model | Owner asked for it (implementation 1) |
+| D-21 | Level factor and uncertainty tilt, each under the two-year rule (level factor kept for buildings, tilt kept for motor only) | Owner asked for it (implementation 3) |
 | D-22 | Seasonal exposure for contents | Adopted by the owner (A22) |
 | D-23 | Significance required for discretionary additions such as CANN (contents CANN dropped) | Adopted by the owner (A22) |
 | D-24 | Merge buildings timber codes T and W | Adopted with the combined-model plan (A24) |
 | D-25 | Development uncertainty: the larger of the bootstrap and Mack | Owner asked for Mack in the ranges (A25) |
+| D-26 | R11 elevation converted from feet | Adopted (A28) |
+| D-27 | Year built 1900 placeholder imputed | Adopted (A28) |
+| D-28 | Motor bodily-injury lift (D-11) switched off | Adopted (A28) |
+| D-29 | Buildings peril interactions | Adopted (A28) |
+| D-30 | Motor credibility k tuned on capped claims | Adopted (A28) |
 
 D-08 records the XGBoost feature set used in A13 only. No decision is formally signed off.
 
@@ -441,16 +467,16 @@ D-08 records the XGBoost feature set used in A13 only. No decision is formally s
 1. **Development is the largest uncertainty.**
    - Motor bodily injury: even with BF, the backtest still over-predicts by 13%, and its "actual" is itself 49% open.
    - Subsidence: 2024 is 59% reported.
-   - The IBNER lift is a lower bound.
-2. **Level.** The backtest under-predicts buildings 2024 by 8.5% in total and over-predicts contents and motor by 4–5%. Level is the largest single source of error: on contents, moving 2023's level by 2% costs about 0.0006 D², ten times the CANN gain. No level factor survives the two-year rule (section 4.9).
+   - The bodily-injury IBNER lift was switched off in A28 (D-28): closed claims fell as much as open ones, so the fall in claim size is treated as real.
+2. **Level.** The backtest under-predicts buildings 2024 by 6.6% in total and over-predicts contents by 3.9% and motor by 0.5%. Level is the largest single source of error: on contents, moving 2023's level by 2% costs about 0.0006 D², ten times the CANN gain. Only buildings' level factor survives the two-year rule (×1.033); contents and motor fail it (section 4.9).
    - **Correction (A20):** an earlier version of this document said under-prediction costs far more D² than over-prediction (8% low 0.0015 against 8% high 0.0003). That was wrong and had no audit entry. For p = 1.5 the deviance of predictions scaled by r from their optimum grows as 2·cosh(ln r / 2) − 2 ≈ (ln r)²/4, which is symmetric in log terms. So 8% too low costs only about 18% more than 8% too high. The deviance-optimal level is the *mean* of the uncertain level, which is what the tilt in section 4.9 targets. There is no case for deliberately predicting high.
    - The deviance-optimal scale is not the ratio of totals, so "predicted / actual" in section 1 is not the measure to correct.
-3. **Trends rest on four years.** Year-to-year noise around the fitted trend is 3.7% (contents) to 8.4% (motor); see section 4.9.
-   - The 90% range for the 2025 level runs from −14% to +16% (buildings), −9% to +10% (contents) and −21% to +27% (motor). This includes Mack's chain-ladder error but not the development method error.
+3. **Trends rest on four years.** Year-to-year noise around the fitted trend is 3.7% (contents) to 5.6% (motor); see section 4.9.
+   - The 90% range for the 2025 level runs from −13% to +14% (buildings), −9% to +10% (contents) and −16% to +19% (motor). This includes Mack's chain-ladder error but not the development method error.
 4. **Selection on the same years.** 2023 and 2024 have informed many choices, so the backtest gains are somewhat optimistic. The leaderboard is the independent check, but it should confirm choices, not drive them.
 5. **Seasonality** is modelled for contents only. Buildings has the stronger winter peak, but seasonal exposure made it worse on both years (A21). The reason is not established.
-6. **Small gains near the noise.** Buildings' CANN gain (+0.00014 and +0.00025) is significant but small. Under the two-year rule, a change with no real effect passes roughly a quarter of the time (if the two years behave independently), so significance is reported alongside it (section 5.4).
-7. **Implementation coverage.** The new models are implemented in Python only. GLM A, the contents benchmark, has an independent R implementation that reconciles (100 checks, 0 failed).
+6. **Small gains near the noise.** The final review's gains are each a few ten-thousandths of D², found and judged on the same two years. Under the two-year rule, a change with no real effect passes roughly a quarter of the time (if the two years behave independently), so significance is reported alongside it (section 5.4).
+7. **Implementation coverage.** The new models are implemented in Python only. GLM A, the contents benchmark, has an independent R implementation that reconciles (101 checks, 0 failed).
 8. **Synthetic data.** It has no shared events between buildings and contents. A real portfolio would, and the independence assumption would need revisiting for Week 2.
 9. **Data in a public repository** (section 2.2, issue 17) is unresolved.
 
@@ -460,7 +486,7 @@ Each risk found by inverting the model, what has been done, and the GitHub issue
 
 | Risk | Status | Issue |
 |---|---|---|
-| Wrong 2025 level | Measured: 90% ranges per line. No level factor passes the two-year rule; buildings carries a +0.5% mean adjustment. | [#131](https://github.com/almac09/iaa-hackathon-2026/issues/131) (closed) |
+| Wrong 2025 level | Measured: 90% ranges per line. Only buildings' level factor passes the two-year rule and is adopted (×1.0334); motor carries a +0.5% mean adjustment (uncertainty tilt ×1.0054). | [#131](https://github.com/almac09/iaa-hackathon-2026/issues/131) (closed) |
 | Ranges too narrow: development method error and tail-fit uncertainty left out | Mack's error added (A25); method error and tail fit **open** | [#140](https://github.com/almac09/iaa-hackathon-2026/issues/140), [#152](https://github.com/almac09/iaa-hackathon-2026/issues/152) (closed) |
 | Leakage | Contacts excluded; missed payments tested and kept; categorical features **not yet scanned** | [#135](https://github.com/almac09/iaa-hackathon-2026/issues/135) (closed), [#141](https://github.com/almac09/iaa-hackathon-2026/issues/141) |
 | Selection on the same two years | Significance now required for discretionary additions (D-23); structural components stay under the two-year rule | [#138](https://github.com/almac09/iaa-hackathon-2026/issues/138) (closed) |
@@ -471,11 +497,11 @@ Each risk found by inverting the model, what has been done, and the GitHub issue
 | Train and test rows built differently | Checked: no difference | [#134](https://github.com/almac09/iaa-hackathon-2026/issues/134) (closed) |
 | Silent failure of the full run | Worker fails loudly; torch kept out of the main process; **no end-to-end test yet** | [#129](https://github.com/almac09/iaa-hackathon-2026/issues/129) (closed), [#145](https://github.com/almac09/iaa-hackathon-2026/issues/145) |
 | Techniques from the team's other branches | Tested out of time; none passes; one data fix adopted (D-24) | [#148](https://github.com/almac09/iaa-hackathon-2026/issues/148), [#149](https://github.com/almac09/iaa-hackathon-2026/issues/149) (closed) |
-| Motor 2025 level (16% above the best-scoring leaderboard file) | **Open**: leaderboard A/B prepared | [#151](https://github.com/almac09/iaa-hackathon-2026/issues/151) |
+| Motor 2025 level (final candidate ×0.927 of the A22 file, about 7% below it; ×1.073 of v014's level) | A/B scored (A27): motor at v014's level 0.12725 against 0.12727 for combined v1, so the lower level did not help; now covered by the D-28 row below | [#151](https://github.com/almac09/iaa-hackathon-2026/issues/151) |
 | Location information below region | No coordinates in the data; weather-based proxies and region × urban tested; none passes and no residual pattern | [#153](https://github.com/almac09/iaa-hackathon-2026/issues/153) (closed) |
-| Data errors in the address table (R11 elevation in feet; year built 1900) | **Open**: found in the final review | [#154](https://github.com/almac09/iaa-hackathon-2026/issues/154), [#155](https://github.com/almac09/iaa-hackathon-2026/issues/155) |
-| Motor level and the bodily-injury lift | **Open**: the lift looks wrong; the leaderboard implies motor about 7% high | [#156](https://github.com/almac09/iaa-hackathon-2026/issues/156), [#151](https://github.com/almac09/iaa-hackathon-2026/issues/151) |
-| Further gains measured in the final review (motor credibility; buildings interactions, calibration, short rows; contents channel; recoveries) | **Open**: need labelled runs and sign-off | [#157](https://github.com/almac09/iaa-hackathon-2026/issues/157)–[#160](https://github.com/almac09/iaa-hackathon-2026/issues/160) |
+| Data errors in the address table (R11 elevation in feet; year built 1900) | Corrected (A28, D-26, D-27) | [#154](https://github.com/almac09/iaa-hackathon-2026/issues/154), [#155](https://github.com/almac09/iaa-hackathon-2026/issues/155) (closed) |
+| Motor level and the bodily-injury lift | Lift switched off (D-28); motor now ×0.927 of the A22 file's level, near the leaderboard's ×0.93. The final candidate scored 0.12805, the best so far | [#156](https://github.com/almac09/iaa-hackathon-2026/issues/156) (closed), [#151](https://github.com/almac09/iaa-hackathon-2026/issues/151) |
+| Further gains measured in the final review | Interactions and motor credibility adopted; calibration power, short-row factor and contents channel failed the rules (A28). Recoveries on open claims **open**; motor named-young-driver and quote-day flags (narrow pass, needs an owner ruling on the capped basis; not tested in A28) **open** | [#157](https://github.com/almac09/iaa-hackathon-2026/issues/157)–[#159](https://github.com/almac09/iaa-hackathon-2026/issues/159) (closed), [#160](https://github.com/almac09/iaa-hackathon-2026/issues/160) |
 | Pack D² not comparable with the leaderboard | **Open** (model choices unaffected) | [#146](https://github.com/almac09/iaa-hackathon-2026/issues/146) |
 | Decisions not signed off | **Open** | [#147](https://github.com/almac09/iaa-hackathon-2026/issues/147) |
 
@@ -514,11 +540,11 @@ python -m pytest -q tests
 - `run_glm_lines.py` needs `work/sample_submission.csv`, the competition's sample file. It takes about 20 minutes on an M3 Max and writes the submission and the `audit/evidence/glm_lines/` tables. The CANN networks use the Apple GPU when PyTorch finds it (MPS) and fall back to the CPU otherwise, which is much slower.
 - `python python/gap_tests.py` (optional, about 10 minutes) repeats the A21 gap tests; it reads `ev_g6` and `ev_g8` from the last full run.
 - `python python/combined_tests.py` (optional, about 30 minutes) repeats the A24 tests of the team's techniques; `python python/development_tests.py` (about 5 minutes) repeats the A25 offset-fit test.
-- `python python/geo_tests.py` (about 6 minutes) repeats the A26 location tests.
+- `python python/geo_tests.py` (about 6 minutes) repeats the A26 location tests; `python python/final_tests.py` (about 40 minutes; `--tests T1` etc. to run parts) repeats the A28 tests.
 - Any runner accepts `--run-label "<text>"`, which is stored in its run-log record (A25).
 - PyTorch runs only in its own worker process (`python/cann_torch.py`). Do not import torch in any process that uses XGBoost (A20).
 - Each run appends a record to `audit/run_log.jsonl`: input, SQL and code hashes, decision switches, package versions and headline metrics.
-- **Expected results:** reconciliation ends with `0 failed`; the 2024 backtest matches section 1; 46 tests pass.
+- **Expected results:** reconciliation ends with `0 failed`; the 2024 backtest matches section 1; 51 tests pass.
 
 ## 10. Where to find things
 
