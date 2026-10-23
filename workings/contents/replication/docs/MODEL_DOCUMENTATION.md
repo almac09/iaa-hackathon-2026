@@ -1,11 +1,11 @@
 # Home and motor claims cost model: technical documentation
 
-IAA AI-Assisted Hackathon 2026, Part 1. This documents the model behind `work/submissions/submission_final_candidate_20261023.csv`, every data issue we found and how it was resolved, and how the model was validated. It reflects the pack as of audit entry A28 (23 October 2026). A visual summary of the whole project, with charts, is in [`FINAL_REPORT.html`](FINAL_REPORT.html).
+IAA AI-Assisted Hackathon 2026, Part 1. This documents the model behind `work/submissions/submission_final_candidate_20261023.csv`, every data issue we found and how it was resolved, and how the model was validated. It reflects the pack as of audit entry A29 (23 October 2026). A visual summary of the whole project, with charts, is in [`FINAL_REPORT.html`](FINAL_REPORT.html).
 
 - **Owner:** Gerard Murphy. **AI assistance:** Claude Code (Claude Opus 5.5).
 - **Code:** `workings/contents/replication`, branch `contents/gerard-final-review`. Every figure here comes from a logged run (`audit/run_log.jsonl`) and an evidence file under `audit/evidence/`.
 - **Decisions** are numbered D-01 to D-30 and are recorded in `audit/DECISIONS.md`. Their switches are in `config.json`. None is formally signed off yet.
-- **Audit entries** A01 to A28 are in `audit/AUDIT_LOG.md`. This document summarises them; the log has the full detail.
+- **Audit entries** A01 to A29 are in `audit/AUDIT_LOG.md`. This document summarises them; the log has the full detail.
 
 ## 1. Summary
 
@@ -40,6 +40,8 @@ Motor's actual changed when the bodily-injury lift was switched off (A28), so it
 **2025 cost per unit of exposure** (90% range for the level in brackets): buildings 500.3 (437–573), contents 129.2 (117–142), motor 581.3 (490–690).
 
 **Leaderboard:** the final candidate scored **0.12805**, the best public score so far, against 0.12753 for the A22 file; the leader had 0.13050. The final candidate's motor level is ×0.927 of the A22 file's, close to the ×0.93 the leaderboard implied (audit log A27; scores in section 6), without being tuned to it.
+
+**Statistical tests (A29):** Type III tests, chi-square tests by level, level merging, dropping terms and a pairwise interaction screen, all scored out of time where they could change the model. Nothing passes the rules, so the model is unchanged (section 5.9).
 
 **The team's other branches** were reviewed for techniques to combine (A24). Blends of GLM and XGBoost, tuned XGBoost and frequency × severity models all failed out-of-time testing; one data fix (timber construction recoded in 2023) was adopted. Section 5.6 has the detail.
 
@@ -417,6 +419,47 @@ A last sweep for anything missed: eight reviewers with different lenses (target 
 | Contents direct-channel flag | +0.0006 / +0.0007 | +0.00062 (−0.00004, +0.00128) | Not adopted |
 
 
+### 5.9 Statistical tests of the final model (A29)
+
+The GLMs of the final model were put through formal hypothesis tests, at the owner's request: Type III tests of each term, chi-square tests of actual against expected by level, level merging and term dropping scored out of time, and a screen of every pair of terms for interactions (`python/stat_tests.py`, evidence `ev_s1_*`, `ev_s2_*`, `ev_s3_*`). The adoption rules were fixed before the labelled runs. The Type III F test matches R's `glm` with `statmod` to a relative 1e-4 on simulated data (a unit test), and two independent code reviews checked the tests (eight findings confirmed, seven distinct defects, all fixed before the runs).
+
+**Type III tests** on the final fits (2021–24). Each term is dropped and the model refitted. The quasi-likelihood F test divides the deviance change by the Pearson dispersion, on the term's estimable columns. Beside it, a score test at the reduced fit takes the smaller of the cluster-robust statistic and the model-based one with the dispersion the sandwich implies.
+
+| Component | Rows | Columns (rank) | Pearson φ | Effective φ | Terms significant on both tests |
+|---|---|---|---|---|---|
+| Buildings large-claim GLM | 707,726 | 35 (35) | 15,033 | 13,160 | 4 of 9 |
+| Contents GLM | 721,617 | 79 (77) | 1,612 | 965 | 16 of 21 |
+| Motor small-claim GLM | 979,968 | 83 (80) | 1,077 | 896 | 18 of 19 |
+| Motor large-claim GLM | 979,968 | 28 (28) | 54,631 | 59,072 | 1 of 5 |
+
+- **Not significant on either test** (F p / score p): buildings large-claim flood zone (0.62 / 0.55), soil type (0.41 / 0.40), construction type (0.11 / 0.15), distance to river (0.14 / 0.05) and x_fz3_rain (0.21 / 0.19); contents segment (0.97 / 0.88), bike cover (0.82 / 0.76) and lodgers (0.19 / 0.09); motor marketing segment (1.00 / 1.00); motor large-claim driver age (0.93 / 0.95), years licensed (0.94 / 0.96) and region (0.06 / 0.15).
+- **Significant on one test only:** contents policyholder age (0.15 / 0.03) and distance to river (0.28 / 0.050); motor large-claim annual mileage (< 0.001 / 0.05).
+- **Aliasing.** Some factors are exactly collinear: marketing segment's budget and mainstream tiers with motor credit band, contents segment with contents credit band, and one direction of motor's voluntary-excess spline. Only the small ridge penalty pins those coefficients, so they cannot be tested one at a time; the tests count estimable columns only. Predictions are unaffected. Segment adds nothing beyond credit band in either line.
+- **Dispersion.** The dispersion the sandwich implies is 0.6 to 1.1 times the Pearson one, so the Pearson F tests are about right. The deviance-based dispersion (44 to 111) is far too small and should not be used for these models.
+
+**Calibration by level** on both backtest years: 186 factor-years, 16 with p < 0.05 (about 9 expected by chance) and 2 after Benjamini–Hochberg within line and year. Those are buildings basement in 2023 (A/E 1.33; 1.08 in 2024) and motor third-party-only cover in 2023 (A/E 2.25, the large claim; 1.04 in 2024); neither is significant in 2024 (p 0.31 and 0.75). Only one factor has p < 0.05 in both years, buildings distance to river (0.039 and 0.016), and it does not survive Benjamini–Hochberg in either (q 0.30 and 0.69). Within it, buildings rows with no distance recorded are under-predicted in both years (A/E 1.61 and 1.20; 170 and 155 claims). It was found on the backtest years, so it is raised for testing rather than adopted ([#163](https://github.com/almac09/iaa-hackathon-2026/issues/163)).
+
+**Simplification, scored out of time:**
+
+- **Level merging** (greedy, while the Wald statistic for equal coefficients is below 2; aliased merges free): buildings +0.00034 / −0.00010, contents −0.00056 / −0.00019, motor −0.00025 / +0.00034. Fails on every line.
+- **Dropping each term** (54 terms): none adopted. Two improve both years without significance: contents segment (+0.00013 / +0.00020) and motor payment method (+0.00130 / +0.00006). Payment method is strongly significant in-sample (F 58.9) yet costs nothing when dropped, which suggests its relativity is not stable over time ([#164](https://github.com/almac09/iaa-hackathon-2026/issues/164)). Conversely, x_fz3_rain is not significant in-sample in the large-claim GLM, yet dropping it costs significantly out of time (−0.00011, 95% −0.00022 to −0.00001). In-sample p-values do not decide predictive value; the out-of-time test does.
+
+**Interaction screen.** Every pair of terms in each GLM, and of buildings' XGBoost on its own residuals, was screened by the score test on 2021–22 only, so both backtest years stayed unseen. Pairs that only repeat the A28 peril interactions were recorded but not screened (8).
+
+| Model | Pairs screened | p < 0.05 | Smallest p | Smallest BH q |
+|---|---|---|---|---|
+| Buildings large-claim GLM | 34 | 3% | 0.027 | 0.91 |
+| Buildings XGBoost (residuals) | 1,479 | 3% | 0.0052 | 1.00 |
+| Contents GLM | 210 | 4% | 0.0010 | 0.16 |
+| Motor small-claim GLM | 171 | 11% | 0.0018 | 0.28 |
+| Motor large-claim GLM | 10 | 0% | 0.32 | 0.91 |
+
+- **No pair passes Benjamini–Hochberg.** The p-values are close to uniform. Motor's small-claim GLM has more small p-values than chance (11% below 0.05), but no single pair stands out.
+- **Positive control.** The screen cannot see the kind of interaction that matters. Refit without the A28 features, buildings' XGBoost gives p = 0.41 for soil type × dry summer and 0.53 for flood zone × rainfall, the two pairs that gain about 0.001 out of time as engineered features (D-29). In an unlogged check before the labelled run, the same pairs reached only 0.03 and 0.05 on 2023 residuals; the BH bar is about 3e-5 (0.05 / 1,479). The trees absorb most of an interaction on the years they are fitted to; its value comes from carrying over to other years' weather. So the three strongest pairs per model were scored regardless of BH, with Holm at the scoring step (an amendment made before the labelled run).
+- **Scored out of time:** 15 pairs, none adopted. One passes the two-year rule: buildings XGBoost email domain × branch (+0.00004 / +0.00033; two-year mean +0.00018, 95% −0.00014 to +0.00050), two administrative fields (email provider and servicing branch). That is the chance pass the significance rule exists to stop. The motor small-claim candidates made things worse: cover type × credit band −0.00327 / −0.00058 and marketing segment × cover type −0.00667 / −0.00025.
+
+**Conclusion.** The model's structure stands up to formal testing, and nothing in A29 changes it: the final candidate (A28, public score 0.12805) stands. Terms that look weak in-sample are mostly neutral out of time, and some (x_fz3_rain) are needed. Merging levels does not improve the fit: it fails on every line, and only contents is worse in both years. The screen finds no interaction it can confirm, and the positive control shows why a screen of this kind could not have found the gains that did matter. Those came from reasoning about how claims arise (subsidence on clay in dry summers, flooding in high zones in wet years), so any further gain is more likely to come from new information than from re-specifying the GLMs.
+
 ## 6. Submission
 
 - **File:** `work/submissions/submission_final_candidate_20261023.csv` (A28), kept out of git (`work/` is ignored). It has 626,639 rows, with row_ids and order identical to `sample_submission.csv`, no nulls, and every prediction above zero (minimum 0.050). A zero would make the deviance infinite on any row with a claim.
@@ -479,6 +522,7 @@ D-08 records the XGBoost feature set used in A13 only. No decision is formally s
 7. **Implementation coverage.** The new models are implemented in Python only. GLM A, the contents benchmark, has an independent R implementation that reconciles (101 checks, 0 failed).
 8. **Synthetic data.** It has no shared events between buildings and contents. A real portfolio would, and the independence assumption would need revisiting for Week 2.
 9. **Data in a public repository** (section 2.2, issue 17) is unresolved.
+10. **What formal tests can and cannot show (A29).** In-sample p-values did not decide predictive value. A term that fails in-sample can be needed out of time, and one that passes can add nothing. An exhaustive interaction screen at the usual thresholds could not detect the interactions that matter here (section 5.9). The out-of-time test remains the arbiter. Two of the GLMs carry exactly aliased factors, held only by the ridge penalty; that is harmless for prediction but means their coefficients cannot be read one at a time.
 
 ### 8.1 Risk register: what would make the model wrong (A21)
 
@@ -502,6 +546,7 @@ Each risk found by inverting the model, what has been done, and the GitHub issue
 | Data errors in the address table (R11 elevation in feet; year built 1900) | Corrected (A28, D-26, D-27) | [#154](https://github.com/almac09/iaa-hackathon-2026/issues/154), [#155](https://github.com/almac09/iaa-hackathon-2026/issues/155) (closed) |
 | Motor level and the bodily-injury lift | Lift switched off (D-28); motor now ×0.927 of the A22 file's level, near the leaderboard's ×0.93. The final candidate scored 0.12805, the best so far | [#156](https://github.com/almac09/iaa-hackathon-2026/issues/156) (closed), [#151](https://github.com/almac09/iaa-hackathon-2026/issues/151) |
 | Further gains measured in the final review | Interactions and motor credibility adopted; calibration power, short-row factor and contents channel failed the rules (A28). Recoveries on open claims **open**; motor named-young-driver and quote-day flags (narrow pass, needs an owner ruling on the capped basis; not tested in A28) **open** | [#157](https://github.com/almac09/iaa-hackathon-2026/issues/157)–[#159](https://github.com/almac09/iaa-hackathon-2026/issues/159) (closed), [#160](https://github.com/almac09/iaa-hackathon-2026/issues/160) |
+| Model structure untested by formal hypothesis tests | Done (A29): Type III, chi-square by level, level merging, term dropping and an interaction screen; nothing passes the rules; two observations open | [#163](https://github.com/almac09/iaa-hackathon-2026/issues/163), [#164](https://github.com/almac09/iaa-hackathon-2026/issues/164) |
 | Pack D² not comparable with the leaderboard | **Open** (model choices unaffected) | [#146](https://github.com/almac09/iaa-hackathon-2026/issues/146) |
 | Decisions not signed off | **Open** | [#147](https://github.com/almac09/iaa-hackathon-2026/issues/147) |
 

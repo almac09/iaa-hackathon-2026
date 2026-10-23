@@ -34,6 +34,7 @@ IAA AI-Assisted Hackathon 2026, Part 1. This pack reproduces every step of the h
 | Location below region: residuals by region and address climate, weather and climate features, region × urban density | A26 | `python/geo_tests.py` |
 | Final review (26-agent sweep), leaderboard results, visual report of the whole project | A27 | `docs/FINAL_REPORT.html`, `audit/evidence/final_review/` |
 | Final run: address corrections, buildings peril interactions, bodily-injury lift off, motor credibility on capped claims; each tested, then combined into the final candidate | A28 | `python/final_tests.py`, `python/run_glm_lines.py` |
+| Statistical tests of the final model: Type III, chi-square by level, level merging and term dropping, a pairwise interaction screen with a positive control | A29 | `python/stat_tests.py` |
 
 **How the three languages fit together.** The SQL is the single source of truth for data preparation. Python and R both run the same SQL files through DuckDB, so their cleaned data is identical by construction (the reconciliation checks this byte for byte). The modelling is written twice, independently: Python uses scikit-learn's Newton solver and R uses its own penalised IRLS written in base R. Both use the same objective, so the results should agree to within the tolerances set in `config.json`.
 
