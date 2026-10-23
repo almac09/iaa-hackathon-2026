@@ -26,8 +26,12 @@
       in each GLM component (the year trend included) is screened by the score test of S1 at the production fit.
       Buildings' small-claim XGBoost is screened on its own residuals, with each pair's main effects as nuisance
       terms. Pairs whose interaction is already a model feature (the A28 peril interactions) are recorded but not
-      screened. Benjamini-Hochberg at 5% within each model. Up to three of the strongest survivors per model are
-      added as fixed features, defined on 2021-22, and scored out of time.
+      screened. Benjamini-Hochberg q-values at 5% are reported within each model. The three strongest pairs per
+      model (smallest p on 2021-22) are added as fixed features, defined on 2021-22, and scored out of time,
+      whether or not they pass Benjamini-Hochberg: a positive control (buildings' XGBoost refitted without the
+      A28 interaction features, screening the two pairs they came from) showed in the smoke run that a gate at
+      that level cannot pass even interactions known to gain about 0.001 out of time. Holm at the scoring step
+      controls the error across the three.
 Adoption (S2, S3), fixed before the runs: both backtest years improve and the two-year mean gain is significant
 (D-23); for dropped terms and interactions also Holm across the candidates scored for a model. Buildings XGBoost
 comparisons average four seeds at a fixed tree count; where only a GLM component changes, the other components
@@ -568,10 +572,12 @@ def fit_offset(N: np.ndarray, y: np.ndarray, off: np.ndarray, p: float, iters: i
     return b
 
 
-def screen_xgb(line: rgl.Line, s: dict, trees, d: pd.DataFrame) -> tuple[list[dict], dict]:
+def screen_xgb(line: rgl.Line, s: dict, trees, d: pd.DataFrame, only=None, model="small (XGBoost)"
+               ) -> tuple[list[dict], dict]:
     """Interaction screen of the small-claim XGBoost on its own fitted rows: the XGBoost prediction is an offset,
     each pair's main effects are refitted as nuisance terms, and the pair's interaction columns are score-tested.
-    The model-based statistic uses the Pearson dispersion of the XGBoost on these rows."""
+    The model-based statistic uses the Pearson dispersion of the XGBoost on these rows. `only` restricts the
+    screen to the given pairs, screened even if already modelled (for the power check)."""
     y = line.targets(d, s["threshold"])[0]
     mu0 = line.build(SCREEN_YEARS, s["threshold"], s["alpha"], trees).small.predict(d)
     off = np.log(mu0)
@@ -586,9 +592,9 @@ def screen_xgb(line: rgl.Line, s: dict, trees, d: pd.DataFrame) -> tuple[list[di
         reps[c] = grouped_rep(c, raw, raw(d), expo)
     order, starts = cluster_order(d.customer_id.to_numpy())
     rows = []
-    for a, b in itertools.combinations(reps, 2):
-        row = {"line": line.name, "model": "small (XGBoost)", "term_a": a, "term_b": b}
-        if modelled(a, b):
+    for a, b in (only or itertools.combinations(reps, 2)):
+        row = {"line": line.name, "model": model, "term_a": a, "term_b": b}
+        if only is None and modelled(a, b):
             rows.append({**row, "already_modelled": True})
             continue
         z = [v for v in z_columns(reps[a], reps[b], d).values() if v.any()]
@@ -658,7 +664,7 @@ def holm(tested: list[list[dict]]) -> None:
 
 
 def s3(cfg: dict, summary_ev: pd.DataFrame) -> dict:
-    screen, scored = [], []
+    screen, scored, power = [], [], []
     for name, line in ft.lines_for(cfg).items():
         s = settings(line, summary_ev)
         line.use_window("tune")
@@ -667,13 +673,14 @@ def s3(cfg: dict, summary_ev: pd.DataFrame) -> dict:
         families = [(comp["component"], *screen_glm(line, comp, d)) for comp in components(line, s)]
         if line.spec["small"] == "xgb":
             families.append(("small (XGBoost)", *screen_xgb(line, s, trees, d)))
+            power += power_check(line, s, trees, d)
         store, xgb_base = {}, None
         glm_base = window_preds(line, s, storing_build(s, trees, store))
         for model, rows, reps in families:
             live = [r for r in rows if not r["already_modelled"]]
             for r, qi in zip(live, bh([r["p"] for r in live])):
                 r["q_bh"], r["fdr_significant"] = qi, bool(qi < FDR)
-            top = sorted([r for r in live if r["fdr_significant"]], key=lambda r: (r["p"], -r["score"]))[:TOP]
+            top = sorted([r for r in live if r["df"] > 0], key=lambda r: (r["p"], -r["score"]))[:TOP]
             for r in rows:
                 r["scored_out_of_time"] = any(r is t for t in top)
             print(f"  {name} {model}: {len(live)} pairs screened, {sum(r['fdr_significant'] for r in live)} pass BH; "
@@ -695,7 +702,24 @@ def s3(cfg: dict, summary_ev: pd.DataFrame) -> dict:
                                       cfg))
             holm(tested)
             scored += [x for rs in tested for x in rs]
-    return {"ev_s3_interaction_screen.csv": pd.DataFrame(screen), "ev_s3_interaction_two_year.csv": pd.DataFrame(scored)}
+    return {"ev_s3_interaction_screen.csv": pd.DataFrame(screen), "ev_s3_interaction_two_year.csv": pd.DataFrame(scored),
+            "ev_s3_power_check.csv": pd.DataFrame(power)}
+
+
+def power_check(line: rgl.Line, s: dict, trees, d: pd.DataFrame) -> list[dict]:
+    """Positive control for the XGBoost screen: refit it on 2021-22 without the A28 peril interaction features and
+    screen the two pairs they were built from, which A28 found to be real out of time (D-29). A screen with power
+    should flag them far beyond the Benjamini-Hochberg threshold of the full screen."""
+    vcfg = copy.deepcopy(line.cfg)
+    lm = vcfg["lines"]["models"][line.name]
+    lm["numeric"] = [c for c in lm["numeric"] if c not in MODELLED]
+    pairs = [(sorted(v)[1], sorted(v)[0]) for v in MODELLED.values()]
+    rows, _ = screen_xgb(with_features(line, vcfg, {}), s, trees, d, only=pairs,
+                         model="small (XGBoost) without the A28 interactions")
+    for r in rows:
+        r["power_check"] = True
+        print(f"  power check {r['term_a']} x {r['term_b']}: p = {r['p']:.2e}", flush=True)
+    return rows
 
 
 # ---- Runner ---------------------------------------------------------------------------------------------------
