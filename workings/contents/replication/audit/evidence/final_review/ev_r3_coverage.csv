@@ -1,0 +1,306 @@
+lens,searched_but_found_nothing
+target-development,"IBNER on perils other than motor BI. The like-for-like means of claims reported within 90 days (ev_10_ibner_check) rise in 2024 by 3.7-8.4% against 2023, which is at or above inflation. Within the 2024 cohort, open claims are at least as large as closed for escape of water, flood, storm, accidental damage, TPP, own damage and theft. Buildings fire is the exception: open median 25.8k against closed 30.2k, but only 130 claims and the cohort level is +8%, so I did not act on it.
+
+Repudiation of claims still open. Motor repudiation is 1.17% in 2024 against 1.25-1.30% in 2021-23, worth about 0.1m. Contents 2024 is higher than earlier years. Negligible either way.
+
+Zero-cost claims. There are none among non-repudiated claims; every one has incurred > 0.
+
+Claims outside any period. 293 motor, 67 buildings and 49 contents claims, costing 1.13m, 0.43m and 0.16m over four years. 66-69% are 2020 losses, none is within 3 days of a row boundary (median 31 days), and every policy has rows. The exclusion matches the truth definition.
+
+2024 rows end on 30 December (leap year, 365 days). No claim is dated 30-31 December 2024, so nothing is lost.
+
+Excess drift. Compulsory excess is a constant 250 (motor) and 350 (home) in every year 2021-25, and the voluntary excess mean is stable (motor 274-275, home about 200).
+
+Pareto adjustment consistency. The 11.89m claim's development factor (1.282) is close to the average for the rest of the large excess (1.274). So computing the GPD adjustment on reported excess and applying it to developed excess is consistent: 0.765 effectively counts that claim as about 3.6m.
+
+Pattern capped at 1m at the production valuation: -0.5% on 2024 motor only.
+
+Subsidence BF prior trend-adjusted. As at 2022 it improves from 0.93 to about 0.94-0.96; as at 2023 it worsens from 1.012 to about 1.04. Fails the both-years test. 2024 had the driest summer index (0.594, against 0.47-0.55), but the year-level link is too weak to calibrate.
+
+BF prior for 2024 BI from the post-step year (2023) only. It lowers 2024 BI by a further 4.6%, but the approximate 2024 level factor moves from 1.002 to 0.985. Not supported.
+
+Backtest-based BF correction on top of D-11. It double counts: BF against D-11's lifted actual is x1.001 (2022) and x0.933 (2023). Detail in candidate 1.
+
+Row-timing probes (fit one year, score the other: 2023-to-2024 gain / 2024-to-2023 gain). Motor: Q4 share -0.0014 / -0.0042, end month -0.0012 / -0.0011, full-year flag -0.0005 / -0.0006. Contents: Q4 share -0.00004 / -0.0004, end month -0.0004 / +0.0002, full-year flag -0.0002 / +0.0002. Buildings end month +0.00017 / +0.00017, which is below the +0.0003 noise bar (and relates to #144).
+
+Measured D2 cost of a level error, identical on both backtest years and all lines: 3% costs about 0.00012-0.00014, 5% about 0.0003-0.0004, and 9% about 0.0010-0.0013.
+
+Scratch scripts are in <review scratch>/agents/target-development/. They are build_db.py, bt.py, bt2.py, cap_pattern.py, scen.py, worlds.py, worlds2.py, worlds_d2.py, step.py and q.py, plus bt_components.csv, y_variants_motor.parquet and probe_ext/. I deleted the 700 MB DuckDB files; build_db.py rebuilds them in about 17 seconds. No repository file was created or changed; a find for files newer than the first scratch file found none."
+features-unused,"The method and calibration are below; the findings by line follow.
+
+**Method and calibration**
+- Backtest predictions were joined to the raw tables by row_id, and I added derived row-structure, cross-line holding and ratio features.
+- Probe calibration with random customer labels (40 draws), mean and sd of the gain per year:
+  - Contents, 2 levels: mean -0.0001, sd 0.0002.
+  - Buildings, 2 levels: similar to contents.
+  - Motor uncapped, 2 levels: mean -0.0003 / -0.0016, sd 0.0016. Too noisy to use.
+  - Motor with the fitted y capped at 50k: sd 0.0004 / 0.0002.
+- Motor full-y D2 is dominated by single claims. The 15.2m row holds 6.6% of 2023 deviance, so motor ideas were judged on capped scores and on a refit as well.
+
+**No information**
+- compulsory_excess has a single value within each line.
+- Every customer has exactly one motor policy.
+- Motor driver_age equals the policyholder's age from date of birth on every row (difference -1/0), so there is no 'driver is not the policyholder' signal.
+
+**Contents** (probe gain 2023 / 2024)
+- All 35 unused banded f_* factors were probed; only f_discount passed. Others fail, from about 0 down to -0.0015: soil, year built, roof, basement, trees, listed, bedrooms, energy, solar, household, marital, email, consent, document preference, branch (also as 25 categories: +0.0003 / -0.0001), customer since, renewals, quote days, new business, payment, licence points, and all 7 weather bands.
+- Derived ratios: sum insured per bedroom +0.00001 / -0.0003; high-value items per sum insured -0.0009 / -0.0006; property age -0.0008 / -0.0011.
+- Missing flags: years-at-address missing +0.00008 / +0.00007.
+- Row structure: lapse rows, mid-term changes, start and end months all fail or are inconsistent in-sample.
+- Cross-line holding: holds a motor policy +0.0002 / +0.00002 (A/E 0.92-0.99 over five readings, too small); holds buildings duplicates tenure.
+- Other-line attributes of the same customer (motor NCB, telematics, vehicle value, mileage; buildings sum insured, occupancy): nothing on both years.
+
+**Buildings**
+- XGBoost already uses almost every raw column.
+- Derived: property age -0.0003 / -0.0008; sum insured per bedroom -0.0015 / -0.0006; total excess fails.
+- Holds a motor policy: -0.00015 / +0.0005; in-sample 1.03 / 0.98 / 0.95, inconsistent.
+- The customer's motor vehicle value group: +0.0003 / +0.0007 at 21 levels, but banded versions flip sign between years.
+- Lapse / ends-early rows: +0.0006 / +0.0003, but reported 2022 shows the opposite (capped 1.11, uncapped 1.22).
+- Exposure power of about 1.15: rejected as unstable (see candidate 3).
+- Seasonal cost weights: -0.0004 to -0.0007.
+
+**Motor**
+- Vehicle fields fail, judged on capped A/E within ±4%: body type, fuel, transmission, seats, colour, engine size, driver assist, overnight parking.
+- make_model: log A/E correlates only 0.078 across years over 300 models (SE about 0.058), and body type varies within a make_model (up to 5 values), so it is not a vehicle identity. This agrees with A20.
+- Derived: age at licence, NCB minus years licensed, NCB above years licensed, value per vehicle age and engine size per seat all fail. The NCB gap shows mixed in-sample signs.
+- marketing_consent: uncapped +0.0014 / +0.0011, but capped -0.0002 / -0.0000 in the residual GLM and in-sample A/E 1.00 / 1.00 / 0.995. Noise.
+- Customer tenure fields, previous insurer, campaign, branch and occupation: negative.
+- Address fields: home year_built +0.0014 / +0.0007 capped, but no mechanism and z below 2.5.
+- Holds buildings: capped A/E 0.97 / 0.95, in-sample 0.96 / 0.98 / 0.97, but residual-GLM gain only +0.00018 / +0.000003 capped. Too small alone; it could ride along with candidate 1.
+- Mid-term-change and row-length flags: inconsistent in-sample.
+
+**Outside my lens, for the structure agent** (these are used features)
+- Motor:
+  - driver_age 17-23: A/E 0.93 / 0.95.
+  - years_licensed 3 or less: 0.93 / 0.93.
+  - vehicle_age over 14: 0.89 / 0.87.
+  - These suggest the 4-knot splines (count not tuned) miss the young and old tails.
+- Buildings:
+  - voluntary_excess 1000: 0.81 / 0.81 (5% of rows).
+  - prior_claims_5y = 2: 1.21 / 1.36 (3.6% of rows).
+  - The XGBoost 20,000-row minimum leaf likely cannot isolate segments this small. A residual GLM on them fails 2023 (-0.0004).
+
+**Scratch scripts and outputs** (all in <review scratch>/agents/features-unused/)
+- batch_probe.py
+- refit_test.py, refit_results.csv, refit_insample_ae.csv
+- insample2.py, insample2_ae.csv
+
+No pack file was created or changed: refits ran in memory with bytecode writing off, and no runner was called."
+interactions,"METHOD NOTES. I wrote two probes in <review scratch>/agents/interactions/: iprobe.py (cells) and pprobe.py, custom.py (parametric). They separate a pure interaction from re-fitted main effects: interaction gain = (main + interaction) minus main only, fitted on one score year and scored on the other.
+
+Two bugs found and fixed along the way:
+(a) A fit without an intercept lets the interaction column absorb the year's level, which rebalancing then turns into a distortion (in-sample gains came out negative).
+(b) Shrinking band scales towards 1 rather than towards the year's level does the same. The supplied probe.py does (b), which probably explains why a factor already in the model scores about -0.001 there.
+
+Motor needs capped scoring: the single 11.9m claim is 6.6% of 2023 model deviance, and uncapped cell probes swung by +/-0.003. Calibration with customer-hash noise columns: 1-df interaction terms gave -0.0006 to +0.0005 (one random x elevation term gave +0.0005 on both contents years). Random x region (44 columns) gave -0.002 to -0.008. Treat anything under about 0.0005 on both years as noise.
+
+MOTOR (small-claim shape, y capped at 50k, level-matched): no interaction passes. driver_age x years_licensed -0.00022 / -0.00003; ncb x driver_age -0.00031 / -0.00013; ncb x years_licensed -0.00031 / -0.00010; cover x vehicle_value_group +0.00010 / -0.00001; cover x vehicle_age +0.00018 / +0.00002; cover x driver_age +0.00009 / +0.00003; mileage x vehicle_use +0.00003 / -0.00006; mileage x age +0.00002 / -0.00007; age x urban +0.00005 / +0.00009; age x region -0.00004 / +0.00002; region x urban -0.0010 / -0.0010; telematics x age 0.0000 / 0.0000; named young driver x age 0.0000; overnight parking x urban -0.0002 / -0.0002; prior claims x NCB -0.00002 / -0.00014; own history x NCB +0.00005 / +0.00004; credit x age +0.00006 / +0.00005; licence points x age -0.00004 / -0.00016. Weather x cover (hail, freezing, wind x cover_type; hail x parking; rain x mileage or urban) all within +/-0.0001 or negative. Winter share x region, urban, mileage, age or cover: negative. Capped at 1m (rebalanced): nothing positive on both years beyond +0.0002.
+
+CONTENTS (uncapped, rebalanced and level-matched): best were tenure x property_type +0.00019 / +0.00012, age x tenure +0.00001 / +0.00024, AD x sum insured +0.00004 / +0.00011, river distance x elevation +0.00005 / +0.00012; all below noise. Negative on at least one year: sum insured x high-value items -0.0006 / -0.0007; flood zone x river distance -0.0008 / -0.0004; flood zone x elevation -0.0004 / +0.0012; property type x urban; age x region; security x urban -0.0016 / -0.0010; bike x urban; lodgers x tenure; excess x AD or sum insured; flood x region; urban x region; credit x age; segment x age; prior claims x history; missed payments x credit; sum insured x urban or tenure; household x lodgers or age; freezing x property type +0.00005 / +0.0007 (noisy); rain x basement. The buildings peril designs gave nothing on contents (negative control).
+
+BUILDINGS (no gain, or fails one year): flood zone x elevation; soil x year built; construction x year built; sum insured x flood zone, construction, region or property type (all negative); property type x urban; listed x sum insured; occupancy x days unoccupied; freezing x occupancy or region; wind or soil or construction x region (strongly negative); dry summer x region (-0.010 / -0.018); history x flood zone or soil; energy rating x year built; basement x flood zone (+0.0004 / -0.0002). Second-tier physics features (clay x trees, clay x trees x dry, flat roof x wind, pre-1950 x freezing) in the refit lowered 2023 by 0.0007 when added to the best set (alone +0.0002 / +0.0008). Flood-zone-specific river-distance terms (zones 2-3 x distance; zone 2+ x distance missing) on top of the first candidate: +0.00077 / -0.00007, so they fail 2024, are data-led, and give -0.0001 on 2022. Seasonality interactions (winter share x part-year, freezing, wind, flood zone, rain, region, occupancy; summer share x soil or dry): none pass, consistent with seasonal exposure failing for buildings (#144 still unexplained).
+
+CONSISTENCY WITH CANN: for contents and motor, no interaction beats noise. That agrees with CANN's +0.00005 (contents) and noise-level motor result, and with A13 (depth-1 trees as good as deeper). For buildings, CANN found only +0.00014 / +0.00025 although it saw soil, weather and flood zone. I did not verify why. Plausible reasons: it corrects small claims only, while about 30-40% of the gain sits in the large-claim GLM; its early stopping on a random 10% may halt before it learns effects concentrated in subsidence and flood claims; and these effects need dry-year exposure in the fitting data. NOT EXAMINED: the motor large-claim GLM (bodily injury) interactions, because noise from a few huge claims makes the backtest uninformative; and a peril-split buildings excess model."
+structure-fitting,"All numbers are D2 change on 2023 / 2024 from my own refit harness, which reproduces the exported backtest predictions (contents to 1e-14, motor to 4e-8, buildings to 5e-9 relative), unless marked as probe results.
+
+(1) Fitting power of the small-claim models. Contents 1.3/1.4/1.45/1.55/1.6/1.7: -0.00037/+0.00003, -0.00014/+0.00007, -0.00006/+0.00005, +0.00004/-0.00009, +0.00005/-0.00024, 0.00000/-0.00070; it mainly moves the level. Motor small and excess jointly: 1.3 -0.00073/-0.00041, 1.55 +0.00024/+0.00004, 1.7 +0.00111/+0.00006; small-only fails 2024. Buildings XGBoost objective 1.3/1.4/1.6/1.7, with trees re-tuned: -0.00227/-0.00023, -0.00119/+0.00041, -0.00147/-0.00070, -0.00220/-0.00197. So 1.5 is right for every small-claim model. Binned variance-power estimates range 1.1-2.0 by line and year, so they are inconclusive.
+
+(2) Knots for the motor small GLM: 3 knots -0.00329/+0.00018, 5 +0.00006/-0.00026, 6 -0.00042/-0.00045, 8 -0.00092/-0.00088; log1p mileage -0.00030/-0.00009. So 4 knots is best. The probe at 20 bands on every spline variable for all three lines was negative on both years (no missed shape).
+
+(3) Prior year weights lambda^(latest year - year). Contents 0.5/0.7/0.85/1.25: -0.00007/-0.00076, +0.00005/-0.00028, +0.00004/-0.00009, -0.00012/+0.00001. Motor: +0.00021/-0.00112, +0.00017/-0.00048, +0.00009/-0.00019, -0.00017/+0.00017. All fail.
+
+(4) Other buildings XGBoost settings, with trees re-tuned. eta 0.025 (258 trees) -0.00063/+0.00010; min_child 5,000 rows -0.00222/-0.00171; min_child 50,000 -0.00413/-0.00034; subsample 1.0 -0.00071/+0.00003; colsample 0.5 -0.00069/-0.00053; colsample 1.0 +0.00051/+0.00014; lambda 20 +0.00017/+0.00057. All lie inside the measured single-seed noise of about +/-0.0004-0.0006 per year (five seeds re-tuned: 2023 -0.00085 to +0.00032, 2024 -0.00011 to +0.00108 against production). Any buildings XGBoost test below about 0.001 needs several seeds.
+
+(5) Motor large-claim structure at p=1.5. Excess proportional to the small prediction -0.00013/+0.00058; penalty 1e-2 0.00000/+0.00007; penalty 1e-1 -0.00016/+0.00033; 3 bands -0.00086/-0.00101; 10 bands -0.00270/+0.00029; region only -0.00135/-0.00148; adding value group and cover type +0.00226/-0.00029 (at p=1.9: +0.00440/-0.00008); smoothed at p=1.9 -0.00127/+0.00066; excess capped at 250k -0.00027/+0.00055 or 1m -0.00004/+0.00045 (rebalanced versions about 0 / -0.0001). The power result is therefore not about the single 11.9m claim.
+
+(6) Buildings large part: proportional to the small part -0.00072/-0.00025; penalty 1e-2 -0.00054/-0.00004.
+
+(7) Large-part level, a proxy for the GPD adjustment: scaling the large part by 0.8 or 1.2 gives buildings -0.00032/-0.00048 and -0.00009/+0.00008, motor -0.00010/+0.00036 and -0.00001/-0.00047. That is a level effect with no stable direction, so I did not pursue the GPD threshold further.
+
+(8) Credibility applied to the small part only: buildings -0.00008/-0.00019, motor -0.00001/-0.00022.
+
+(9) In-sample balance, relevant to #143. The buildings small XGBoost under-fits its own fitting years: fitted/actual is 0.959 overall and 0.954-0.970 in every year of both windows; the excess GLM is at 0.964 before the GPD adjustment. So the under-prediction starts in-sample: the non-canonical Tweedie log link does not preserve totals, and this is not only a trend problem. Rescaling to the in-sample total gives buildings +0.00002/+0.00026 (pred/actual 0.977/0.951), contents +0.00005/+0.00002, motor -0.00001/-0.00054. Too small to propose, but it explains about 4 points of the buildings shortfall.
+
+(10) Exposure non-proportionality and row shape. Probe on buildings exposure bands: +0.00063/+0.00076. But the raw loss cost per exposure of 'leaver' rows (from 1 Jan, ending early) relative to full-year rows is 1.28/1.18 in 2021-22 against 0.83/0.82 in 2023-24. The probe's 2023-to-2024 cross-fit is misled by a pattern specific to those two years, and a real fit on 2021-22 would learn the opposite sign. Log exposure as an XGBoost feature gives +0.00039/+0.00032, but at 166 trees against 131; trees x1.25 alone gives -0.00005/+0.00060, so the two are confounded and inside seed noise. Contents and motor fail the probe (row shape -0.00019/-0.00011 and -0.00197/-0.00333).
+
+(11) Temperature (cross-fitted power on the rate relativities): contents gamma 0.96-0.97, -0.00002/+0.00037; motor small part gamma 1.05-1.06, +0.00012/+0.00019. Below the bar.
+
+Data note for the development lens: 2024 full-year rows end on 30 December (2024 is a leap year and rows are 365 days), so a loss dated 31 December 2024 falls outside every period.
+
+Scripts and text outputs are in <review scratch>/agents/structure-fitting/ (harness.py, var_glm.py, var_xgb.py, var_knots.py, seedbag.py, treescale.py, components.py, insample.py, out_*.txt). I deleted the 3.4 GB lines.pkl and the row-level prediction pickles; to regenerate them, run prep.py and then run_base.py. Nothing in the repository was written to: no file is newer than the start of this work, and the run log was not touched."
+level-trend-calibration,"All gains below are 2023 / 2024; I treat anything under +0.0003 on both years as noise.
+
+Calibration by decile of mu (the probe, 10 and 20 bands): buildings passes (+0.00037/+0.00049 at 10, +0.00024/+0.00005 at 20); this is candidate 1. Contents fails (-0.00035/+0.00054). Motor fails heavily (-0.0058/-0.0037); one band holds the 11.9m claim.
+
+Power recalibration on the other lines:
+- Contents is over-dispersed out of time (b 0.954/0.969; in-sample 0.99). With b from the other year: +0.00042 / -0.00003, two-year mean +0.00019 (-0.00011, +0.00050). Fixed b 0.97: +0.00040 / +0.00002. Fails or is noise.
+- Motor's small part is calibrated (b 0.986/0.994; -0.00009/-0.00003). Its large part is noise (b 1.28/0.68).
+
+Trend alternatives (mu rescaled by exp(delta-slope x (year - centre))). Window slopes: buildings 0.019 / 0.041 / 0.057 (final), contents 0.002 / 0.049 / 0.041, motor 0.097 / 0.065 / 0.054.
+- Pooled slope across lines: buildings +0.00004/+0.00019, contents +0.00117/-0.00002, motor -0.00166/+0.00011.
+- Half-pooled: buildings +0.00005/+0.00011, contents +0.00069/-0.00001, motor -0.00055/+0.00008.
+- Fixed 5%: buildings -0.00004/+0.00017, contents +0.00135/-0.00001, motor -0.0012/+0.00011.
+- No trend: worse on every line.
+None passes cleanly. In-sample deviance-optimal scale by fitting year shows no residual trend (buildings 0.98-1.00, contents 0.97-1.02, motor 0.99-1.06).
+
+Trend by peril and by frequency vs severity (developed, claims capped at 50k, 2021-24):
+- Buildings: frequency +0.1% a year, severity +7.2%. By peril: flood +0.7%, escape of water +8.9%, storm +10.8%, subsidence +14.9%, fire +5.9%.
+- Contents: frequency +0.6%, severity +4.1%.
+- Motor: frequency -4.0% (reported counts, so 2024 bodily injury IBNR is in it), severity +5.3%.
+A peril-mix trend would shift flood-heavy rows, but probes on flood zone (-0.0008/-0.0001), elevation (-0.0010/-0.0012), river distance (-0.0005/-0.0011) and region show no consistent residual.
+
+2025 projection, timing and mix:
+- The exposure-weighted midpoint is day 183 in 2022-25 (187 in 2021), so there is no mid-year timing gap.
+- Test rows have the same structure as 2022-23: 64% full-year rows, 14.6% exits, 14.6% joiners.
+- Motor risk-mix index (year held fixed, final model), per exposure: 683.6 / 646.6 / 623.9 / 606.4 for 2021-24, 592.4 for 2025. Drivers by 2025 against 2021: NCB years -7.0%, vehicle age -5.6%, telematics opt-in -4.0%, telematics score +3.6%. Risk-adjusted trend +5.5% a year, raw capped loss-cost trend +1.4% a year. Internally consistent.
+- Contents mix +7.8% by 2025 (log sum insured +6.1%, age +1.9%); buildings mix about flat.
+- Claim-history credibility drifts up with history length (mean 0.996 to 1.004, 2021 to 2025): negligible.
+
+Cost of level errors (2024 backtest): 1% costs about 0.00001-0.00002 of D2, 2% about 0.00005-0.00006, 5% about 0.0003-0.00036, similar on every line.
+
+#143 diagnosis: in-sample, the buildings small part's total A/E is 1.03-1.05 every year while its deviance-optimal scale is 1.00. This is under-dispersion under a non-canonical link, not a wrong intercept. Candidate 1 removes about 40% of the in-sample shortfall (1.037 to 1.022).
+
+Part-year, exit, joiner and midpoint-month calibration:
+- Exposure bands pass on buildings (+0.00056/+0.00050) and contents (+0.00026/+0.00060), as does buildings' exit flag after candidate 1 (+0.00026/+0.00060). Rows that end mid-year are cancellations or lapses, and their period_end is in the test file.
+- But the pattern reverses in 2022 in-sample: buildings exits 1.18 against 0.79/0.86, contents 0.85 against 1.13/1.08. An exit factor estimated in-sample loses -0.0015 on 2023 (buildings) and -0.0012 (contents). Midpoint-month residuals are just as unstable. Not proposed.
+
+Credibility-factor exponent (customer-history lens), mu x cf^(a-1):
+- Buildings at a = 1.4: +0.00008/+0.00020. Motor at 1.2-1.4: +0.00005/+0.00037 to +0.00068. Contents worse.
+- The 2023 gains are noise-level; I mention it only as a pointer on the credibility k.
+
+Buildings XGBoost settings: tree count and leaf size are covered in candidate 1; max_delta_step makes no difference.
+
+Housekeeping: scratch scripts and outputs are in <review scratch>/agents/level-trend-calibration/. They include final_tests.py, bld_insreb.py, bld_final.py, motor_level.py, bfq.py, bfq_backtest.py, decomp.py and h.py. My request to delete lines.pkl (6.9 GB pickle of prepared lines) in that folder was denied, so it is still there and should be removed. I ran no pack runner, wrote no repo file, and the repo __pycache__ timestamps are unchanged."
+customer-history,"All numbers are D2 changes, 2023 / 2024, unless stated; tests were two-way, and for the history structure exact or rebalance-preserving.
+
+Harness check. My credibility harness reproduces production: the no-history variant gives buildings -0.00096 / -0.00168, contents -0.0016 / -0.0005 and motor -0.00096 / -0.0030, against the documented history gains of +0.0010/+0.0017, +0.0017/+0.0005 and +0.0010/+0.0030. Motor parts reproduce the backtest predictions exactly.
+
+(1) prior_claims_5y leak scan (part of #141). It is a static customer field that does not contain our observed claims: 71% of customers with one observed claim have a lower declared count. The claimant mean (0.37-0.39) against the non-claimant mean (0.30) is identical in 2021-24, and the test-file means of 0.305-0.308 match the non-claimant level. No leak.
+
+(2) Within-year history mismatch between backtest and test. 80-83% of rows start in January; same-year prior claims average 0.0000 (buildings), 0.0003 (contents) and 0.0038 (motor) per row. Negligible.
+
+(3) Customers with several policies. Nobody holds more than one policy per line per year (max = 1 on every line).
+
+(4) Recency weighting of history (n and E weighted lambda^lag, lambda 0.5-1.25). Buildings best +0.00008 / +0.00017, contents 0 / 0, motor fails 2023.
+
+(5) Unreported recent claims ('2024 claims not yet reported'). n/E is 0.92-0.98 for the most recent prior year and about 1.00 for older years. Scaling lag-1 E by 0.93 changes D2 by ±0.00002, because the rebalancing absorbs it.
+
+(6) Claim-cost history. Large-claim (5k+) count weights from -0.5 to 2 and capped-cost counts (5k, 20k): buildings best +0.00011 / +0.00014, contents and motor nil or negative.
+
+(7) Other functional forms. A power on the factor and a latent two-class mixture add nothing beyond k.
+
+(8) Declined (repudiated) claim history. Own-line repudiated claims on contents 0 / 0; all-lines repudiated on contents -0.00001 / -0.00015, motor -0.00008 / -0.00011, buildings +0.00002 / +0.00002.
+
+(9) Multi-product holdings (lines held in the same year, line combinations, has_motor and so on). Signs are inconsistent: buildings mp_lines -0.00074 / +0.00037, contents +0.00039 / -0.00028, motor negative.
+
+(10) Other address history. Claims by other customers at the same address 0.0000; own-line claims at a customer's other addresses (movers) +0.00003 / +0.00005; cross-line flood/storm claims at the address +0.00002 / +0.00002 (buildings) and +0.00001 / -0.00001 (contents).
+
+(11) New business, renewal count, tenure with us (yr - customer_since_year), years at address, and seen versus unseen in the data. Negative on both years for every line.
+
+(12) Contents accidental-damage history over-predicted (A/E 0.86 / 0.77). With constant peril shares, down-weighting it gave +0.00013 / +0.00024, but with proper per-peril GLM E it falls to +0.00003 / +0.00018, so not real.
+
+(13) Re-tuning the cross and home groups two-way. Buildings home and cross: off on both years. Motor cross: off. Contents cross: 2023 prefers k=8 and 2024 prefers off (-0.00017 on 2023), so inconsistent; contents own k=3 gives -0.00005 / +0.00014.
+
+(14) Buildings own k=3 alone: +0.00006 / +0.00019. The capped-target versions are the same, so buildings k is not distorted by large claims.
+
+(15) Methodological caution for the orchestrator. On motor, the uncapped probe on any history or customer column (own_n, multi-product, peril classes, tenure) is dominated by the single 15.2m 2023 row with no prior claims, giving gains of about -0.001 to -0.004. With claims capped at 1m, or that row dropped, the same columns show consistent under-prediction of claimants instead. Motor probes should be run with a capped or exclusion variant before a 'both negative' result is believed.
+
+Scratch scripts (row-level parquet intermediates deleted; the scripts regenerate them, using only in-memory DuckDB and nothing written to the pack) are in <review scratch>/agents/customer-history/: cred.py, motor_k.py, motor_parts.py, get_e.py, peril_e.py, v1_k.py to v6_peril_e.py, boot.py, derive.py, derive_home.py, pc5y.py."
+test-set-and-scoring,"These are aggregates from scratch scripts in <review scratch>/agents/test-set-and-scoring/. Run derive.py, then prevdec.py, to regenerate the derived parquet files; I deleted them afterwards.
+
+(1) 2025 test mix against 2024. Row structure is the same on every line:
+- part-year rows 35.6/38.0/40.7% (buildings/contents/motor) against 35.5/38.0/40.5%;
+- rows starting on 1 January 81.5/80.0/78.5%; rows ending early with no successor 14.6/14.4/14.2% against 14.6/14.3/14.1%; mid-term splits 3.9/5.6/7.4%;
+- new business 15.1/15.2/15.2% against 15.2/15.2/15.4%; every new policy is flagged new_business;
+- no overlaps, duplicate row_ids or exposure mismatches, and every row joins to an address.
+
+Drift appears only where it was already present year on year: renewal_count -0.31 a year, motor vehicle_age +0.59, ncb +0.27. Numeric ranges are within training, apart from renewal_count = 19 on 2.8% of rows (training maximum 18; only the buildings trees use it) and age 92 on 0.1%. Compulsory excess is constant (350/350/250) in every year, and the voluntary excess mix is stable.
+
+(2) Leak scan of the test file: 148 policy-file features and levels, comparing claimants with non-claimants and the 2025 mean.
+- Only customer_service_contacts has the claim-blind-in-test signature (ratio 1.03-1.11, z 32-80).
+- missed_payments_12m: the 2025 mean is below 2024 on all three lines (ratio 0.58-1.38, z 0.9-1.8 each). That is consistent with partial claim-blindness, but within year-to-year noise; A21 covers it.
+- No categorical leak.
+- The probes on licence_points, household_size, years_at_address and marital_status are all negative.
+
+(3) Row structure and renewal decision. Rows labelled declined_by_insurer (0.1-0.9% of rows, about 1.1 claims each) hold 53% (buildings), 25% (contents) and 34-44% (motor) of developed cost. 91% of the policies declined in 2024 still appear in the 2025 test file. A 'previously declined' flag probes at no more than +0.00005: the history factor already captures it.
+- Probes of end type, start type, struct and start/end month fail on contents and motor (motor end_type -0.0019 / -0.0030).
+- Mid-term-change rows cost 30-80% more raw than renewed rows, but match year-end rows once declined rows are counted.
+- Claims sit uniformly within rows: the share in the last 10% of a row is 0.07-0.12, so claims do not trigger row ends.
+- Within-year trend timing (scaling by the exposure mid-point): buildings at most +0.00004; contents and motor negative on 2024.
+
+(4) 2025 weather. 2025 is the windiest year (mean wind index 4.885 against 4.35-4.60; exposure in the 8+ band 12.2k against 3.2-5.3k), but buildings A/E by wind band shows no consistent pattern, and storm is about 10% of cost. Hail is lower (5.89 days), which matters little: glass and hail is about 4% of motor cost.
+
+(5) Target definition. No negative or zero net claims apart from repudiated claims, which carry incurred = 0. Motor 2024 repudiations are 1.17% against 1.25-1.30% in earlier years, so about 26 open claims may yet be repudiated: negligible. Home lines have no recoveries. The only gap found is the motor recoveries candidate above.
+
+(6) Scoring.
+- Pooled D2 on the backtests: 0.117 (2023) and 0.112 (2024) against a constant-rate baseline; 0.152 and 0.138 against a constant-mean baseline. Bridget's v014 scored 0.109 on the leaderboard, closest to the pooled constant-rate scale (an inference for #146, not established).
+- Each line's share of the pooled constant-rate baseline deviance: motor 0.45-0.47, buildings 0.31-0.33, contents 0.17. A +0.001 contents gain is worth about +0.00017 pooled.
+- Level is cheap in D2: moving a line by ±3% changes pooled D2 by at most 0.0002, so #143 and the tilt are low-value. Scaling motor to v014's level (x0.8635) costs -0.0020 (2023) and -0.0010 (2024) pooled.
+- Leaderboard noise, from 30% random row subsets: score SD 0.0065-0.0096; the paired-difference SD for the x0.8635 motor A/B is 0.0013-0.0033, against a mean effect of -0.001 to -0.002. The #151 A/B and any change of about 0.001 cannot be resolved on the public leaderboard.
+
+(7) Submission file. 626,639 rows in sample order, 6 decimal places, minimum 0.049 (1-day contents rows), no zeros. Predictions are proportional to exposure; nothing to fix."
+team-and-literature,"All numbers are D² changes on 2024 / 2023 from cross-year probes on the production backtest predictions (without CANN; baselines buildings 0.11102 / 0.11046, contents 0.09538 / 0.09677, motor 0.10097 / 0.08062), unless stated. Scripts are in <review scratch>/agents/team-and-literature/ (the row-level intermediates were deleted; export_claims.py, decomp.py, bag2.py, seg2.py and life.py regenerate them).
+
+(1) Team levers: GitHub was not reachable. Beyond section 5.6 and A24 (blends, Bridget's tuned XGBoost, frequency x severity, timber), the only queued lever I could identify is Bridget's 'GLM scaled to the 2024 level', which is the open motor-level question (#151). I could not review any other queued levers from Bridget or Alan.
+
+(2) Pooled scoring: with a constant-rate baseline over all three lines, each line's share of the baseline deviance is buildings 0.33-0.34, contents 0.17 and motor 0.46-0.49. Backtest pooled D² is 0.11730 (2023) and 0.11166 (2024). Deviance is additive by row, so pooling does not change the per-line deviance-optimal multipliers (k = 1.020 / 1.046, 1.112 / 0.986, 1.022 / 0.973). A half-credibility level factor only passes for buildings, worth about +0.0001.
+
+(3) An extra year of trend (the window's own slope: buildings 1.9% / 4.1%, motor 9.75% / 6.5%): buildings +0.00026 / +0.00005 (half a year: +0.00019 / +0.00004); contents -0.00039 / +0.00096; motor -0.00117 / -0.00079.
+
+(4) Prediction floors: rate floors at the 0.1%, 1% and 5% quantiles are negative on every line in both years (for example buildings q5: -0.00027 / -0.00080; motor -0.00053 / -0.00049). Absolute floors of 1 or less have no effect. Contents floors of 2-5 win 2023 only, which is a level artefact.
+
+(5) Leveraged excess-layer trend (Lee 1988; L = 1 + u/e(u), about 2): buildings +0.00008 / +0.00001; motor -0.00033 / 0.00000. The buildings excess over 50k per exposure did grow about 9.5% a year against 7.4% for the small part over 2021-24, but this is worth almost no D².
+
+(6) Large-loss loading by segment (correction on the large part only, 5 bands, k = 50): buildings sum insured +0.00012 / +0.00026; everything else is under 0.0001 or negative. Motor urban density (+0.00032 / +0.00053) and engine size (+0.00101 / +0.00057) are driven by the 11.9m claim: dense-urban 2023 excess A/E is 15.0 uncapped and 1.9 capped at 950k.
+
+(7) Motor peril split (bodily injury and other perils as two Tweedie GLMs with the production factors): -0.00016 / +0.00003; giving bodily injury the other perils' trend: +0.00007 / -0.00099. Window slopes are bodily injury 7.1% / 0.8% against other perils 11.3% / 9.7%.
+
+(8) Bühlmann-Straub credibility (the probe shrinks each band by claims / (claims + k)): make_model (300 opaque codes, so 'make' is identical) at k = 200 is -0.00159 / -0.00618; at k = 1,000 -0.00010 / -0.00126; capped -0.00005 / -0.00005. make_model x cover type at k = 1,000: +0.00003 / +0.00014. Region x urban x cover at k = 1,000: +0.00065 / +0.00040, but only +0.00005 / +0.00006 with claims capped at 50k. Branch: buildings -0.00115 / -0.00153, contents -0.00048 / -0.00015, motor -0.0090 / -0.0061. Buildings region x property -0.00093 / -0.00108; region x soil +0.00019 / +0.00010. Contents property x tenure +0.00015 / +0.00035 (k = 200) and +0.00016 / +0.00022 (k = 1,000).
+
+(9) Separate models by motor cover type (proxied by cover type crossed with driver age, value, NCB, mileage, vehicle age and region): all negative, for example -0.00223 / -0.00286.
+
+(10) Experience-rating variants: last-year claims at most +0.00007; prior large claims buildings +0.00006 / +0.00006, motor -0.00044 / -0.00026; exposure-weighted history negative on all lines.
+
+(11) Multi-product holding: buildings has-motor +0.00053 / -0.00015; contents has-motor +0.00002 / +0.00022; motor number of lines -0.0059 / -0.0018. Multi-car does not exist: every customer has at most one car-year.
+
+(12) Exposure elasticity (offset power b): buildings b of about 0.15 gives +0.00061 / +0.00058, but only +0.00008 / +0.00001 with claims capped at 50k. Contents b is unstable (-0.27 / -0.09) and the result is -0.00101 / +0.00215. Motor fails.
+
+(13) Policy lifecycle. The data uses calendar-year terms renewing on 1 January. A row ending mid-year is a termination (cancelled, lapsed or declined) or a mid-term change; the test file has the same mix (about 14% terminations). Buildings rows that terminate in the year have relativity 0.78-0.85, worth +0.00029 / +0.00061 (2023 interval +0.00007 to +0.00115) on all 8 seeds. But raw 2022 shows the reverse (small cost per exposure 363.6 against 328.9; small cost over written premium 1.139 against 1.047), so a factor fitted on 2021-22 would point the wrong way. As an XGBoost feature it scores -0.00043 / -0.00012. Contents +0.00010 / +0.00024, motor fails. It is also governance-sensitive: termination is only known after inception.
+
+(14) Motor marketing consent: the probe gives +0.00107 / +0.00140, but frequency is equal (141 against 139 per 1,000). Capped at 50k, cost per exposure is 533 against 525 in 2023, so the gap is large claims, chiefly the 11.9m claim. The consent share is the same for same-year claimants, later claimants and never-claimants (0.549 / 0.543 / 0.551), so it is neither a leak nor a signal.
+
+(15) Hurdle model: not fitted. It changes the mean only through the frequency and severity split, which A24 already rejected.
+
+(16) Noise floor: buildings XGBoost seed noise is 0.0003 D² per year, which is as large as most gains discussed here."
+critic,"This sweep added two data-quality findings, ran six checks that found nothing, and verified several claims the earlier lenses left open.
+
+WHAT THE LENSES COVERED WELL: target development (IBNR, BF, IBNER, recoveries, repudiations, row timing); every unused policy, customer and address field as a banded probe; two-way interactions; GLM and XGBoost structure (power, knots, penalties, tree settings, year weights); level, trend and calibration; claim-history credibility in depth; test-set mix and leaks; and the team's techniques.
+
+WHAT NOBODY EXAMINED, AND WHERE THIS SWEEP FOUND THE TWO GAPS ABOVE: a systematic quality scan of the numeric inputs. Section 2.2's 18 issues were found case by case, and the recode scan covered text fields only. I ran four scans:
+- Heaped values in every numeric field: only year_built = 1900 is a placeholder. The other heaps are natural floors or caps (mileage 0 is genuine, with frequency 0.088 against 0.12; days_unoccupied is uniform from 0 to 14).
+- Constant-ratio unit errors across more than 30 fields and 12 groupings: only R11 elevation.
+- Year drift of numeric fields and categorical shares by year: smooth, apart from the known timber T/W.
+- Year-on-year sum insured ratios: only the known x1000 errors plus genuine moves.
+
+Both errors sit in the shared address table, so they also affect the 2025 test rows.
+
+OTHER TABLES AND COLUMNS CHECKED, NOTHING ACTIONABLE:
+- Claims are internally consistent: paid never exceeds incurred, closed claims have paid = incurred, nothing is reported before its loss date, and recoveries appear only on closed own-damage and theft claims. Same-day multiple claims are rare (51 motor policy-days) and none repeats an amount.
+- repairer_id: 1,000 repairers, each spread over all 12 regions, with no persistent cost (correlation of mean cost across periods 0.03). third_party_id repeats only within the known duplicates.
+- surname plus date_of_birth: 9,901 matching pairs against about 9,050 expected by chance, with attributes agreeing at chance rates, so there are no hidden duplicate customers.
+- row_id order correlates with the risk mix, but leaves no residual (probe -0.0005).
+- Previous-year weather at the address (dryness for subsidence): on fully developed 2022-23 subsidence the lag terms reduce deviance by only 0.5 on 2 degrees of freedom.
+- Year-on-year premium change, and premium relative to the prediction: negative on every line.
+- R04 and R05 share an identical regional climate. That may be by design, and I did not test its impact.
+
+CLAIMS VERIFIED:
+- (a) The interactions lens said probe.py is biased because it shrinks towards 1. A level-corrected probe gives the same figures within 0.0001 (contents f_region -0.00060 / -0.00129 against -0.00066 / -0.00122). The negative scores of factors already in the model are re-estimation noise, so the features-unused scans stand.
+- (b) Buildings history E comes from a 12-feature GLM while the XGBoost uses 53 features. Refitting E on 28 or 53 features changes D2 by only -0.00002 to -0.00009, so there is no double counting. Buildings own-line k = 3 gives +0.00006 / +0.00019, which reproduces the customer-history lens.
+- (c) C7 (part-year rows): raw rows of exposure 0.1 or less cost 0.17-0.52 of full-year rows in every year 2021-24, with no large claims. The 2022 reversal other lenses found for leaver rows does not extend to these short rows, but the effect rests on 10-22 claims a year.
+- (d) customer_service_contacts record the true claims, including unreported ones: about 2.3-2.5 contacts per claim whatever the peril, cost or status. On that basis, the hidden claim counts for 2024 are motor 2,293 +/-177, buildings 559 +/-131 and contents 392 +/-130. These are in line with prior years' late-reported claims: motor 2,162, 2,065 and 1,912+ for 2021-23, matching within the estimator's error. The production n_ibnr_count_basis (motor 1,659) is cost-weighted, so it is not comparable. The check is too imprecise (about +/-8%) to settle #151, but the count side shows no anomaly, which points the motor question at severity and IBNER (C1). Previous-year contacts as a feature show no signal.
+- (e) A BF prior adjusted for 2024's dryness (2024 expected subsidence frequency x1.14 against 2022-23 from a clay x dry Poisson model) would raise 2024 subsidence from 11.28m to 11.76m, about +0.7% on the buildings level. That is worth about 0.00001 of D2, so I did not propose it.
+- (f) The 11.89m claim's paid share (0.062) sits at about the 10th percentile of open 2023 bodily-injury claims, so a x10 typo can be neither confirmed nor ruled out.
+
+STILL NOT COVERED: interactions within the motor large-claim (bodily injury) model; a peril-split buildings excess model; vintage (as-at-valuation) D2 backtests on all lines (only proxies, in C1, C13 and C14); effects of the immature 2024 year that exist only in the final fit; and joint re-measurement of C2, C5, C9 and C11 with the two data fixes.
+
+All refits ran in memory, and no runner or repository file was touched; a check for files newer than my first scratch file found none. Scripts and aggregate results are in <review scratch>/agents/critic/ (refit/ holds the refits). I deleted the row-level prediction files; the scripts regenerate them."
