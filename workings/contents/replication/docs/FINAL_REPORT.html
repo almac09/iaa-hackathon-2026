@@ -1,0 +1,396 @@
+<title>IAA Pricing Model Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column with full-width figures; a working actuarial review, not a brochure. */
+:root {
+  --bg: #f4f6f8; --surface: #ffffff; --ink: #121721; --ink-2: #444d5b; --muted: #6a7381; --rule: #dce1e7; --grid: #e9edf1;
+  --accent: #0e5f78; --accent-soft: #e2eff3;
+  --b: #2a78d6; --c: #eb6834; --m: #1baf7a;
+  --good: #0a8a0a; --good-soft: #e3f3e3; --bad: #8a929e; --warn-soft: #fff4dc;
+  --display: "Spectral", Georgia, "Times New Roman", serif;
+  --body: "Public Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121519; --surface: #1a1e23; --ink: #eef1f4; --ink-2: #bcc3cc; --muted: #8e97a3; --rule: #2d343c; --grid: #252b32;
+  --accent: #63b6d0; --accent-soft: #1d3138; --b: #3987e5; --c: #d95926; --m: #199e70;
+  --good: #3fbf3f; --good-soft: #1c2e1c; --bad: #7d8692; --warn-soft: #2e2817; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121519; --surface: #1a1e23; --ink: #eef1f4; --ink-2: #bcc3cc; --muted: #8e97a3; --rule: #2d343c; --grid: #252b32;
+  --accent: #63b6d0; --accent-soft: #1d3138; --b: #3987e5; --c: #d95926; --m: #199e70;
+  --good: #3fbf3f; --good-soft: #1c2e1c; --bad: #7d8692; --warn-soft: #2e2817; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font: 15px/1.6 var(--body); }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 28px 72px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 40px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 26px; font-weight: 600; }
+h3 { font-size: 18px; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.lede { font-size: 17px; color: var(--ink-2); }
+.eyebrow { font: 600 12px/1 var(--body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+section { display: grid; gap: 16px; }
+.meta { color: var(--muted); font-size: 13px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.kpi { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px; display: grid; gap: 4px; }
+.kpi b { font: 600 26px/1.1 var(--mono); font-variant-numeric: tabular-nums; }
+.kpi span { font-size: 13px; color: var(--muted); }
+figure { margin: 0; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 18px 18px 14px; display: grid; gap: 10px; min-width: 0; align-content: start; }
+figcaption { font-size: 13.5px; color: var(--ink-2); max-width: 78ch; }
+figcaption b { color: var(--ink); }
+.fig-title { font: 600 15px/1.3 var(--body); }
+.chart { width: 100%; overflow-x: auto; }
+.chart svg { display: block; width: 100%; height: auto; min-width: 520px; }
+.chart svg text { fill: var(--ink-2); font: 11px var(--body); }
+.chart svg .tick { fill: var(--muted); font: 10.5px var(--mono); }
+.chart svg .lbl { fill: var(--ink); font: 600 11.5px var(--body); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--ink-2); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.legend i.hollow { background: transparent !important; border: 2px solid var(--muted); width: 8px; height: 8px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.grid2 > * { min-width: 0; }
+details { border-top: 1px solid var(--rule); padding-top: 8px; }
+summary { cursor: pointer; font-size: 13px; color: var(--accent); font-weight: 600; }
+summary:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.pill { display: inline-block; font: 600 11px/1 var(--body); padding: 4px 7px; border-radius: 999px; white-space: nowrap; }
+.pill.kept { background: var(--good-soft); color: var(--good); }
+.pill.drop { background: var(--grid); color: var(--muted); }
+.pill.test { background: var(--accent-soft); color: var(--accent); }
+.pill.warn { background: var(--warn-soft); color: var(--ink); }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+.flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; counter-reset: step; }
+.step { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 12px; display: grid; gap: 6px; align-content: start; position: relative; }
+.step h3 { font-size: 15px; }
+.step h3::before { counter-increment: step; content: counter(step); font: 600 11px/1 var(--mono); color: var(--accent); margin-right: 8px; }
+.step ul { margin: 0; padding-left: 16px; font-size: 12.5px; color: var(--ink-2); display: grid; gap: 2px; }
+.lines3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; font-size: 12.5px; }
+.lines3 > div { border-left: 3px solid var(--rule); padding-left: 8px; }
+.callout { background: var(--accent-soft); border-radius: 8px; padding: 14px 16px; display: grid; gap: 6px; }
+.callout p { max-width: none; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 14px; display: grid; gap: 6px; align-content: start; }
+.card .num { font: 500 13px var(--mono); color: var(--ink-2); }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; }
+.filters select { font: inherit; padding: 4px 6px; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); color: var(--ink); }
+#tip { position: fixed; pointer-events: none; z-index: 20; background: var(--ink); color: var(--bg); font-size: 12px; line-height: 1.4; padding: 7px 9px; border-radius: 6px; max-width: 300px; box-shadow: 0 4px 14px rgb(0 0 0 / 0.18); }
+ol.recs { margin: 0; padding-left: 20px; display: grid; gap: 10px; }
+ol.recs li { padding-left: 4px; }
+ol.recs .gain { font-family: var(--mono); font-size: 13px; color: var(--ink-2); }
+footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 6px; }
+code { font: 12.5px var(--mono); background: var(--grid); padding: 1px 4px; border-radius: 4px; }
+@media (prefers-reduced-motion: no-preference) { .chart circle, .chart rect { transition: opacity .15s; } }
+</style>
+
+<div class="wrap">
+<header style="display:grid;gap:14px">
+  <span class="eyebrow">IAA AI-Assisted Hackathon 2026 · Part 1 · contents pack</span>
+  <h1>IAA Pricing Model Review</h1>
+  <p class="lede">What was built, what was tested, what was kept and why, and what the final review found still missing. Every figure comes from a logged run or an evidence file in the pack.</p>
+  <p class="meta">Prepared by Claude Code for Gerard Murphy, 23 October 2026. Pack: <code>workings/contents/replication</code>. Audit entries A01–A27, decisions D-01–D-25.</p>
+  <div class="kpis">
+    <div class="kpi"><b>0.12753</b><span>best public score (A22 file); leader 0.13050</span></div>
+    <div class="kpi"><b>0.1107</b><span>buildings D², 2024 backtest</span></div>
+    <div class="kpi"><b>0.0968</b><span>contents D², 2024 backtest</span></div>
+    <div class="kpi"><b>0.0806</b><span>motor D², 2024 backtest</span></div>
+    <div class="kpi"><b id="kpi-tested">–</b><span>ideas tested out of time</span></div>
+  </div>
+</header>
+
+<section>
+  <span class="eyebrow">1 · The model</span>
+  <h2>The model in one picture</h2>
+  <p>Raw data runs through six stages in order. Each box names the choices that mattered most; each was tested before it was kept.</p>
+  <div class="flow">
+    <div class="step"><h3>Clean the data</h3><ul><li>Exposure from dates</li><li>Sum insured ÷1,000 errors</li><li>604 duplicate claims removed</li><li>Motor customer IDs padded</li><li>Timber T/W recode merged</li><li>Contacts excluded (a leak)</li></ul></div>
+    <div class="step"><h3>Develop the target</h3><ul><li>Incurred − recoveries</li><li>Reporting pattern by line × peril</li><li>Bornhuetter–Ferguson for slow perils</li><li>Motor bodily-injury lift (D-11)</li></ul></div>
+    <div class="step"><h3>Model each line</h3><div class="lines3"><div style="border-color:var(--b)">Buildings: XGBoost depth 3 + large-claim GLM + Pareto + CANN</div><div style="border-color:var(--c)">Contents: one Tweedie GLM, seasonal exposure</div><div style="border-color:var(--m)">Motor: spline GLM + large-claim GLM + Pareto</div></div></div>
+    <div class="step"><h3>Claim history</h3><ul><li>Credibility (k + n) / (k + E)</li><li>Own line, other home line, motor/home</li><li>No look-ahead</li></ul></div>
+    <div class="step"><h3>Project to 2025</h3><ul><li>Log-linear calendar trend</li><li>Level ranges: bootstrap + Mack</li><li>Mean adjustment, buildings only</li></ul></div>
+    <div class="step"><h3>Test every change</h3><ul><li>Fit 2021–22 → score 2023</li><li>Fit 2021–23 → score 2024</li><li>Kept only if both improve</li><li>Optional additions: also significant</li></ul></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">2 · Progress</span>
+  <h2>How the model improved</h2>
+  <figure>
+    <div class="fig-title">2024 backtest D² by audit stage, one panel per line</div>
+    <div class="grid2" id="hist"></div>
+    <figcaption><b>Why it moved:</b> the split models and claim history (A16) lifted every line. The review (A17) added splines and two motor factors. It also switched slow perils to Bornhuetter–Ferguson, which changed the actual being scored, so motor's apparent fall at A17 is a change of yardstick, not of skill. Removing duplicate claims (A18) changed the yardstick again. From A18 onward the panels compare like with like.</figcaption>
+    <details><summary>Table view</summary><div class="tbl" id="hist-tbl"></div></details>
+  </figure>
+  <figure>
+    <div class="fig-title">Public leaderboard scores on record</div>
+    <div class="chart" id="lb"></div>
+    <figcaption><b>What it shows:</b> our files score 0.127–0.128, well clear of the team's GLM files (0.108–0.109) and 0.003 behind the leader. The A22 file is the best. The timber merge (A24) cost about 0.0003, and lowering motor by 13.6% changed almost nothing (section 5). A file trained on renewed policies only scored −0.125 and is left off the axis.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <span class="eyebrow">3 · Evidence</span>
+  <h2>Every idea tested, and why it was kept or dropped</h2>
+  <p>Each point is one change, placed by its effect on D² when scored on 2023 (across) and on 2024 (up). A change is kept only in the top-right quadrant, and an optional addition also needs a significant two-year gain. The shaded band marks ±0.0003, about the noise of refitting.</p>
+  <figure>
+    <div class="filters"><label for="f-line">Line</label><select id="f-line"><option value="all">All lines</option><option>buildings</option><option>contents</option><option>motor</option></select>
+      <label for="f-out">Outcome</label><select id="f-out"><option value="all">All</option><option value="kept">Kept</option><option value="drop">Dropped</option></select></div>
+    <div class="legend"><span><i style="background:var(--b)"></i>Buildings</span><span><i style="background:var(--c)"></i>Contents</span><span><i style="background:var(--m)"></i>Motor</span><span><i style="background:var(--muted)"></i>Filled: kept</span><span><i class="hollow"></i>Hollow: dropped</span><span>▲ beyond the axis</span></div>
+    <div class="chart" id="ideas"></div>
+    <figcaption><b>Reading it:</b> kept points cluster top-right: claim history, the A17 splines, the trend, seasonal contents exposure. The large dropped cluster near the origin is the honest result of testing many ideas: most do nothing measurable. Dropped points far from the origin, such as Bridget's tuned XGBoost or yearly weather for motor, are ideas that fit one year's noise. Hover a point for its name and source.</figcaption>
+    <details><summary>Table view (all tested ideas)</summary><div class="tbl" id="ideas-tbl"></div></details>
+  </figure>
+</section>
+
+<section>
+  <span class="eyebrow">4 · Development</span>
+  <h2>Development to ultimate: where most of the risk sits</h2>
+  <div class="grid2">
+    <figure>
+      <div class="fig-title">Developed ÷ actual, backtest as at end-2023</div>
+      <div class="chart" id="dev"></div>
+      <figcaption><b>Why Bornhuetter–Ferguson:</b> rebuilt from the position a year earlier, the chain ladder overstated 2023 subsidence by 18% and bodily injury by 33%. BF was out by 1% and 13%. On every other peril the two agree within ±4%.</figcaption>
+    </figure>
+    <figure>
+      <div class="fig-title">Uncertainty in the 2024 development (CV of the ultimate)</div>
+      <div class="chart" id="cv"></div>
+      <figcaption><b>Why Mack was added:</b> the row bootstrap measures only sampling noise in the pattern. Mack's chain-ladder error adds the claims still to be reported, almost doubling motor's uncertainty (3.0% → 5.4%). The larger of the two now feeds the 2025 ranges (D-25).</figcaption>
+    </figure>
+  </div>
+  <figure>
+    <div class="fig-title">Recent-weighted reporting patterns, judged at two valuation dates</div>
+    <div class="chart" id="decay"></div>
+    <figcaption><b>Why not adopted:</b> weighting recent loss years more (decay below 1) moved motor and contents further from the actual at both dates. Buildings improved by under 1%, but its subsidence worsened. Note also that motor's development over-estimated the backtest year at both dates (×1.035, ×1.055). The final review traces that to the bodily-injury lift (section 7).</figcaption>
+  </figure>
+</section>
+
+<section>
+  <span class="eyebrow">5 · Level</span>
+  <h2>The 2025 level, its range and the benchmarks</h2>
+  <figure>
+    <div class="legend"><span><i style="background:var(--ink)"></i>Our 2025 rate, with 90% range</span><span>◇ Developed 2024</span><span>| Data-workstream central benchmark</span><span>△ Bridget's v014 level (best team file)</span><span>★ Leaderboard-implied motor optimum</span></div>
+    <div class="chart" id="level"></div>
+    <figcaption><b>What the leaderboard says about motor:</b> two files that differ only in motor (×1 and ×0.8635) scored 0.12727 and 0.12725, almost the same. The score's cost of a level error is close to symmetric in percentage terms, with a curvature measured on the backtest. Read together, the pair puts motor's best level at about ×0.93 of ours, worth about +0.0004. Buildings and contents agree with every benchmark within a few per cent.</figcaption>
+    <details><summary>Table view</summary><div class="tbl" id="level-tbl"></div></details>
+  </figure>
+</section>
+
+<section>
+  <span class="eyebrow">6 · Exposure and place</span>
+  <h2>Seasonality and location</h2>
+  <div class="grid2">
+    <figure>
+      <div class="fig-title">Claim frequency by month, relative to the year (2021–23)</div>
+      <div class="legend"><span><i style="background:var(--b)"></i>Buildings</span><span><i style="background:var(--c)"></i>Contents</span><span><i style="background:var(--m)"></i>Motor</span></div>
+      <div class="chart" id="season"></div>
+      <figcaption><b>Why contents only:</b> weighting each day of exposure by its month's rate passed for contents (+0.0010 / +0.0003) and was adopted (D-22). Buildings has the stronger winter peak but got worse on both years, probably because yearly weather already carries it. Motor failed.</figcaption>
+    </figure>
+    <figure>
+      <div class="fig-title">Location below region</div>
+      <div class="callout" style="background:transparent;padding:0">
+        <p>The address table has <b>no coordinates, postcode or street</b>, and address IDs carry no geography, so true geocoding is impossible. Each address's weather varies within its region and persists from year to year, so it was tested as a location fingerprint.</p>
+        <p>No location group was off in the same direction on both years. Weather, climate and region × urban features all failed. The final review then found two location-linked data errors (section 7).</p>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">7 · Final review</span>
+  <h2>What the final review found still missing</h2>
+  <p>Eight independent reviewers, each with a different lens, searched for untested improvements and measured them on the backtest. A skeptic then re-measured each candidate and tried to refute it, and a completeness critic looked for what everyone missed. Of 24 raw ideas, 12 were merged or dropped, 9 of 14 survived the skeptics, and the critic added 2 data errors.</p>
+  <figure>
+    <div class="legend"><span><i style="background:var(--muted)"></i>Scored on 2023</span><span><i class="hollow"></i>Scored on 2024</span><span>Dashed line: +0.0003 bar on both years</span></div>
+    <div class="chart" id="review"></div>
+    <figcaption><b>How to read it:</b> each row is one candidate, with its D² gain on each backtest year from the skeptic's own refit. Candidates that change the target itself (C1, C12) cannot be scored this way and show no dots. None of these is in the model yet. They need a full run under the usual rules and your sign-off.</figcaption>
+    <details open><summary>Details and verdicts</summary><div class="tbl" id="review-tbl"></div></details>
+  </figure>
+  <div class="cards">
+    <div class="card"><span class="pill warn">Data error</span><h3>R11 elevation is in feet</h3><p>All 49,046 addresses in region R11 run 3.25–3.30 times every other region at every percentile. The other regions cap at exactly 60.0, and R11 at 196.9, which is 60 × 3.28. The models price R11's low-lying homes as higher, and so safer from flood, than they are.</p></div>
+    <div class="card"><span class="pill warn">Data error</span><h3>Year built 1900 is a placeholder</h3><p>19,014 addresses carry 1900, 10.8 times any neighbouring year. Their energy ratings and claim rates look like houses of every age, yet the models price them as pre-1900. Imputing from energy rating fixes most of it.</p></div>
+    <div class="card"><span class="pill warn">Target</span><h3>The bodily-injury lift looks wrong</h3><p>D-11 lifts each bodily-injury year back to 2021's claim size, on the view that open claims are under-reserved. But <i>closed</i> claims fell by as much as open ones in 2023, so the fall is real. Removing the lift lowers motor's 2025 level by 5–8%, the same direction and size as the leaderboard indicates.</p></div>
+  </div>
+  <details><summary>Ideas merged or dropped before verification (12)</summary><div class="tbl" id="dropped-tbl"></div></details>
+</section>
+
+<section>
+  <span class="eyebrow">8 · Limits</span>
+  <h2>What was not tested, and why</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Not done</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Paid and incurred development triangles</td><td>The claims file is one snapshot at 31 December 2024 with no history of case reserves, so movement on reported claims cannot be observed. Only reporting triangles are possible, and those were used (chain ladder, BF, Mack).</td></tr>
+      <tr><td>True geocoding and spatial smoothing</td><td>No coordinates, postcode or street exist in the data. Weather-based proxies were tested instead (A26).</td></tr>
+      <tr><td>Random cross-validation folds</td><td>Deliberately avoided: mixing the scored year into training rewards fitting year-specific noise. It is why the team's tuned XGBoost looked good on its branch and failed here.</td></tr>
+      <tr><td>Tuning to the public leaderboard</td><td>Avoided apart from one designed A/B on motor's level. The public board is a sample, and the private board decides.</td></tr>
+      <tr><td>Uncertainty in the Pareto tail fit</td><td>Open (#140): the 2025 ranges include development and trend error but not the tail shape.</td></tr>
+      <tr><td>Leak scan of categorical features</td><td>Open (#141): the numeric scan and the year-recode scan were done; the same-year against next-year test for categories was not.</td></tr>
+      <tr><td>Reverse-engineering the data generator</td><td>Parked: renewal premiums rise by a fixed amount each year, but that mixes risk ageing with inflation, so it was not used as a trend signal.</td></tr>
+      <tr><td>The final review's candidates in the model</td><td>Measured by in-memory refits, but not yet run through the production pipeline with logging. That needs your sign-off (section 9).</td></tr>
+      <tr><td>Motor large-claim split decision</td><td>Open (#142): it fails 2023 (the year of the 11.9m claim) and is kept as your design choice.</td></tr>
+    </tbody></table></div>
+</section>
+
+<section>
+  <span class="eyebrow">9 · Next</span>
+  <h2>Recommended final run</h2>
+  <p>In order of confidence. Each would go through the production pipeline with the usual two-year test, with a labelled run and an audit entry. The expected gains are the review's refit figures and are not additive.</p>
+  <ol class="recs">
+    <li><b>Correct the two data errors</b> (R11 elevation in feet, #154; year built 1900, #155). These are correctness fixes, like the timber merge. <span class="gain">buildings −0.0001 / +0.0008 and +0.0003 / +0.0007</span></li>
+    <li><b>Buildings peril interactions</b> (#158) in the XGBoost and the large-claim GLM (clay × dry summer, flood zone × rainfall). <span class="gain">+0.0004 / +0.0006, significant</span></li>
+    <li><b>Remove the motor bodily-injury lift (D-11, #156)</b> and let the level fall where the data puts it. It changes the target, so judge it on both yardsticks and on the leaderboard. <span class="gain">motor level −5% to −8%; leaderboard pair implies about +0.0004</span></li>
+    <li><b>Motor own-line credibility k = 4</b> (#157), tuned on claims capped at 1m. <span class="gain">+0.0007 / +0.0012 capped</span></li>
+    <li><b>Buildings calibration power and short-row factor.</b> <span class="gain">about +0.0005 / +0.0006 each</span></li>
+    <li><b>Contents direct-channel flag (#159):</b> borderline, so subject to the significance rule. <span class="gain">+0.0006 / +0.0007</span></li>
+  </ol>
+  <div class="callout"><p><b>Strongest case against:</b> every one of these was found by looking hard at 2023 and 2024, the same two years used to judge it. The review guarded against that with placebos, seed averaging, cross-year fitting and a 2022 out-of-window check, but some optimism remains. The public score will be the independent check. A realistic combined gain is perhaps +0.001 to +0.002, which would narrow, not close, the 0.003 gap to the leader.</p></div>
+</section>
+
+<footer>
+  <p>Sources: <code>audit/AUDIT_LOG.md</code> (A01–A27), <code>audit/DECISIONS.md</code>, <code>docs/MODEL_DOCUMENTATION.md</code>, evidence in <code>audit/evidence/glm_lines/</code> and <code>audit/evidence/lines/</code>, the run log <code>audit/run_log.jsonl</code>, GitHub issues #105–#161 on almac09/iaa-hackathon-2026, and the final review's verdicts (A27).</p>
+  <p>Backtest D² is against the developed actual with a constant-mean baseline. The leaderboard uses a constant-rate baseline pooled over all lines, so absolute values differ; comparisons within each are valid.</p>
+</footer>
+</div>
+<div id="tip" hidden></div>
+
+<script>
+const DATA = {"ideas":[{"source":"A20 bootstrap","line":"buildings","idea":"CANN","g2023":0.00014,"g2024":0.00025,"adopted":true,"note":""},{"source":"A20 bootstrap","line":"buildings","idea":"history","g2023":0.00096,"g2024":0.00167,"adopted":true,"note":""},{"source":"A20 bootstrap","line":"buildings","idea":"trend","g2023":0.00017,"g2024":0.00201,"adopted":true,"note":""},{"source":"A20 bootstrap","line":"buildings","idea":"split","g2023":0.00189,"g2024":0.001,"adopted":true,"note":""},{"source":"A20 bootstrap","line":"buildings","idea":"A17 smoothing and factors","g2023":0.00168,"g2024":0.00104,"adopted":true,"note":""},{"source":"A20 bootstrap","line":"contents","idea":"CANN","g2023":6e-05,"g2024":5e-05,"adopted":false,"note":"fails 2023"},{"source":"A20 bootstrap","line":"contents","idea":"history","g2023":0.00166,"g2024":0.00051,"adopted":true,"note":""},{"source":"A20 bootstrap","line":"contents","idea":"trend","g2023":9e-05,"g2024":0.00079,"adopted":true,"note":""},{"source":"A20 bootstrap","line":"contents","idea":"A17 smoothing and factors","g2023":0.00102,"g2024":0.00187,"adopted":true,"note":""},{"source":"A20 bootstrap","line":"motor","idea":"CANN","g2023":-0.00019,"g2024":0.00067,"adopted":false,"note":"fails 2023"},{"source":"A20 bootstrap","line":"motor","idea":"history","g2023":0.00098,"g2024":0.00296,"adopted":true,"note":""},{"source":"A20 bootstrap","line":"motor","idea":"trend","g2023":0.00413,"g2024":0.00106,"adopted":true,"note":""},{"source":"A20 bootstrap","line":"motor","idea":"split","g2023":-0.00105,"g2024":0.00489,"adopted":true,"note":""},{"source":"A20 bootstrap","line":"motor","idea":"A17 smoothing and factors","g2023":0.00562,"g2024":0.00201,"adopted":true,"note":""},{"source":"A21 gap tests","line":"buildings","idea":"missed payments: lagged","g2023":-0.0007,"g2024":-0.00042,"adopted":false,"note":""},{"source":"A21 gap tests","line":"buildings","idea":"missed payments: lagged (baseline trees)","g2023":-0.00035,"g2024":-0.0003,"adopted":false,"note":""},{"source":"A21 gap tests","line":"buildings","idea":"missed payments: dropped","g2023":-0.00085,"g2024":0.00014,"adopted":false,"note":""},{"source":"A21 gap tests","line":"buildings","idea":"missed payments: dropped (baseline trees)","g2023":-0.0011,"g2024":-0.0004,"adopted":false,"note":""},{"source":"A21 gap tests","line":"buildings","idea":"seasonality: seasonal exposure","g2023":-0.00067,"g2024":3e-05,"adopted":false,"note":""},{"source":"A21 gap tests","line":"buildings","idea":"seasonality: seasonal exposure (baseline trees)","g2023":-0.00046,"g2024":-0.00037,"adopted":false,"note":""},{"source":"A21 gap tests","line":"contents","idea":"missed payments: lagged","g2023":-0.00135,"g2024":3e-05,"adopted":false,"note":""},{"source":"A21 gap tests","line":"contents","idea":"missed payments: dropped","g2023":-0.00118,"g2024":-0.00081,"adopted":false,"note":""},{"source":"A21 gap tests","line":"contents","idea":"dispersion: double GLM","g2023":0.00093,"g2024":-0.0004,"adopted":false,"note":""},{"source":"A21 gap tests","line":"contents","idea":"seasonality: seasonal exposure","g2023":0.001,"g2024":0.00031,"adopted":true,"note":""},{"source":"A21 gap tests","line":"motor","idea":"missed payments: lagged","g2023":-0.00032,"g2024":-0.00028,"adopted":false,"note":""},{"source":"A21 gap tests","line":"motor","idea":"missed payments: dropped","g2023":-0.00047,"g2024":-0.00022,"adopted":false,"note":""},{"source":"A21 gap tests","line":"motor","idea":"dispersion: double GLM","g2023":-0.00016,"g2024":-0.00014,"adopted":false,"note":""},{"source":"A21 gap tests","line":"motor","idea":"seasonality: seasonal exposure","g2023":0.00015,"g2024":-0.00072,"adopted":false,"note":""},{"source":"A24 team techniques","line":"buildings","idea":"timber merge: T and W merged","g2023":-0.00068,"g2024":-0.00043,"adopted":true,"note":""},{"source":"A24 team techniques","line":"buildings","idea":"blend: weight 0.0 (chosen on 2023) / 0.2 (on 2024), scored crosswise","g2023":-0.00044,"g2024":0.0,"adopted":false,"note":""},{"source":"A24 team techniques","line":"buildings","idea":"alternative alone: smoothed GLM","g2023":-0.00707,"g2024":-0.00408,"adopted":false,"note":""},{"source":"A24 team techniques","line":"contents","idea":"blend: weight 0.0 (chosen on 2023) / 0.0 (on 2024), scored crosswise","g2023":0.0,"g2024":0.0,"adopted":false,"note":""},{"source":"A24 team techniques","line":"contents","idea":"alternative alone: XGBoost (Bridget's settings)","g2023":-0.08935,"g2024":-0.0363,"adopted":false,"note":""},{"source":"A24 team techniques","line":"contents","idea":"frequency x severity: Poisson x gamma GLM","g2023":-0.00055,"g2024":-0.00085,"adopted":false,"note":""},{"source":"A24 team techniques","line":"motor","idea":"blend: weight 0.0 (chosen on 2023) / 0.2 (on 2024), scored crosswise","g2023":-0.002,"g2024":0.0,"adopted":false,"note":""},{"source":"A24 team techniques","line":"motor","idea":"alternative alone: XGBoost (Bridget's settings)","g2023":-0.03941,"g2024":-0.01196,"adopted":false,"note":""},{"source":"A24 team techniques","line":"motor","idea":"frequency x severity: Poisson x gamma GLM","g2023":-0.00102,"g2024":0.0007,"adopted":false,"note":""},{"source":"A25 development","line":"buildings","idea":"offset fit: reported cost, offset exposure x F","g2023":-0.0,"g2024":0.00019,"adopted":false,"note":""},{"source":"A25 development","line":"contents","idea":"offset fit: reported cost, offset exposure x F","g2023":0.0,"g2024":0.0,"adopted":false,"note":""},{"source":"A25 development","line":"motor","idea":"offset fit: reported cost, offset exposure x F","g2023":-0.00021,"g2024":-0.0003,"adopted":false,"note":""},{"source":"A26 location","line":"buildings","idea":"address climate: five climate features (baseline trees)","g2023":-0.00046,"g2024":-9e-05,"adopted":false,"note":""},{"source":"A26 location","line":"contents","idea":"yearly weather: five weather splines","g2023":0.00017,"g2024":-0.00309,"adopted":false,"note":""},{"source":"A26 location","line":"contents","idea":"address climate: five climate splines","g2023":8e-05,"g2024":-0.00015,"adopted":false,"note":""},{"source":"A26 location","line":"contents","idea":"region x urban: region x urban density factor","g2023":-0.00161,"g2024":-0.00101,"adopted":false,"note":""},{"source":"A26 location","line":"motor","idea":"yearly weather: five weather splines","g2023":-0.00627,"g2024":-0.00036,"adopted":false,"note":""},{"source":"A26 location","line":"motor","idea":"address climate: five climate splines","g2023":0.00033,"g2024":-0.0012,"adopted":false,"note":""},{"source":"A26 location","line":"motor","idea":"region x urban: region x urban density factor","g2023":-0.00052,"g2024":-0.0005,"adopted":false,"note":""},{"source":"A17 review","line":"contents","idea":"splines on age, elevation, river","g2023":0.0011,"g2024":0.0019,"adopted":true,"note":""},{"source":"A17 review","line":"motor","idea":"splines + credit band + missed payments","g2023":0.0053,"g2024":0.0023,"adopted":true,"note":""},{"source":"A17 review","line":"buildings","idea":"large-claim GLM splines","g2023":0.001,"g2024":0.0005,"adopted":true,"note":""},{"source":"A17 review","line":"buildings","idea":"separate weather-peril model","g2023":-0.0015,"g2024":-0.0018,"adopted":false,"note":""},{"source":"A20 CANN","line":"buildings","idea":"CANN (after timber merge)","g2023":0.00014,"g2024":0.00025,"adopted":true,"note":""}],"review":[{"id":"G1","line":"buildings","title":"Region R11 elevation recorded in feet","kind":"Data error","g23":-9e-05,"g24":0.00078,"verdict":"Worth testing","note":"R11 runs 3.25\u20133.30\u00d7 every other region at the 10th, 50th and 90th percentiles; others cap at 60.0 and R11 at 196.9 (60 \u00d7 3.28). Six-seed mean; 2024 positive on all seeds."},{"id":"G2","line":"buildings","title":"year_built = 1900 is a placeholder (19,014 addresses)","kind":"Data error","g23":0.00034,"g24":0.00067,"verdict":"Worth testing","note":"10.8\u00d7 any neighbouring year; their energy ratings and claims look like all ages. Imputed from energy rating. Two-year mean +0.00051 (+0.00007 to +0.00086)."},{"id":"C1","line":"motor","title":"Remove the bodily-injury open-claim lift (D-11)","kind":"Target","g23":null,"g24":null,"verdict":"Worth testing","note":"Closed claims fell as much as open ones in 2023, so the fall is real severity, not under-reserving. Changes the target, so only proxies exist: motor 2025 level \u22125% to \u22128%."},{"id":"C2","line":"buildings","title":"XGBoost: clay \u00d7 dry summer, flood zone 3+ \u00d7 rainfall","kind":"Feature","g23":0.0012,"g24":0.00075,"verdict":"Worth testing","note":"Four-seed mean with fixed trees; placebo features stay below +0.0002. Clay in a dry summer claims about six times the rate elsewhere."},{"id":"C3","line":"buildings","title":"Calibration power on the small-claim XGBoost","kind":"Calibration","g23":0.00045,"g24":0.00056,"verdict":"Worth testing","note":"The trees under-spread their predictions; one exponent fitted on the other year. Two-year mean +0.00051 (+0.00005 to +0.00097)."},{"id":"C4","line":"motor","title":"Own-line credibility k = 4 instead of 8","kind":"Credibility","g23":-0.00017,"g24":0.00131,"verdict":"Worth testing","note":"2023's loss is one 15.25m claim; capped at 1m the gains are +0.00066 / +0.00122. k = 6 passes the literal rule (+0.00004 / +0.00057)."},{"id":"C5","line":"buildings","title":"Large-claim GLM: the same two interactions","kind":"Feature","g23":0.00042,"g24":0.0006,"verdict":"Worth testing","note":"Two-year mean +0.00051 (+0.00022 to +0.00078): significant."},{"id":"C6","line":"contents","title":"Direct-channel flag","kind":"Feature","g23":0.00056,"g24":0.00069,"verdict":"Worth testing","note":"Stable relativity about 0.88. Two-year mean +0.00063 (\u22120.00003 to +0.00128): borderline under D-23."},{"id":"C7","line":"buildings","title":"Short part-year rows cost less than pro rata","kind":"Exposure","g23":0.00047,"g24":0.00067,"verdict":"Worth testing","note":"Rows of 36 days or less cost 0.17\u20130.52 of full-year rows in every year; the factor was estimated on the other year."},{"id":"C10","line":"motor","title":"Named young driver and quoted-on-inception flag","kind":"Feature","g23":-0.00015,"g24":-4e-05,"verdict":"Narrow","note":"Passes only with claims capped at 50k (+0.00057 / +0.00037); on the full target it is about nil."},{"id":"C12","line":"motor","title":"Net open own-damage and theft claims of expected recoveries","kind":"Target","g23":0.0,"g24":null,"verdict":"Worth testing","note":"The competition target is net of recoveries, which are booked only at closure (ratios of exactly 0.8 and 0.3). \u22121.2% on 2024 motor; level effect about \u00b10.0001."},{"id":"C8","line":"motor","title":"Large-claim GLM fitted at Tweedie power 1.9","kind":"Fitting","g23":0.00083,"g24":0.00024,"verdict":"Rejected","note":"All of the gain comes from the single largest claim each year; on the other rows it is slightly worse."},{"id":"C9","line":"buildings","title":"Large-claim GLM: log knots, six knots","kind":"Fitting","g23":0.00074,"g24":0.00042,"verdict":"Rejected","note":"A selected peak: random knot positions average +0.00045 / +0.00019."},{"id":"C11","line":"buildings","title":"More XGBoost trees and seed bagging","kind":"Fitting","g23":-0.00032,"g24":0.00061,"verdict":"Rejected","note":"Seed-specific: one year prefers more trees and the other fewer."},{"id":"C13","line":"motor","title":"Count-weighted bodily-injury reporting pattern","kind":"Development","g23":-0.0001,"g24":8e-05,"verdict":"Rejected","note":"Level proxy only, about a tenth of the noise bar."},{"id":"C14","line":"motor","title":"Bornhuetter\u2013Ferguson by loss quarter","kind":"Development","g23":0.0012,"g24":1e-05,"verdict":"Rejected","note":"The 2023 gain is the 11.9m claim; 2024 is nil."}],"dropped":[{"title":"Motor: correct the 2025 level for the measured development over-estimate of the latest year (#151)","reason":"Merged into C1. On the production basis (D-11 on), applying A25's x1.035/x1.055 (BI x1.087/x1.134) double counts. Those biases were measured with IBNER off on both sides (AUDIT_LOG A17 item 1), and against D-11's lifted actual BF was x1.001 / x0.933. It only applies coherently once D-11 is removed."},{"title":"Net open motor own-damage and theft claims of their expected recoveries (target definition)","reason":"Duplicate of 'Deduct expected recoveries from open motor own-damage and theft claims'. Merged into C12; the counts and ratios were verified in this review."},{"title":"Buildings: scale rows of 36 days or less (exposure <= 0.1) to about 0.4 of pro rata","reason":"Merged into C7 with the buildings exposure-elasticity proposal. This review's capped probe puts the effect in large claims, not small-claim severity, so the excess-GLM form is preferred."},{"title":"Exposure elasticity for buildings large claims (prediction proportional to exposure^b, b about 1.05-1.1)","reason":"Merged into C7."},{"title":"Seed-bag the buildings XGBoost (average 5 seeds, with the larger tree count)","reason":"Merged into C11 with tree-count scaling. Against production it fails 2023 (-0.00007), and against the seed average it is below the noise floor (+0.00026/+0.00025). It is kept only inside C11 because the 2023 baseline is selection-inflated: tune_trees early-stops on 2023 with the production seed."},{"title":"Buildings: seed-bag the XGBoost small-claim model and use the bag as the comparison baseline","reason":"Merged into C11. On its own it is below the noise floor (+0.00019/+0.00018 against the average seed; -0.00033/+0.00005 against production)."},{"title":"Scale the buildings XGBoost tree count with the fitting data, instead of reusing the 2021-22 early-stopped count","reason":"Kept as the base of merged C11 (listed here for completeness)."},{"title":"Buildings: one-parameter calibration slope (auto-calibration) on the predicted rate","reason":"Merged into C3 with the dispersion (power) recalibration, which is the same one-parameter stretch. This review's probe on mu deciles confirms +0.00037/+0.00049."},{"title":"Buildings peril-aware credibility: subsidence claims weight 0, flood/storm weight 1.5-2, against per-peril expected counts","reason":"Below the noise floor: +0.00022 on 2023 with the fixed weights (+0.00009 when the weights are chosen on 2024). Neither year is significant (2023 -0.00023 to +0.00071), and it needs six extra GLMs per window. Not tested before (sql/12 has no peril), but the measured gain does not clear about +0.0003 on both years."},{"title":"Log-scale spline knots for contents elevation and river distance","reason":"2023 gain +0.00022 (log1p, 4 knots) and +0.00005 to +0.00016 for the raw-knot variants are below the noise floor. About 12 variants were tried, and the reviewer expects it to fail D-23."},{"title":"Exposure elasticity below 1 for contents (short rows claim more per day)","reason":"2024 is below the noise floor in every measurement: the refit at a=0.95 gives +0.00026, and this review's probe on exposure bands gives +0.00020 (scored 2024) / +0.00029 (scored 2023). The 2023-tuned a=0.8 fails 2024 (-0.00016). It has the opposite sign to buildings and interacts with D-22 seasonal exposure."},{"title":"Motor: credibility-weight the large-claim relativities towards the small-claim model's shape","reason":"2023 gain below the noise floor: +0.00022 with w fixed at 0.5, and +0.00008 with w taken from 2024. Neither yearly interval excludes zero. It overlaps C8, which addresses the same flat or noisy motor excess relativities with a stronger 2023 result."}],"history":{"stages":["A15","A16","A17","A18","A20","A22","A24"],"labels":["XGBoost per line","Split models + history","Review: BF, splines","Duplicates, motor IDs","CANN, significance","Seasonal contents","Timber merge"],"buildings":[0.1045,0.1082,0.1114,0.1109,0.111,0.111,0.1107],"contents":[0.0927,0.0945,0.0958,0.0965,0.0965,0.0968,0.0968],"motor":[0.0816,0.0839,0.0801,0.0806,0.0806,0.0806,0.0806]},"leader":[{"name":"Bridget v013: GLM at 2021\u201324 level","score":0.10829,"ours":false},{"name":"Bridget v014: GLM at 2024 level","score":0.10916,"ours":false},{"name":"Ours A24: combined v1 with motor \u00d70.8635","score":0.12725,"ours":true},{"name":"Ours A24: combined v1 (timber merge)","score":0.12727,"ours":true},{"name":"Ours A25: Mack ranges (same predictions)","score":0.12727,"ours":true},{"name":"Ours A22: seasonal contents","score":0.12753,"ours":true,"best":true},{"name":"Competition leader","score":0.1305,"ours":false,"leader":true}],"level":[{"line":"buildings","rate_2025":492.322843,"p05":422.989748,"p95":573.020464,"developed_2024":484.653966,"cian":484.9,"v014":500.8},{"line":"contents","rate_2025":129.189779,"p05":117.362274,"p95":142.209234,"developed_2024":119.995772,"cian":127.6,"v014":127.3},{"line":"motor","rate_2025":627.418062,"p05":494.017269,"p95":796.841426,"developed_2024":591.439529,"cian":612.7,"v014":546.5,"lb_opt":583.482}],"cv":[{"line":"buildings","ay":2023,"bootstrap":0.000859,"mack":0.002389},{"line":"buildings","ay":2024,"bootstrap":0.008406,"mack":0.010844},{"line":"contents","ay":2023,"bootstrap":0.000406,"mack":0.001021},{"line":"contents","ay":2024,"bootstrap":0.003893,"mack":0.005612},{"line":"motor","ay":2023,"bootstrap":0.043093,"mack":0.004559},{"line":"motor","ay":2024,"bootstrap":0.029598,"mack":0.053773}],"season":[{"line":"buildings","month":1,"relative_frequency":1.255059},{"line":"buildings","month":2,"relative_frequency":1.346357},{"line":"buildings","month":3,"relative_frequency":0.824355},{"line":"buildings","month":4,"relative_frequency":0.911155},{"line":"buildings","month":5,"relative_frequency":0.867609},{"line":"buildings","month":6,"relative_frequency":0.904697},{"line":"buildings","month":7,"relative_frequency":0.874284},{"line":"buildings","month":8,"relative_frequency":0.904058},{"line":"buildings","month":9,"relative_frequency":0.914555},{"line":"buildings","month":10,"relative_frequency":0.890995},{"line":"buildings","month":11,"relative_frequency":0.899688},{"line":"buildings","month":12,"relative_frequency":1.430915},{"line":"contents","month":1,"relative_frequency":1.100817},{"line":"contents","month":2,"relative_frequency":1.094071},{"line":"contents","month":3,"relative_frequency":0.966699},{"line":"contents","month":4,"relative_frequency":0.939955},{"line":"contents","month":5,"relative_frequency":0.963911},{"line":"contents","month":6,"relative_frequency":0.973994},{"line":"contents","month":7,"relative_frequency":0.957287},{"line":"contents","month":8,"relative_frequency":1.000382},{"line":"contents","month":9,"relative_frequency":0.953224},{"line":"contents","month":10,"relative_frequency":0.961388},{"line":"contents","month":11,"relative_frequency":0.945267},{"line":"contents","month":12,"relative_frequency":1.14709},{"line":"motor","month":1,"relative_frequency":0.957732},{"line":"motor","month":2,"relative_frequency":0.979479},{"line":"motor","month":3,"relative_frequency":0.986903},{"line":"motor","month":4,"relative_frequency":0.977274},{"line":"motor","month":5,"relative_frequency":0.998992},{"line":"motor","month":6,"relative_frequency":1.000742},{"line":"motor","month":7,"relative_frequency":0.989606},{"line":"motor","month":8,"relative_frequency":0.992818},{"line":"motor","month":9,"relative_frequency":0.996794},{"line":"motor","month":10,"relative_frequency":1.020314},{"line":"motor","month":11,"relative_frequency":1.036118},{"line":"motor","month":12,"relative_frequency":1.058423}],"dev":[{"line":"buildings","peril":"accidental_damage","reported_share_at_2023":0.979,"chain_ladder_over_actual":0.9905,"method_used_over_actual":0.9905,"bf_applied":false},{"line":"buildings","peril":"escape_of_water","reported_share_at_2023":0.9162,"chain_ladder_over_actual":1.0243,"method_used_over_actual":1.0243,"bf_applied":false},{"line":"buildings","peril":"fire","reported_share_at_2023":0.9817,"chain_ladder_over_actual":0.9653,"method_used_over_actual":0.9653,"bf_applied":false},{"line":"buildings","peril":"flood","reported_share_at_2023":0.9757,"chain_ladder_over_actual":0.984,"method_used_over_actual":0.984,"bf_applied":false},{"line":"buildings","peril":"storm","reported_share_at_2023":0.9448,"chain_ladder_over_actual":0.9817,"method_used_over_actual":0.9817,"bf_applied":false},{"line":"buildings","peril":"subsidence","reported_share_at_2023":0.5669,"chain_ladder_over_actual":1.1765,"method_used_over_actual":1.0115,"bf_applied":true},{"line":"contents","peril":"accidental_damage","reported_share_at_2023":0.9771,"chain_ladder_over_actual":0.986,"method_used_over_actual":0.986,"bf_applied":false},{"line":"contents","peril":"escape_of_water","reported_share_at_2023":0.9395,"chain_ladder_over_actual":0.9893,"method_used_over_actual":0.9893,"bf_applied":false},{"line":"contents","peril":"flood","reported_share_at_2023":0.9633,"chain_ladder_over_actual":0.9803,"method_used_over_actual":0.9803,"bf_applied":false},{"line":"contents","peril":"theft","reported_share_at_2023":0.9904,"chain_ladder_over_actual":0.9937,"method_used_over_actual":0.9937,"bf_applied":false},{"line":"motor","peril":"bodily_injury","reported_share_at_2023":0.4991,"chain_ladder_over_actual":1.3257,"method_used_over_actual":1.1339,"bf_applied":true},{"line":"motor","peril":"glass_hail","reported_share_at_2023":0.9685,"chain_ladder_over_actual":0.9975,"method_used_over_actual":0.9975,"bf_applied":false},{"line":"motor","peril":"own_damage","reported_share_at_2023":0.9671,"chain_ladder_over_actual":0.997,"method_used_over_actual":0.997,"bf_applied":false},{"line":"motor","peril":"theft","reported_share_at_2023":0.9879,"chain_ladder_over_actual":0.9836,"method_used_over_actual":0.9836,"bf_applied":false},{"line":"motor","peril":"third_party_prop","reported_share_at_2023":0.9345,"chain_ladder_over_actual":0.9998,"method_used_over_actual":0.9998,"bf_applied":false}],"decay":[{"as_at":"2022-12-31","pattern_decay":1.0,"line":"buildings","peril":"ALL","reported_share":NaN,"chain_ladder_over_actual":0.9956,"method_used_over_actual":0.992,"bf_applied":NaN},{"as_at":"2022-12-31","pattern_decay":1.0,"line":"buildings","peril":"subsidence","reported_share":0.7044,"chain_ladder_over_actual":0.9568,"method_used_over_actual":0.9285,"bf_applied":true},{"as_at":"2022-12-31","pattern_decay":1.0,"line":"contents","peril":"ALL","reported_share":NaN,"chain_ladder_over_actual":1.0021,"method_used_over_actual":1.0021,"bf_applied":NaN},{"as_at":"2022-12-31","pattern_decay":1.0,"line":"motor","peril":"ALL","reported_share":NaN,"chain_ladder_over_actual":1.0701,"method_used_over_actual":1.0346,"bf_applied":NaN},{"as_at":"2022-12-31","pattern_decay":1.0,"line":"motor","peril":"bodily_injury","reported_share":0.4709,"chain_ladder_over_actual":1.1719,"method_used_over_actual":1.0866,"bf_applied":true},{"as_at":"2022-12-31","pattern_decay":0.5,"line":"buildings","peril":"ALL","reported_share":NaN,"chain_ladder_over_actual":0.9969,"method_used_over_actual":0.9932,"bf_applied":NaN},{"as_at":"2022-12-31","pattern_decay":0.5,"line":"buildings","peril":"subsidence","reported_share":0.7037,"chain_ladder_over_actual":0.9578,"method_used_over_actual":0.9291,"bf_applied":true},{"as_at":"2022-12-31","pattern_decay":0.5,"line":"contents","peril":"ALL","reported_share":NaN,"chain_ladder_over_actual":1.0026,"method_used_over_actual":1.0026,"bf_applied":NaN},{"as_at":"2022-12-31","pattern_decay":0.5,"line":"motor","peril":"ALL","reported_share":NaN,"chain_ladder_over_actual":1.0767,"method_used_over_actual":1.0371,"bf_applied":NaN},{"as_at":"2022-12-31","pattern_decay":0.5,"line":"motor","peril":"bodily_injury","reported_share":0.4644,"chain_ladder_over_actual":1.1882,"method_used_over_actual":1.0931,"bf_applied":true},{"as_at":"2022-12-31","pattern_decay":0.25,"line":"buildings","peril":"ALL","reported_share":NaN,"chain_ladder_over_actual":0.9981,"method_used_over_actual":0.9944,"bf_applied":NaN},{"as_at":"2022-12-31","pattern_decay":0.25,"line":"buildings","peril":"subsidence","reported_share":0.7025,"chain_ladder_over_actual":0.9595,"method_used_over_actual":0.9302,"bf_applied":true},{"as_at":"2022-12-31","pattern_decay":0.25,"line":"contents","peril":"ALL","reported_share":NaN,"chain_ladder_over_actual":1.003,"method_used_over_actual":1.003,"bf_applied":NaN},{"as_at":"2022-12-31","pattern_decay":0.25,"line":"motor","peril":"ALL","reported_share":NaN,"chain_ladder_over_actual":1.0826,"method_used_over_actual":1.0394,"bf_applied":NaN},{"as_at":"2022-12-31","pattern_decay":0.25,"line":"motor","peril":"bodily_injury","reported_share":0.4589,"chain_ladder_over_actual":1.2025,"method_used_over_actual":1.0986,"bf_applied":true},{"as_at":"2023-12-31","pattern_decay":1.0,"line":"buildings","peril":"ALL","reported_share":NaN,"chain_ladder_over_actual":1.0157,"method_used_over_actual":0.9929,"bf_applied":NaN},{"as_at":"2023-12-31","pattern_decay":1.0,"line":"buildings","peril":"subsidence","reported_share":0.5669,"chain_ladder_over_actual":1.1765,"method_used_over_actual":1.0115,"bf_applied":true},{"as_at":"2023-12-31","pattern_decay":1.0,"line":"contents","peril":"ALL","reported_share":NaN,"chain_ladder_over_actual":0.9883,"method_used_over_actual":0.9883,"bf_applied":NaN},{"as_at":"2023-12-31","pattern_decay":1.0,"line":"motor","peril":"ALL","reported_share":NaN,"chain_ladder_over_actual":1.1357,"method_used_over_actual":1.0546,"bf_applied":NaN},{"as_at":"2023-12-31","pattern_decay":1.0,"line":"motor","peril":"bodily_injury","reported_share":0.4991,"chain_ladder_over_actual":1.3257,"method_used_over_actual":1.1339,"bf_applied":true},{"as_at":"2023-12-31","pattern_decay":0.5,"line":"buildings","peril":"ALL","reported_share":NaN,"chain_ladder_over_actual":1.0266,"method_used_over_actual":0.9969,"bf_applied":NaN},{"as_at":"2023-12-31","pattern_decay":0.5,"line":"buildings","peril":"subsidence","reported_share":0.532,"chain_ladder_over_actual":1.2537,"method_used_over_actual":1.0398,"bf_applied":true},{"as_at":"2023-12-31","pattern_decay":0.5,"line":"contents","peril":"ALL","reported_share":NaN,"chain_ladder_over_actual":0.9878,"method_used_over_actual":0.9878,"bf_applied":NaN},{"as_at":"2023-12-31","pattern_decay":0.5,"line":"motor","peril":"ALL","reported_share":NaN,"chain_ladder_over_actual":1.1676,"method_used_over_actual":1.0648,"bf_applied":NaN},{"as_at":"2023-12-31","pattern_decay":0.5,"line":"motor","peril":"bodily_injury","reported_share":0.472,"chain_ladder_over_actual":1.4018,"method_used_over_actual":1.1591,"bf_applied":true},{"as_at":"2023-12-31","pattern_decay":0.25,"line":"buildings","peril":"ALL","reported_share":NaN,"chain_ladder_over_actual":1.0374,"method_used_over_actual":1.0004,"bf_applied":NaN},{"as_at":"2023-12-31","pattern_decay":0.25,"line":"buildings","peril":"subsidence","reported_share":0.5007,"chain_ladder_over_actual":1.3322,"method_used_over_actual":1.0652,"bf_applied":true},{"as_at":"2023-12-31","pattern_decay":0.25,"line":"contents","peril":"ALL","reported_share":NaN,"chain_ladder_over_actual":0.987,"method_used_over_actual":0.987,"bf_applied":NaN},{"as_at":"2023-12-31","pattern_decay":0.25,"line":"motor","peril":"ALL","reported_share":NaN,"chain_ladder_over_actual":1.2044,"method_used_over_actual":1.0754,"bf_applied":NaN},{"as_at":"2023-12-31","pattern_decay":0.25,"line":"motor","peril":"bodily_injury","reported_share":0.4443,"chain_ladder_over_actual":1.4894,"method_used_over_actual":1.1846,"bf_applied":true}]};
+const NS = "http://www.w3.org/2000/svg";
+const LINE_COL = { buildings: "var(--b)", contents: "var(--c)", motor: "var(--m)", all: "var(--muted)" };
+const fmt = (v, d = 4) => v == null ? "–" : (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(d);
+function el(tag, attrs = {}, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function svg(w, h, host) { const s = el("svg", { viewBox: `0 0 ${w} ${h}`, role: "img" }); document.getElementById(host).appendChild(s); return s; }
+function scale(d0, d1, r0, r1) { return v => r0 + (v - d0) / (d1 - d0) * (r1 - r0); }
+function ticks(a, b, n) { const step = Math.pow(10, Math.floor(Math.log10((b - a) / n))); const err = (b - a) / n / step; const m = err >= 7.5 ? 10 : err >= 3.5 ? 5 : err >= 1.5 ? 2 : 1; const s = m * step; const out = []; for (let v = Math.ceil(a / s) * s; v <= b + 1e-12; v += s) out.push(+v.toFixed(10)); return out; }
+const tip = document.getElementById("tip");
+function attachTip(node, html) { node.setAttribute("tabindex", "0"); node.style.cursor = "default";
+  const show = e => { tip.innerHTML = html; tip.hidden = false; const r = (e.touches ? e.touches[0] : e); const x = r.clientX ?? node.getBoundingClientRect().x, y = r.clientY ?? node.getBoundingClientRect().y; tip.style.left = Math.min(x + 14, innerWidth - 310) + "px"; tip.style.top = (y + 14) + "px"; };
+  node.addEventListener("pointerenter", show); node.addEventListener("pointermove", show); node.addEventListener("focus", e => { const b = node.getBoundingClientRect(); show({ clientX: b.x, clientY: b.y }); });
+  node.addEventListener("pointerleave", () => tip.hidden = true); node.addEventListener("blur", () => tip.hidden = true); }
+function table(host, cols, rows) { const t = document.createElement("table"); t.innerHTML = `<thead><tr>${cols.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead>`; const b = document.createElement("tbody");
+  rows.forEach(r => { const tr = document.createElement("tr"); tr.innerHTML = cols.map(c => `<td class="${c[2] || ""}">${c[1](r)}</td>`).join(""); b.appendChild(tr); }); t.appendChild(b); const h = document.getElementById(host); h.innerHTML = ""; h.appendChild(t); }
+const outcomePill = k => k ? `<span class="pill kept">✓ kept</span>` : `<span class="pill drop">× dropped</span>`;
+const lineDot = l => `<span class="dot" style="background:${LINE_COL[l] || LINE_COL.all}"></span>${l}`;
+
+/* 2 · history: small multiples */
+(function () { const H = DATA.history, host = document.getElementById("hist");
+  ["buildings", "contents", "motor"].forEach(line => { const box = document.createElement("div"); box.className = "chart"; box.id = "hist-" + line; host.appendChild(box);
+    const s = svg(320, 200, box.id); s.style.minWidth = "0"; const v = H[line], lo = Math.min(...v) - 0.0012, hi = Math.max(...v) + 0.0012;
+    const x = scale(0, v.length - 1, 44, 304), y = scale(lo, hi, 168, 26);
+    el("text", { x: 44, y: 14, class: "lbl" }, s).textContent = line[0].toUpperCase() + line.slice(1);
+    ticks(lo, hi, 4).forEach(t => { el("line", { x1: 44, x2: 304, y1: y(t), y2: y(t), stroke: "var(--grid)" }, s); el("text", { x: 38, y: y(t) + 3, "text-anchor": "end", class: "tick" }, s).textContent = t.toFixed(3); });
+    el("rect", { x: x(2) - 6, y: 26, width: x(3) - x(2) + 12, height: 142, fill: "var(--grid)", opacity: 0.6 }, s);
+    el("text", { x: (x(2) + x(3)) / 2, y: 36, "text-anchor": "middle", class: "tick" }, s).textContent = "yardstick changes";
+    el("polyline", { points: v.map((d, i) => `${x(i)},${y(d)}`).join(" "), fill: "none", stroke: LINE_COL[line], "stroke-width": 2 }, s);
+    v.forEach((d, i) => { const c = el("circle", { cx: x(i), cy: y(d), r: 4.5, fill: LINE_COL[line], stroke: "var(--surface)", "stroke-width": 2 }, s); attachTip(c, `<b>${H.stages[i]}</b> ${H.labels[i]}<br>${line} D² ${d.toFixed(4)}`);
+      el("text", { x: x(i), y: 186, "text-anchor": "middle", class: "tick" }, s).textContent = H.stages[i]; });
+    el("text", { x: x(v.length - 1), y: y(v[v.length - 1]) - 9, "text-anchor": "end", class: "lbl" }, s).textContent = v[v.length - 1].toFixed(4); });
+  table("hist-tbl", [["Stage", r => r.s], ["What changed", r => r.l], ["Buildings", r => r.b.toFixed(4), "num"], ["Contents", r => r.c.toFixed(4), "num"], ["Motor", r => r.m.toFixed(4), "num"]],
+    H.stages.map((s, i) => ({ s, l: H.labels[i], b: H.buildings[i], c: H.contents[i], m: H.motor[i] }))); })();
+
+/* 2 · leaderboard dot plot */
+(function () { const L = DATA.leader, W = 900, rowH = 30, H = L.length * rowH + 40; const s = svg(W, H, "lb"); const x = scale(0.105, 0.1325, 330, W - 30);
+  ticks(0.105, 0.1325, 6).forEach(t => { el("line", { x1: x(t), x2: x(t), y1: 10, y2: H - 26, stroke: "var(--grid)" }, s); el("text", { x: x(t), y: H - 10, "text-anchor": "middle", class: "tick" }, s).textContent = t.toFixed(3); });
+  L.forEach((r, i) => { const yy = 22 + i * rowH; el("text", { x: 320, y: yy + 4, "text-anchor": "end", class: r.best ? "lbl" : "" }, s).textContent = r.name;
+    el("line", { x1: x(0.105), x2: x(r.score), y1: yy, y2: yy, stroke: "var(--rule)", "stroke-width": 2 }, s);
+    const c = el("circle", { cx: x(r.score), cy: yy, r: 6, fill: r.leader ? "var(--ink)" : r.ours ? "var(--accent)" : "var(--surface)", stroke: r.ours || r.leader ? "var(--surface)" : "var(--muted)", "stroke-width": 2 }, s);
+    attachTip(c, `<b>${r.name}</b><br>public score ${r.score.toFixed(5)}`);
+    el("text", { x: x(r.score) + 10, y: yy + 4, class: "tick" }, s).textContent = r.score.toFixed(5); }); })();
+
+/* 3 · ideas scatter */
+function drawIdeas() { const host = document.getElementById("ideas"); host.innerHTML = ""; const fl = document.getElementById("f-line").value, fo = document.getElementById("f-out").value;
+  const rows = DATA.ideas.filter(r => (fl === "all" || r.line === fl) && (fo === "all" || (fo === "kept") === r.adopted));
+  const W = 900, H = 560, lo = -0.0045, hi = 0.0065; const s = svg(W, H, "ideas"); const x = scale(lo, hi, 70, W - 24), y = scale(lo, hi, H - 50, 20);
+  el("rect", { x: x(0), y: y(hi), width: x(hi) - x(0), height: y(0) - y(hi), fill: "var(--good-soft)", opacity: 0.55 }, s);
+  el("rect", { x: x(-0.0003), y: y(hi), width: x(0.0003) - x(-0.0003), height: y(lo) - y(hi), fill: "var(--grid)", opacity: 0.7 }, s);
+  el("rect", { x: x(lo), y: y(0.0003), width: x(hi) - x(lo), height: y(-0.0003) - y(0.0003), fill: "var(--grid)", opacity: 0.7 }, s);
+  ticks(lo, hi, 8).forEach(t => { el("line", { x1: x(t), x2: x(t), y1: y(hi), y2: y(lo), stroke: "var(--grid)" }, s); el("line", { x1: x(lo), x2: x(hi), y1: y(t), y2: y(t), stroke: "var(--grid)" }, s);
+    el("text", { x: x(t), y: H - 32, "text-anchor": "middle", class: "tick" }, s).textContent = (t * 1000).toFixed(0); el("text", { x: 62, y: y(t) + 3, "text-anchor": "end", class: "tick" }, s).textContent = (t * 1000).toFixed(0); });
+  el("line", { x1: x(0), x2: x(0), y1: y(hi), y2: y(lo), stroke: "var(--muted)" }, s); el("line", { x1: x(lo), x2: x(hi), y1: y(0), y2: y(0), stroke: "var(--muted)" }, s);
+  el("text", { x: (x(lo) + x(hi)) / 2, y: H - 10, "text-anchor": "middle" }, s).textContent = "D² change scored on 2023 (×1,000)";
+  const yl = el("text", { x: 16, y: (y(lo) + y(hi)) / 2, "text-anchor": "middle", transform: `rotate(-90 16 ${(y(lo) + y(hi)) / 2})` }, s); yl.textContent = "D² change scored on 2024 (×1,000)";
+  el("text", { x: x(hi) - 6, y: y(hi) + 16, "text-anchor": "end", class: "lbl" }, s).textContent = "Better on both years";
+  rows.forEach(r => { const off = r.g2023 < lo || r.g2023 > hi || r.g2024 < lo || r.g2024 > hi; const cx = x(Math.max(lo, Math.min(hi, r.g2023))), cy = y(Math.max(lo, Math.min(hi, r.g2024)));
+    const col = LINE_COL[r.line] || LINE_COL.all; const html = `<b>${r.idea}</b><br>${r.line} · ${r.source}<br>2023 ${fmt(r.g2023, 5)} · 2024 ${fmt(r.g2024, 5)}<br>${r.adopted ? "Kept" : "Dropped"}${off ? " (beyond the axis)" : ""}`;
+    const m = off ? el("path", { d: `M${cx},${cy - 7} L${cx + 6},${cy + 5} L${cx - 6},${cy + 5} Z`, fill: r.adopted ? col : "var(--surface)", stroke: col, "stroke-width": 2 }, s)
+      : el("circle", { cx, cy, r: 6, fill: r.adopted ? col : "var(--surface)", stroke: r.adopted ? "var(--surface)" : col, "stroke-width": 2 }, s); attachTip(m, html); });
+  const sorted = [...rows].sort((a, b) => (b.g2023 + b.g2024) - (a.g2023 + a.g2024));
+  table("ideas-tbl", [["Idea", r => r.idea], ["Line", r => lineDot(r.line)], ["Source", r => r.source], ["2023", r => fmt(r.g2023, 5), "num"], ["2024", r => fmt(r.g2024, 5), "num"], ["Outcome", r => outcomePill(r.adopted)]], sorted); }
+document.getElementById("f-line").addEventListener("change", drawIdeas); document.getElementById("f-out").addEventListener("change", drawIdeas);
+document.getElementById("kpi-tested").textContent = DATA.ideas.length + DATA.review.length; drawIdeas();
+
+/* 4 · development backtest dots */
+(function () { const rows = DATA.dev.filter(r => ["subsidence", "bodily_injury", "escape_of_water", "storm", "flood", "own_damage", "third_party_prop", "theft"].includes(r.peril) && !(r.line === "contents" && r.peril !== "escape_of_water"));
+  const W = 460, rowH = 28, H = rows.length * rowH + 50; const s = svg(W, H, "dev"); s.style.minWidth = "0"; const x = scale(0.9, 1.36, 190, W - 20);
+  ticks(0.9, 1.36, 5).forEach(t => { el("line", { x1: x(t), x2: x(t), y1: 10, y2: H - 30, stroke: t === 1 ? "var(--muted)" : "var(--grid)" }, s); el("text", { x: x(t), y: H - 14, "text-anchor": "middle", class: "tick" }, s).textContent = "×" + t.toFixed(2); });
+  rows.forEach((r, i) => { const yy = 22 + i * rowH; el("text", { x: 182, y: yy + 4, "text-anchor": "end" }, s).textContent = `${r.line} · ${r.peril.replace(/_/g, " ")}`;
+    el("line", { x1: x(r.method_used_over_actual), x2: x(r.chain_ladder_over_actual), y1: yy, y2: yy, stroke: "var(--rule)", "stroke-width": 2 }, s);
+    const a = el("circle", { cx: x(r.chain_ladder_over_actual), cy: yy, r: 5.5, fill: "var(--surface)", stroke: LINE_COL[r.line], "stroke-width": 2 }, s);
+    const b = el("circle", { cx: x(r.method_used_over_actual), cy: yy, r: 5.5, fill: LINE_COL[r.line], stroke: "var(--surface)", "stroke-width": 2 }, s);
+    attachTip(a, `<b>${r.line} ${r.peril}</b><br>chain ladder ×${r.chain_ladder_over_actual.toFixed(3)}`); attachTip(b, `<b>${r.line} ${r.peril}</b><br>method used ×${r.method_used_over_actual.toFixed(3)}${r.bf_applied ? " (BF)" : ""}`); });
+  const lg = el("text", { x: 190, y: 8, class: "tick" }, s); lg.textContent = "hollow: chain ladder · filled: method used"; })();
+
+/* 4 · CV bars */
+(function () { const rows = DATA.cv.filter(r => r.ay === 2024), W = 460, H = 210; const s = svg(W, H, "cv"); s.style.minWidth = "0"; const y = scale(0, 0.06, 170, 20), bw = 34;
+  ticks(0, 0.06, 6).forEach(t => { el("line", { x1: 50, x2: W - 10, y1: y(t), y2: y(t), stroke: "var(--grid)" }, s); el("text", { x: 44, y: y(t) + 3, "text-anchor": "end", class: "tick" }, s).textContent = (t * 100).toFixed(0) + "%"; });
+  rows.forEach((r, i) => { const cx = 110 + i * 125; [["bootstrap", r.bootstrap, 0.45], ["Mack", r.mack, 1]].forEach(([k, v, op], j) => {
+      const bx = cx + (j ? 2 : -bw - 2); const rect = el("rect", { x: bx, y: y(v), width: bw, height: y(0) - y(v), rx: 3, fill: LINE_COL[r.line], opacity: op }, s);
+      attachTip(rect, `<b>${r.line} 2024</b><br>${k} CV ${(v * 100).toFixed(2)}%`); el("text", { x: bx + bw / 2, y: y(v) - 5, "text-anchor": "middle", class: "tick" }, s).textContent = (v * 100).toFixed(1) + "%"; });
+    el("text", { x: cx, y: 188, "text-anchor": "middle", class: "lbl" }, s).textContent = r.line; });
+  el("text", { x: 50, y: 206, class: "tick" }, s).textContent = "light: row bootstrap · solid: Mack (used: the larger)"; })();
+
+/* 4 · decay */
+(function () { const rows = DATA.decay.filter(r => r.peril === "ALL"), W = 900, H = 230; const s = svg(W, H, "decay"); const panels = ["2022-12-31", "2023-12-31"];
+  panels.forEach((asat, pi) => { const ox = pi * 450, x = scale(0, 2, ox + 70, ox + 360), y = scale(0.98, 1.08, 190, 30);
+    el("text", { x: ox + 70, y: 16, class: "lbl" }, s).textContent = "As at " + asat;
+    ticks(0.98, 1.08, 5).forEach(t => { el("line", { x1: ox + 70, x2: ox + 360, y1: y(t), y2: y(t), stroke: Math.abs(t - 1) < 1e-9 ? "var(--muted)" : "var(--grid)" }, s); el("text", { x: ox + 62, y: y(t) + 3, "text-anchor": "end", class: "tick" }, s).textContent = "×" + t.toFixed(2); });
+    [1, 0.5, 0.25].forEach((dc, i) => el("text", { x: x(i), y: 210, "text-anchor": "middle", class: "tick" }, s).textContent = "decay " + dc);
+    ["buildings", "contents", "motor"].forEach(line => { const pts = [1, 0.5, 0.25].map((dc, i) => { const r = rows.find(q => q.as_at === asat && q.line === line && Math.abs(q.pattern_decay - dc) < 1e-9); return [x(i), y(r.method_used_over_actual), r.method_used_over_actual, dc]; });
+      el("polyline", { points: pts.map(p => p[0] + "," + p[1]).join(" "), fill: "none", stroke: LINE_COL[line], "stroke-width": 2 }, s);
+      pts.forEach(p => attachTip(el("circle", { cx: p[0], cy: p[1], r: 4.5, fill: LINE_COL[line], stroke: "var(--surface)", "stroke-width": 2 }, s), `<b>${line}</b> as at ${asat}<br>decay ${p[3]}: developed ÷ actual ×${p[2].toFixed(4)}`));
+      if (pi === 1) el("text", { x: pts[2][0] + 8, y: pts[2][1] + 4, class: "lbl" }, s).textContent = line; }); }); })();
+
+/* 5 · level ranges */
+(function () { const rows = DATA.level, W = 900, rowH = 70, H = rows.length * rowH + 50; const s = svg(W, H, "level");
+  rows.forEach((r, i) => { const yy = 34 + i * rowH; const lo = Math.min(r.p05, r.v014, r.developed_2024) * 0.95, hi = Math.max(r.p95, r.cian) * 1.03; const x = scale(lo, hi, 130, W - 30);
+    el("text", { x: 120, y: yy + 4, "text-anchor": "end", class: "lbl" }, s).textContent = r.line;
+    ticks(lo, hi, 6).forEach(t => el("text", { x: x(t), y: yy + 32, "text-anchor": "middle", class: "tick" }, s).textContent = t.toFixed(0));
+    el("line", { x1: x(lo), x2: x(hi), y1: yy + 20, y2: yy + 20, stroke: "var(--grid)" }, s);
+    el("rect", { x: x(r.p05), y: yy - 7, width: x(r.p95) - x(r.p05), height: 14, rx: 7, fill: LINE_COL[r.line], opacity: 0.22 }, s);
+    const p = el("circle", { cx: x(r.rate_2025), cy: yy, r: 7, fill: LINE_COL[r.line], stroke: "var(--surface)", "stroke-width": 2 }, s); attachTip(p, `<b>${r.line} 2025</b><br>our rate ${r.rate_2025.toFixed(1)} (90% ${r.p05.toFixed(0)}–${r.p95.toFixed(0)})`);
+    const dv = el("path", { d: `M${x(r.developed_2024)},${yy - 7} l7,7 l-7,7 l-7,-7 Z`, fill: "var(--surface)", stroke: "var(--ink-2)", "stroke-width": 1.5 }, s); attachTip(dv, `developed 2024: ${r.developed_2024.toFixed(1)}`);
+    const cn = el("line", { x1: x(r.cian), x2: x(r.cian), y1: yy - 12, y2: yy + 12, stroke: "var(--ink)", "stroke-width": 2 }, s); attachTip(cn, `data-workstream central benchmark: ${r.cian.toFixed(1)}`);
+    const tv = el("path", { d: `M${x(r.v014)},${yy - 8} l7,13 l-14,0 Z`, fill: "var(--surface)", stroke: "var(--ink)", "stroke-width": 1.5 }, s); attachTip(tv, `Bridget v014 level: ${r.v014.toFixed(1)}`);
+    if (r.lb_opt) { const st = el("text", { x: x(r.lb_opt), y: yy + 5, "text-anchor": "middle", class: "lbl", style: "font-size:15px" }, s); st.textContent = "★"; attachTip(st, `leaderboard-implied motor optimum: about ${r.lb_opt.toFixed(0)} (×0.93 of ours)`); }
+    el("text", { x: x(r.rate_2025), y: yy - 12, "text-anchor": "middle", class: "tick" }, s).textContent = r.rate_2025.toFixed(1); });
+  el("text", { x: 130, y: H - 6, class: "tick" }, s).textContent = "cost per unit of exposure, 2025";
+  table("level-tbl", [["Line", r => lineDot(r.line)], ["Ours 2025", r => r.rate_2025.toFixed(1), "num"], ["90% range", r => r.p05.toFixed(0) + "–" + r.p95.toFixed(0), "num"], ["Developed 2024", r => r.developed_2024.toFixed(1), "num"], ["Benchmark (central)", r => r.cian.toFixed(1), "num"], ["v014 level", r => r.v014.toFixed(1), "num"], ["Leaderboard-implied", r => r.lb_opt ? r.lb_opt.toFixed(0) : "–", "num"]], rows); })();
+
+/* 6 · seasonality */
+(function () { const W = 460, H = 230; const s = svg(W, H, "season"); s.style.minWidth = "0"; const x = scale(1, 12, 50, W - 60), y = scale(0.8, 1.45, 190, 16);
+  ticks(0.8, 1.45, 6).forEach(t => { el("line", { x1: 50, x2: W - 60, y1: y(t), y2: y(t), stroke: Math.abs(t - 1) < 1e-9 ? "var(--muted)" : "var(--grid)" }, s); el("text", { x: 44, y: y(t) + 3, "text-anchor": "end", class: "tick" }, s).textContent = t.toFixed(1); });
+  "JFMAMJJASOND".split("").forEach((m, i) => el("text", { x: x(i + 1), y: 208, "text-anchor": "middle", class: "tick" }, s).textContent = m);
+  ["buildings", "contents", "motor"].forEach(line => { const pts = DATA.season.filter(r => r.line === line).sort((a, b) => a.month - b.month);
+    el("polyline", { points: pts.map(p => `${x(p.month)},${y(p.relative_frequency)}`).join(" "), fill: "none", stroke: LINE_COL[line], "stroke-width": 2 }, s);
+    pts.forEach(p => attachTip(el("circle", { cx: x(p.month), cy: y(p.relative_frequency), r: 3.5, fill: LINE_COL[line], stroke: "var(--surface)", "stroke-width": 1.5 }, s), `<b>${line}</b> month ${p.month}: ×${p.relative_frequency.toFixed(3)}`));
+    const last = pts[pts.length - 1]; el("text", { x: x(12) + 8, y: y(last.relative_frequency) + 4, class: "lbl" }, s).textContent = line; }); })();
+
+/* 7 · review dumbbells */
+(function () { const R = DATA.review, W = 900, rowH = 30, H = R.length * rowH + 50; const s = svg(W, H, "review"); const lo = -0.0006, hi = 0.0016; const x = scale(lo, hi, 400, W - 30);
+  ticks(lo, hi, 8).forEach(t => { el("line", { x1: x(t), x2: x(t), y1: 10, y2: H - 30, stroke: Math.abs(t) < 1e-12 ? "var(--muted)" : "var(--grid)" }, s); el("text", { x: x(t), y: H - 12, "text-anchor": "middle", class: "tick" }, s).textContent = (t * 1000).toFixed(1); });
+  el("line", { x1: x(0.0003), x2: x(0.0003), y1: 10, y2: H - 30, stroke: "var(--accent)", "stroke-dasharray": "4 4" }, s);
+  el("text", { x: x(hi), y: H - 0, "text-anchor": "end", class: "tick" }, s).textContent = "D² change ×1,000";
+  R.forEach((r, i) => { const yy = 22 + i * rowH; const t = el("text", { x: 392, y: yy + 4, "text-anchor": "end", class: r.verdict === "Rejected" ? "" : "lbl" }, s); t.textContent = `${r.id} · ${r.title.length > 52 ? r.title.slice(0, 50) + "…" : r.title}`;
+    el("rect", { x: 6, y: yy - 5, width: 10, height: 10, rx: 5, fill: LINE_COL[r.line] }, s);
+    if (r.g23 == null && r.g24 == null) { el("text", { x: x(0) + 6, y: yy + 4, class: "tick" }, s).textContent = "changes the target: not scored this way"; return; }
+    const vals = [r.g23, r.g24].filter(v => v != null); if (vals.length === 2) el("line", { x1: x(Math.max(lo, Math.min(hi, r.g23))), x2: x(Math.max(lo, Math.min(hi, r.g24))), y1: yy, y2: yy, stroke: "var(--rule)", "stroke-width": 2 }, s);
+    if (r.g23 != null) attachTip(el("circle", { cx: x(Math.max(lo, Math.min(hi, r.g23))), cy: yy, r: 5.5, fill: "var(--muted)", stroke: "var(--surface)", "stroke-width": 2 }, s), `<b>${r.id}</b> scored on 2023: ${fmt(r.g23, 5)}`);
+    if (r.g24 != null) attachTip(el("circle", { cx: x(Math.max(lo, Math.min(hi, r.g24))), cy: yy, r: 5.5, fill: "var(--surface)", stroke: "var(--ink-2)", "stroke-width": 2 }, s), `<b>${r.id}</b> scored on 2024: ${fmt(r.g24, 5)}`); });
+  const pill = v => v === "Rejected" ? `<span class="pill drop">× rejected</span>` : v === "Narrow" ? `<span class="pill warn">narrow</span>` : `<span class="pill test">worth testing</span>`;
+  table("review-tbl", [["", r => r.id], ["Candidate", r => `<b>${r.title}</b><br><span style="color:var(--muted)">${r.note}</span>`], ["Line", r => lineDot(r.line)], ["2023", r => fmt(r.g23, 5), "num"], ["2024", r => fmt(r.g24, 5), "num"], ["Verdict", r => pill(r.verdict)]], R);
+  table("dropped-tbl", [["Idea", r => r.title], ["Why it was merged or dropped", r => r.reason]], DATA.dropped); })();
+</script>
