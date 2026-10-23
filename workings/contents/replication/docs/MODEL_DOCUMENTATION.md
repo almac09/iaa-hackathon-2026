@@ -1,11 +1,11 @@
 # Home and motor claims cost model: technical documentation
 
-IAA AI-Assisted Hackathon 2026, Part 1. This documents the model behind `work/submissions/submission_combined_v2_dev_methods_20261022.csv`, every data issue we found and how it was resolved, and how the model was validated. It reflects the pack as of audit entry A26 (22 October 2026).
+IAA AI-Assisted Hackathon 2026, Part 1. This documents the model behind `work/submissions/submission_combined_v2_dev_methods_20261022.csv`, every data issue we found and how it was resolved, and how the model was validated. It reflects the pack as of audit entry A27 (23 October 2026). A visual summary of the whole project, with charts, is in [`FINAL_REPORT.html`](FINAL_REPORT.html).
 
 - **Owner:** Gerard Murphy. **AI assistance:** Claude Code (Claude Opus 5.5).
 - **Code:** `workings/contents/replication`, branch `contents/gerard`. Every figure here comes from a logged run (`audit/run_log.jsonl`) and an evidence file under `audit/evidence/`.
 - **Decisions** are numbered D-01 to D-25 and are recorded in `audit/DECISIONS.md`. Their switches are in `config.json`. None is formally signed off yet.
-- **Audit entries** A01 to A26 are in `audit/AUDIT_LOG.md`. This document summarises them; the log has the full detail.
+- **Audit entries** A01 to A27 are in `audit/AUDIT_LOG.md`. This document summarises them; the log has the full detail.
 
 ## 1. Summary
 
@@ -81,7 +81,9 @@ Every input file is pinned by SHA-256 (`audit/expected_inputs.sha256`) and check
 | 15 | **Recent claims not fully reported or settled.** | Valuation 31 December 2024. 2024 motor reported cost is 22% below 2023. Motor bodily injury reports with an average lag of 159 days (up to 1,361); subsidence 116. | Developed to ultimate (section 3). | D-10, D-11, D-17 |
 | 16 | **A step in claim cost from 2023, and inflation.** | Contents cost per unit of exposure is 105 in 2021–22 and 117 in 2023–24, with flat frequency. Claim-size quantiles rise 3.9–4.4% a year. | Calendar-year trend in every model, projected to 2025. | D-13; A13–A14 |
 | 17 | **Competition data in the public GitHub repo.** | `data/*.parquet` is on `main` (and on `hackathon-bridget` and `data-cian`) of a public repository. A02 raised the risk on day one. | **Open.** Needs a team decision: make the repo private, or remove the files and their history (rules §5b). | A02, A18 |
-| 18 | **Buildings timber construction recoded in 2023.** | `T` appears only in 2021–22 and `W` only from 2023 (about 22,000 rows a year each); every 2025 test row is `W`. A scan of all 31 text fields on the three lines found no other year-specific recode. | Merged as `timber`; the raw value is kept. Left apart, `W` stands in for "2023 or later". Found by the data workstream (#54). | D-24; A24 |
+| 18 | **Buildings timber construction recoded in 2023.** | `T` appears only in 2021–22 and `W` only from 2023 (about 22,000 rows a year each); every 2025 test row is `W`. The same buildings switch code: 16,954 of the 17,621 policies coded `T` in 2022 (96%) are `W` in 2023, against about 2% code changes between any other pair of years (A27). A scan of all 31 text fields on the three lines found no other year-specific recode. | Merged as `timber`; the raw value is kept. Left apart, `W` stands in for "2023 or later". Found by the data workstream (#54). | D-24; A24 |
+| 19 | **Region R11 elevation recorded in feet.** | All 49,046 R11 addresses run 3.25–3.30× every other region at the 10th, 50th and 90th percentiles and within every flood zone; the other regions cap at 60.0 and R11 at 196.9 (60 × 3.28). R11's river distance and flood zones match the others. | **Not yet corrected:** proposed conversion to metres behind a switch ([#154](https://github.com/almac09/iaa-hackathon-2026/issues/154)). Found in the final review. | A27 |
+| 20 | **`year_built = 1900` is a placeholder.** | 19,014 addresses (10.8× any neighbouring year); their energy ratings and claim rates match houses of all ages, yet the models price them as pre-1900. | **Not yet corrected:** proposed imputation from energy rating ([#155](https://github.com/almac09/iaa-hackathon-2026/issues/155)). Found in the final review. | A27 |
 
 **Checks that found no problem:** unique row and claim IDs; no duplicate rows, zero or negative exposure, or overlapping periods for any policy; every buildings, contents and padded motor row joins to customer, address and weather; no category level in 2025 unseen in training; policyholder age matches date of birth on every home row; drift into 2025 matches the trends already modelled (sum insured about +2% a year, premium about +5%).
 
@@ -117,7 +119,8 @@ The chain ladder failed for the slow perils for two reasons. It gives too much w
 
 - **The problem:** the data is one snapshot, so movement on reported claims cannot be observed directly.
 - **Evidence:** for every peril except motor bodily injury, the current average cost of claims reported within 90 days rises with inflation from year to year. For bodily injury it falls as the open share rises: 21,049 (2021, 10% open) → 19,564 → 17,325 → 18,098 (2024, 74% open).
-- **Fix:** each bodily injury loss year is lifted to the 2021 level with no inflation: ×1.076, ×1.215 and ×1.163 for 2022–24. This is a deliberate lower bound, because inflation is left to the trend.
+- **Fix:** each bodily injury loss year is lifted to the 2021 level with no inflation: ×1.085, ×1.215 and ×1.163 for 2022–24 (×1.076 for 2022 before the duplicate claims were removed in A18; corrected in A27).
+- **Challenged (A27):** closed claims, which cannot develop, fell by as much as open ones in 2023, so the fall in claim size looks like real severity rather than under-reserving. Switching the lift off would lower motor's 2025 level by about 5–8% ([#156](https://github.com/almac09/iaa-hackathon-2026/issues/156)). Not yet changed. This is a deliberate lower bound, because inflation is left to the trend.
 
 ### 3.4 Traditional methods tested (A25)
 
@@ -375,12 +378,31 @@ Every branch was reviewed (Alan's on `main`, Bridget's on `hackathon-bridget`, C
 - **Shared addresses:** 96% of addresses only ever have one customer, so address-level history from other customers would add little.
 - **Conclusion:** region, urban density, flood zone, elevation, distance to river, soil and, for buildings, each year's weather already carry the location signal. With real coordinates, the next test would be spatial smoothing of residuals (territory credibility). [#153](https://github.com/almac09/iaa-hackathon-2026/issues/153).
 
+### 5.8 Final review (A27)
+
+A last sweep for anything missed: eight reviewers with different lenses (target and development, unused features, interactions, model structure, level and calibration, customer history, test set and scoring, team and literature ideas) proposed and measured candidates by rebuilding the production model in memory. A skeptic then re-measured each and tried to refute it, and a completeness critic looked for gaps. Evidence: `audit/evidence/final_review/`.
+
+| Candidate | Line | 2023 / 2024 | Verdict | Issue |
+|---|---|---|---|---|
+| R11 elevation in feet (data error) | Buildings | −0.0001 / +0.0008 | Worth testing | [#154](https://github.com/almac09/iaa-hackathon-2026/issues/154) |
+| `year_built = 1900` placeholder (data error) | Buildings | +0.0003 / +0.0007 | Worth testing | [#155](https://github.com/almac09/iaa-hackathon-2026/issues/155) |
+| Remove the bodily-injury lift (D-11) | Motor | changes the target; level −5% to −8% | Worth testing | [#156](https://github.com/almac09/iaa-hackathon-2026/issues/156) |
+| Own-line credibility k = 4 | Motor | −0.0002 (one claim) / +0.0013 | Worth testing | [#157](https://github.com/almac09/iaa-hackathon-2026/issues/157) |
+| Peril interactions (large-claim GLM; XGBoost) | Buildings | +0.0004 / +0.0006; +0.0012 / +0.0008 | Worth testing | [#158](https://github.com/almac09/iaa-hackathon-2026/issues/158) |
+| Calibration power; short part-year rows | Buildings | +0.0005 / +0.0006; +0.0005 / +0.0007 | Worth testing | [#158](https://github.com/almac09/iaa-hackathon-2026/issues/158) |
+| Direct-channel flag | Contents | +0.0006 / +0.0007 | Borderline | [#159](https://github.com/almac09/iaa-hackathon-2026/issues/159) |
+| Net open own-damage/theft claims of expected recoveries | Motor | target definition; −1.2% on 2024 | Worth testing | [#160](https://github.com/almac09/iaa-hackathon-2026/issues/160) |
+| Large-claim GLM at power 1.9; log knots; more trees and seed bagging; count-weighted or quarterly BF development | Motor / buildings | various | Rejected: one-claim or seed artefacts, selected peaks | [#161](https://github.com/almac09/iaa-hackathon-2026/issues/161) |
+
+None of these is in the model yet: each needs a labelled full run under the two-year rule and the owner's sign-off.
+
 ## 6. Submission
 
 - **File:** `work/submissions/submission_combined_v2_dev_methods_20261022.csv` (A25), kept out of git (`work/` is ignored). It has 626,639 rows, with row_ids and order identical to `sample_submission.csv`, no nulls, and every prediction above zero (minimum 0.049). A zero would make the deviance infinite on any row with a claim.
 - **Mean prediction per row:** buildings 401.7, contents 103.4, motor 492.1.
 - **A/B file for the leaderboard:** `submission_combined_v1_20261022_motor_at_v014_level.csv` is identical except that motor is scaled ×0.8635 to a mean of 424.91 ([#151](https://github.com/almac09/iaa-hackathon-2026/issues/151)).
 - **Earlier files** (A20–A22 outputs, renamed by the owner) are kept beside it.
+- **Public leaderboard** (A27): the A22 file scored **0.12753** (best), combined v1 0.12727, this A25 file 0.12727 (the same predictions as v1 apart from buildings within 0.003%), and combined v1 with motor ×0.8635 0.12725. The leader was 0.13050.
 - **2025 cost per unit of exposure against developed 2024:** buildings 492.3 against 484.7, contents 129.2 against 120.0, motor 627.4 against 591.4.
 
 ## 7. Decisions
@@ -451,6 +473,9 @@ Each risk found by inverting the model, what has been done, and the GitHub issue
 | Techniques from the team's other branches | Tested out of time; none passes; one data fix adopted (D-24) | [#148](https://github.com/almac09/iaa-hackathon-2026/issues/148), [#149](https://github.com/almac09/iaa-hackathon-2026/issues/149) (closed) |
 | Motor 2025 level (16% above the best-scoring leaderboard file) | **Open**: leaderboard A/B prepared | [#151](https://github.com/almac09/iaa-hackathon-2026/issues/151) |
 | Location information below region | No coordinates in the data; weather-based proxies and region × urban tested; none passes and no residual pattern | [#153](https://github.com/almac09/iaa-hackathon-2026/issues/153) (closed) |
+| Data errors in the address table (R11 elevation in feet; year built 1900) | **Open**: found in the final review | [#154](https://github.com/almac09/iaa-hackathon-2026/issues/154), [#155](https://github.com/almac09/iaa-hackathon-2026/issues/155) |
+| Motor level and the bodily-injury lift | **Open**: the lift looks wrong; the leaderboard implies motor about 7% high | [#156](https://github.com/almac09/iaa-hackathon-2026/issues/156), [#151](https://github.com/almac09/iaa-hackathon-2026/issues/151) |
+| Further gains measured in the final review (motor credibility; buildings interactions, calibration, short rows; contents channel; recoveries) | **Open**: need labelled runs and sign-off | [#157](https://github.com/almac09/iaa-hackathon-2026/issues/157)–[#160](https://github.com/almac09/iaa-hackathon-2026/issues/160) |
 | Pack D² not comparable with the leaderboard | **Open** (model choices unaffected) | [#146](https://github.com/almac09/iaa-hackathon-2026/issues/146) |
 | Decisions not signed off | **Open** | [#147](https://github.com/almac09/iaa-hackathon-2026/issues/147) |
 

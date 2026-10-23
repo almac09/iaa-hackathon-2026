@@ -32,6 +32,7 @@ IAA AI-Assisted Hackathon 2026, Part 1. This pack reproduces every step of the h
 | Techniques from the team's other branches tested out of time (GLM/XGBoost blend, tuned XGBoost, frequency × severity, timber merge); leaderboard A/B file for one line's level | A24 | `python/combined_tests.py`, `python/level_variant.py` |
 | Traditional development methods: recent-weighted patterns in a two-date backtest, fitting with a development offset, Mack's chain-ladder error in the level ranges; run labels | A25 | `python/backtest_development.py`, `python/development_tests.py`, `python/mack.py`, `python/level_uncertainty.py` |
 | Location below region: residuals by region and address climate, weather and climate features, region × urban density | A26 | `python/geo_tests.py` |
+| Final review (26-agent sweep), leaderboard results, visual report of the whole project | A27 | `docs/FINAL_REPORT.html`, `audit/evidence/final_review/` |
 
 **How the three languages fit together.** The SQL is the single source of truth for data preparation. Python and R both run the same SQL files through DuckDB, so their cleaned data is identical by construction (the reconciliation checks this byte for byte). The modelling is written twice, independently: Python uses scikit-learn's Newton solver and R uses its own penalised IRLS written in base R. Both use the same objective, so the results should agree to within the tolerances set in `config.json`.
 

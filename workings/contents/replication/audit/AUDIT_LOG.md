@@ -610,3 +610,55 @@
 - **Issue:** #153 (closed).
 - **Checks:** 46 tests pass (new: the feature helpers copy the config); ruff passes.
 - **Status:** analysis only.
+
+### A27 — Final review, leaderboard results and the visual report
+- **When / who:** 2026-10-22 to 23, Claude, at the owner's instruction to do a thorough final pass for anything missed that is likely to improve the model, then write a report, with graphics, of what was done and what was and was not tested.
+- **Leaderboard results** (public scores, shared by the owner; `ev_r4_leaderboard_scores.csv`; recorded on #151):
+
+  | File | Public score |
+  |---|---|
+  | A22 file (seasonal contents, before the timber merge) | **0.12753** (best) |
+  | Combined v1 (A24) | 0.12727 |
+  | Combined v2, Mack ranges (A25) | 0.12727 |
+  | Combined v1 with motor ×0.8635 | 0.12725 |
+  | Competition leader | 0.13050 |
+
+  - **Timber merge:** cost about 0.0003, in line with both backtests.
+  - **Motor level:** the motor pair implies a score-optimal motor level of about ×0.93 of ours (×0.926–0.935 for ±0.0001 of noise on the difference), worth about +0.0004. This uses the pooled backtest's curvature of the score in the motor level, about 0.071 per (ln k)², similar in 2023 and 2024.
+- **Timber recode confirmed** (D-24 kept at the owner's instruction, given it is correct): 16,954 of the 17,621 policies coded `T` in 2022 (96%) are `W` in 2023. Between other pairs of years, 98.2% of policies keep their code (294,312 of 299,771).
+- **Review method:** a workflow of 26 agents. It ran no pack runner, so nothing was added to `run_log.jsonl`.
+  - **Measurement tool:** row-level 2023 and 2024 backtest predictions of the production model without CANN were exported to scratch; they reproduce the backtest D² exactly. A probe fitted a credibility-shrunk correction per band on one year and scored it on the other. Calibration: a modelled factor gives −0.0012 / −0.0007, the contacts leak +0.37 / +0.37, written premium −0.0038 / +0.0011.
+  - **Finders:** eight lenses (target and development, unused features, interactions, structure and fitting, level and calibration, customer history, test set and scoring, team and literature). Most measured their candidates by rebuilding the production model in memory, which reproduces the backtest to 1e-8 or better.
+  - **Merge:** an agent removed duplicates and anything already tested; 24 candidates became 14, and 12 were dropped with reasons (`ev_r2`).
+  - **Verification:** one skeptic per candidate re-measured it independently and tried to refute it on novelty, leaks, single-claim artefacts, seed noise and selection. 9 of 14 survived.
+  - **Completeness critic:** it ran numeric heaping, unit-error, drift and sum-insured scans and added two data errors, both verified.
+- **Findings** (`ev_r1_review_verdicts.csv`; D² change on 2023 / 2024; none applied):
+  - **R11 elevation recorded in feet** (#154): buildings −0.0001 / +0.0008.
+  - **`year_built = 1900` placeholder** (#155): +0.0003 / +0.0007; two-year mean +0.00051 (95% +0.00007 to +0.00086).
+  - **The bodily-injury lift D-11 looks wrong** (#156): closed claims fell as much as open ones in 2023. Removing it lowers motor's 2025 level by about 5–8%, consistent with the leaderboard reading.
+    - Documentation correction: the applied factors are 1.0854 / 1.2149 / 1.1631 (2022–24). The model documentation still quoted 1.076 for 2022, the value before de-duplication; it is corrected.
+  - **Motor own-line credibility k = 4** (#157): −0.0002 / +0.0013 on the full target, where 2023 is driven by one 15.25m claim; capped at 1m, +0.0007 / +0.0012.
+  - **Buildings peril interactions** (clay × dry summer, flood zone 3+ × rainfall; #158): large-claim GLM +0.0004 / +0.0006, two-year mean +0.00051 (95% +0.00022 to +0.00078); XGBoost +0.0012 / +0.0008.
+  - **Buildings calibration power** (+0.00045 / +0.00056) and **short part-year rows** (+0.00047 / +0.00067) (#158).
+  - **Contents direct-channel flag** (#159): +0.00056 / +0.00069, borderline.
+  - **Net open motor own-damage and theft claims of expected recoveries** (#160): a correction to the target definition.
+- **Rejected by the skeptics:**
+  - motor large-claim GLM at power 1.9: one claim each year carries the gain;
+  - buildings log knots: a selected peak;
+  - more XGBoost trees and seed bagging: seed-specific;
+  - count-weighted bodily-injury pattern: below the noise bar;
+  - Bornhuetter–Ferguson by loss quarter: the 11.9m claim carries the gain.
+- **Report:** `docs/FINAL_REPORT.html`, also published as a private artifact. It has charts of:
+  - the pipeline;
+  - backtest D² by stage;
+  - the leaderboard;
+  - every tested idea's 2023 / 2024 effect, with its outcome;
+  - the development backtests and the uncertainty;
+  - the 2025 level against the benchmarks;
+  - seasonality;
+  - the final review's candidates;
+  - what was not tested and why.
+
+  Its data come from the evidence files.
+- **Issues:** #154–#160 (open), #161 (closed, this review).
+- **Status:** analysis only. The model and submission are unchanged; the recommended final run awaits the owner's sign-off.
