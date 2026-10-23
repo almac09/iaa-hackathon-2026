@@ -203,6 +203,9 @@ class Line:
     def build(self, years, threshold, alpha, trees=None, trend=True, a16=False) -> LineModel:
         """`a16` rebuilds with the settings before A17 (no smoothing, no added motor factors), for significance."""
         sp, gl = ({**self.spec, **self.spec["a16_override"]} if a16 else self.spec), self.cfg["glm_lines"]
+        if a16 and "excess" in self.spec.get("a16_override", {}):
+            # Keep post-A17 additions (A28 interactions) so the variant reverts only the A17 settings.
+            sp["excess"] = {**sp["excess"], "continuous": self.spec["excess"].get("continuous", [])}
         d = self.rows(years)
         y_small, y_excess = self.targets(d, threshold)
         if sp["small"] == "glm":
@@ -215,8 +218,8 @@ class Line:
                              n_iter).fit(d, y_small, self.p)
         if threshold is None:
             return LineModel(small)
-        spec, _ = self.glm_spec(sp["excess"], d)
-        excess = GLM(spec, [], gl["excess_alpha"], trend=False).fit(d, y_excess, self.p)
+        spec, cont = self.glm_spec(sp["excess"], d)  # continuous terms only where the excess spec lists them (A28)
+        excess = GLM(spec, cont, gl["excess_alpha"], trend=False).fit(d, y_excess, self.p)
         tail = glm_lines.gpd_tail(self.claims[self.claims.row_id.isin(d.row_id)], threshold)
         return LineModel(small, excess, tail)
 

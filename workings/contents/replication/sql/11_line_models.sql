@@ -17,7 +17,11 @@ CREATE OR REPLACE TABLE buildings_model AS
 SELECT r.*,
        coalesce(t.n_claims, 0) AS n_claims, coalesce(t.claim_cost, 0) AS claim_cost,
        coalesce(t.claim_cost_dev, 0) AS claim_cost_dev, coalesce(t.excess_dev, 0) AS excess_dev,
-       cu.* EXCLUDE (customer_id), ad.* EXCLUDE (address_id), w.* EXCLUDE (address_id, year)
+       cu.* EXCLUDE (customer_id), ad.* EXCLUDE (address_id), w.* EXCLUDE (address_id, year),
+       -- Peril interactions (A28): clay soil in a dry summer drives subsidence; a high or unknown flood zone with
+       -- heavy rain drives flood. Used only where config.json lists them.
+       coalesce((ad.soil_type = 'clay')::INT * w.dry_summer_index, 0) AS x_clay_dry,
+       coalesce((coalesce(ad.flood_zone, 99) >= 3)::INT * w.rainfall_mm / 1000, 0) AS x_fz3_rain
 FROM buildings_rows r
 LEFT JOIN line_target t ON t.line = 'buildings' AND t.row_id = r.row_id
 LEFT JOIN customers cu USING (customer_id)
