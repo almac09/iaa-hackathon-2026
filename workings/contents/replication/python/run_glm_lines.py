@@ -293,11 +293,15 @@ def run_line(line: Line) -> dict:
     # Credibility k per group, one group at a time, on the same tuning split.
     base = line.build(years, threshold, alpha, tree_spec, trend=False)
     ks = {g: np.inf for g in GROUPS[line.name]}
+    # A28: optionally tune k against claims capped per row, so a single catastrophe does not pick it (motor).
+    cap = gl.get("credibility_tuning_cap", {}).get(line.name)
+    y_tune = np.minimum(val.y_full.to_numpy(), cap) if cap else val.y_full.to_numpy()
     for grp in GROUPS[line.name]:
         scores = {}
         for k in gl["credibility_k_grid"] + [np.inf]:
-            scores[k] = line.score(line.predict(base, "tune", {**ks, grp: k}, val), val)["d2_vs_developed"]
-            out["credibility"].append({"line": line.name, "group": grp, "k": k, "d2_2023_developed": scores[k]})
+            scores[k] = models.d2_tweedie(y_tune, line.predict(base, "tune", {**ks, grp: k}, val), line.p)
+            out["credibility"].append({"line": line.name, "group": grp, "k": k, "d2_2023_developed": scores[k],
+                                       "tuning_cap": cap})
         ks[grp] = max(scores, key=scores.get)
         print(f"  {line.name} credibility {grp}: k {ks[grp]} (D2 {scores[ks[grp]]:.4f}, "
               f"no history {scores[np.inf]:.4f})", flush=True)
@@ -402,6 +406,37 @@ def run_line(line: Line) -> dict:
         final = line.add_cann(final, f_years, threshold)
     pred = line.predict(final, "final", ks, line.test, year=f_year) * level["level_factor"]
 
+    # Prediction shape (A28): a calibration power on the predicted rate and a factor for short part-year rows, each
+    # estimated on one backtest year and scored on the other; adopted only if both years improve and the two-year
+    # mean gain is significant (D-23). 2025 uses the average of the two years' estimates.
+    ph = gl.get("posthoc", {})
+    out["shape"] = []
+    if line.name in ph.get("lines", []):
+        se = ph["short_exposure"]
+        ex = {w: line.rows([WINDOWS[w][1]]).exposure_plain.to_numpy() for w in EVAL_WINDOWS}
+        est = {w: fit_shape(ys[w], mus[w], ex[w], p, se, ph.get("fit_power", True)) for w in EVAL_WINDOWS}
+        for w in EVAL_WINDOWS:
+            a, f = est[other[w]]
+            alt = shape_adjust(mus[w], ex[w], a, f, se)
+            v = line.rows([WINDOWS[w][1]])
+            diff = significance.paired_cluster_bootstrap(ys[w], alt, mus[w], v[bs["cluster"]].to_numpy(), p, bs["n"], bs["seed"])
+            gain = models.d2_tweedie(ys[w], alt, p) - models.d2_tweedie(ys[w], mus[w], p)
+            out["shape"].append({"line": line.name, "score_year": WINDOWS[w][1], "power_used": a, "short_factor_used": f,
+                                 "power_fitted_here": est[w][0], "short_factor_fitted_here": est[w][1],
+                                 **significance.summarise(diff, gain)})
+        mean, lo, hi = significance.two_year_interval([r["d2_gain"] for r in out["shape"]],
+                                                      [r["ci_low_95"] for r in out["shape"]], [r["ci_high_95"] for r in out["shape"]])
+        adopted = all(r["d2_gain"] > 0 for r in out["shape"]) and lo > 0
+        power = float(np.mean([e[0] for e in est.values()])) if adopted else 1.0
+        factor = float(np.mean([e[1] for e in est.values()])) if adopted else 1.0
+        for r in out["shape"]:
+            r.update({"two_year_mean": mean, "two_year_ci_low_95": lo, "two_year_ci_high_95": hi, "adopted": adopted,
+                      "power_2025": power, "short_factor_2025": factor})
+        print(f"  {line.name} prediction shape: power {power:.3f}, short-row factor {factor:.2f} "
+              f"({'adopted' if adopted else 'not adopted'}; two-year mean {mean:+.5f}, {lo:+.5f} to {hi:+.5f})", flush=True)
+        if adopted:
+            pred = shape_adjust(pred, line.test.exposure_plain.to_numpy(), power, factor, se)
+
     # Level uncertainty (A20): development (bootstrap, ev_u1), trend and year-to-year noise, propagated to 2025.
     fitted = line.predict(final, "final", ks, line.train)
     by_year = pd.DataFrame({"yr": line.train.yr.to_numpy(), "y": line.train.y_full.to_numpy(),
@@ -459,6 +494,32 @@ def run_line(line: Line) -> dict:
                             "month": m + 1, "relative_frequency": float(wt[m])}
                            for w, wt in line.weights.items() for m in range(12)]
     return out
+
+
+def shape_adjust(mu: np.ndarray, expo: np.ndarray, power: float = 1.0, short_factor: float = 1.0,
+                 short_exposure: float = 0.1) -> np.ndarray:
+    """Prediction shape changes that keep the total of `mu` over the same rows (A28): the predicted rate's spread
+    scaled by (rate / geometric mean)^(power - 1), and rows of exposure at most `short_exposure` multiplied by
+    `short_factor`. Uses predictions only, never actuals, so it can be applied to the 2025 rows."""
+    rate = mu / expo
+    out = mu * (rate / np.exp(np.mean(np.log(rate)))) ** (power - 1)
+    out = np.where(expo <= short_exposure, out * short_factor, out)
+    return out * mu.sum() / out.sum()
+
+
+def fit_shape(y: np.ndarray, mu: np.ndarray, expo: np.ndarray, p: float, short_exposure: float,
+              fit_power: bool = True) -> tuple[float, float]:
+    """The power (unless fit_power is False, when it stays 1), then the short-row factor, that maximise D2 on one
+    year (grids 0.90-1.30 and 0.20-1.20)."""
+    a = 1.0
+    if fit_power:
+        powers = np.round(np.arange(0.90, 1.3001, 0.005), 3)
+        a = max(powers, key=lambda x: models.d2_tweedie(y, shape_adjust(mu, expo, x, 1.0, short_exposure), p))
+    if not (expo <= short_exposure).any():
+        return float(a), 1.0
+    factors = np.round(np.arange(0.20, 1.2001, 0.02), 2)
+    f = max(factors, key=lambda x: models.d2_tweedie(y, shape_adjust(mu, expo, a, x, short_exposure), p))
+    return float(a), float(f)
 
 
 def deviance_scale(y: np.ndarray, mu: np.ndarray, p: float) -> float:
@@ -582,7 +643,8 @@ def main() -> None:
                     write_csv(boot, out_dir / "ev_g8_bootstrap_significance.csv"),
                     write_csv(cat("level"), out_dir / "ev_g9_level_factor.csv"),
                     write_csv(cat("uncertainty"), out_dir / "ev_g10_level_uncertainty.csv"),
-                    write_csv(cat("seasonal"), out_dir / "ev_g14_seasonal_exposure_weights.csv")]
+                    write_csv(cat("seasonal"), out_dir / "ev_g14_seasonal_exposure_weights.csv"),
+                    write_csv(cat("shape"), out_dir / "ev_g15_prediction_shape.csv")]
 
         prefixes = {name: cfg["lines"]["models"][name]["prefix"] for name in results}
         sub = make_submission.build_submission(sample, {prefixes[k]: r["pred"] for k, r in results.items()})

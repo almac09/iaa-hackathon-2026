@@ -49,3 +49,24 @@ def test_offset_line_fits_reported_cost_and_the_share_weights_quarters():
     d = off.df[off.df.src == "train"]
     assert off.reported_small(d, None).tolist() == [150.0, 70_000.0]          # reported, not developed
     assert off.reported_small(d, 50_000).tolist() == [150.0, 50_000.0]       # split on reported cost
+
+
+def test_shape_adjust_keeps_the_total_and_moves_the_spread():
+    mu = np.array([1.0, 2.0, 4.0, 8.0])
+    expo = np.array([1.0, 1.0, 1.0, 0.05])
+    assert np.allclose(rgl.shape_adjust(mu, expo), mu)                         # identity at power 1, factor 1
+    wide = rgl.shape_adjust(mu, np.ones(4), power=1.2)
+    assert wide.sum() == pytest.approx(mu.sum()) and wide[3] / wide[0] > mu[3] / mu[0]   # spread stretched
+    short = rgl.shape_adjust(mu, expo, short_factor=0.5)
+    assert short.sum() == pytest.approx(mu.sum())
+    assert short[3] / short[2] == pytest.approx(0.5 * mu[3] / mu[2])          # only the short row is scaled
+
+
+def test_fit_shape_recovers_a_planted_power():
+    rng = np.random.default_rng(1)
+    expo = np.ones(200_000)
+    true_rate = np.exp(rng.normal(0, 0.6, 200_000))
+    mu_flat = true_rate ** (1 / 1.15)                                            # predictions under-spread
+    y = rng.gamma(2.0, true_rate / 2.0) * (rng.random(200_000) < 0.5) * 2
+    a, f = rgl.fit_shape(y, mu_flat * true_rate.sum() / mu_flat.sum(), expo, 1.5, 0.1)
+    assert 1.10 <= a <= 1.20 and f == 1.0                                      # no short rows: factor left at 1
