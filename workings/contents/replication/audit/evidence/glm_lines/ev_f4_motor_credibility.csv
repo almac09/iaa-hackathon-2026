@@ -1,0 +1,5 @@
+line,test,variant,score_year,d2_baseline,d2_variant,pred_over_developed,d2_gain,boot_mean,ci_low_95,ci_high_95,share_not_better,n_boot,significant_95,passes_two_year_rule,two_year_mean,two_year_ci_low_95,two_year_ci_high_95,passes_significance_rule,gain_capped_1m,gain_without_10m_rows,k_capped_choice,rule_takes_capped_choice,k_adopted_by_rule
+motor,T4 motor credibility,k = 4 (against k = 8),2023,0.10097,0.100797,0.969184,-0.000173,-9.1e-05,-0.001855,0.001143,0.526,1000,False,False,0.000568,-0.000352,0.001489,False,0.000655,0.000718,4.0,True,4.0
+motor,T4 motor credibility,k = 4 (against k = 8),2024,0.080618,0.081928,1.055538,0.00131,0.001327,0.000348,0.002485,0.004,1000,True,False,0.000568,-0.000352,0.001489,False,0.001216,0.00131,4.0,True,4.0
+motor,T4 motor credibility,k = 6 (against k = 8),2023,0.10097,0.101005,0.967711,3.5e-05,6.3e-05,-0.000546,0.000492,0.383,1000,False,True,0.000303,-1.8e-05,0.000623,False,0.00032,0.000341,4.0,True,4.0
+motor,T4 motor credibility,k = 6 (against k = 8),2024,0.080618,0.081189,1.053911,0.000571,0.000576,0.000233,0.000985,0.001,1000,True,True,0.000303,-1.8e-05,0.000623,False,0.000537,0.000571,4.0,True,4.0

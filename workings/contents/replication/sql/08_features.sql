@@ -48,6 +48,7 @@ SELECT row_id, src, yr, exposure,
        lvl(bicycle_cover) AS f_bike,
        lvl(voluntary_excess) AS f_vol_xs,
        lvl(channel) AS f_channel,
+       CASE WHEN channel = 'direct' THEN 'direct' ELSE 'other' END AS f_direct,  -- A28
        lvl(payment_method) AS f_payment,
        lvl(least(missed_payments_12m, 3)) AS f_missed_pay,
        lvl(new_business) AS f_new_business,

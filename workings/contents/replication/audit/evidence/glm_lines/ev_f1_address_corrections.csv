@@ -1,0 +1,11 @@
+line,test,variant,score_year,d2_baseline,d2_variant,pred_over_developed,d2_gain,boot_mean,ci_low_95,ci_high_95,share_not_better,n_boot,significant_95,passes_two_year_rule,two_year_mean,two_year_ci_low_95,two_year_ci_high_95,passes_significance_rule
+buildings,T1 address corrections,both,2023,0.110711,0.110908,0.945826,0.000197,0.000213,-0.001126,0.001506,0.383,1000,False,True,0.000754,-0.000121,0.001628,False
+buildings,T1 address corrections,both,2024,0.110584,0.111894,0.913281,0.00131,0.001343,0.000217,0.002523,0.008,1000,True,True,0.000754,-0.000121,0.001628,False
+buildings,T1 address corrections,R11 elevation only,2023,0.110711,0.110914,0.946004,0.000203,0.000211,-0.000941,0.001481,0.393,1000,False,True,0.000405,-0.000422,0.001233,False
+buildings,T1 address corrections,R11 elevation only,2024,0.110584,0.111192,0.911611,0.000608,0.000631,-0.000437,0.001821,0.137,1000,False,True,0.000405,-0.000422,0.001233,False
+buildings,T1 address corrections,year built only,2023,0.110711,0.111167,0.944784,0.000456,0.00046,-0.000137,0.001035,0.063,1000,False,True,0.000459,5.9e-05,0.000858,True
+buildings,T1 address corrections,year built only,2024,0.110584,0.111045,0.913968,0.000461,0.000473,-0.000101,0.000987,0.053,1000,False,True,0.000459,5.9e-05,0.000858,True
+contents,T1 address corrections,both,2023,0.095378,0.095684,0.926545,0.000306,0.000312,-0.00017,0.000804,0.118,1000,False,True,0.000237,-0.000121,0.000595,False
+contents,T1 address corrections,both,2024,0.096767,0.096935,1.038727,0.000168,0.000183,-0.000311,0.000737,0.237,1000,False,True,0.000237,-0.000121,0.000595,False
+motor,T1 address corrections,both,2023,0.10097,0.10097,0.966903,0.0,0.0,0.0,0.0,1.0,1000,False,False,0.0,0.0,0.0,False
+motor,T1 address corrections,both,2024,0.080618,0.080618,1.052985,0.0,0.0,0.0,0.0,1.0,1000,False,False,0.0,0.0,0.0,False
