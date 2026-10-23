@@ -118,7 +118,9 @@ def test_truncated_report_lag_pattern_by_hand(cfg):
 
 
 def test_ibner_applies_to_motor_bodily_injury_only_and_can_be_switched_off(cfg):
-    c = build(cfg).execute("SELECT * FROM line_claims_dev").df().set_index("claim_id")
+    on = copy.deepcopy(cfg)
+    on["decisions"]["D11_ibner_motor_bi"]["apply"] = True  # off by default since A28 (D-28)
+    c = build(on).execute("SELECT * FROM line_claims_dev").df().set_index("claim_id")
     assert c.loc["C6", "dev_factor"] == pytest.approx(2.0)  # 2021 cohort 2,000 / 2024 cohort 1,000
     assert c.loc["C5", "dev_factor"] == pytest.approx(1.0)
     off = copy.deepcopy(cfg)
