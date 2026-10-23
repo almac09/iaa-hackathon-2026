@@ -190,7 +190,7 @@
     "posthoc": {"lines": ["buildings"], "short_exposure": 0.1, "fit_power": false,
                 "_about": "A28 (#158): factor for rows of exposure <= 0.1, estimated on each backtest year, adopted only if the other year improves on both and the two-year mean is significant; the calibration power failed the significance rule in T3, so it is not fitted."},
     "freq_alpha": 0.001,
-    "out_file": "work/submissions/submission_combined_v2_dev_methods_{date}.csv",
+    "out_file": "work/submissions/submission_final_candidate_{date}.csv",
     "alpha_grid": [0.00001, 0.0001, 0.001],
     "excess_alpha": 0.001,
     "thresholds": [25000, 50000, 100000],

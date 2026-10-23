@@ -1,6 +1,6 @@
 model,d2,pred_over_actual
 exposure only,0.030892,0.936413
-A single Tweedie,0.093283,0.97069
-B per-peril Tweedie,0.091997,0.978259
-C per-size-band Tweedie,0.087214,1.031869
-D per-peril freq x sev,0.090387,0.977674
+A single Tweedie,0.093362,0.971008
+B per-peril Tweedie,0.092947,0.970424
+C per-size-band Tweedie,0.087039,1.03367
+D per-peril freq x sev,0.090656,0.962681

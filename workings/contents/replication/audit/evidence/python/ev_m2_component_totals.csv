@@ -1,14 +1,14 @@
 component,pred_total
-A total,17002646.629038
-B accidental_damage,1871563.824217
-B escape_of_water,3947440.174355
-B flood,4172131.470567
-B theft,7144089.837443
-C cost_band_1,1163153.671764
-C cost_band_2,5799485.856857
-C cost_band_3,6419402.168969
-C cost_band_4,4692219.620338
-D accidental_damage,1873669.73212
-D escape_of_water,3872174.591657
-D flood,4277755.699772
-D theft,7101371.999715
+A total,17008206.273172
+B accidental_damage,1871199.703135
+B escape_of_water,3947962.189419
+B flood,4033093.66452
+B theft,7145722.627173
+C cost_band_1,1163517.326901
+C cost_band_2,5799687.681564
+C cost_band_3,6424603.875169
+C cost_band_4,4717996.649268
+D accidental_damage,1873843.582646
+D escape_of_water,3873806.270933
+D flood,4009758.36439
+D theft,7104953.873114
