@@ -2,6 +2,27 @@
 -- One row per policy period, train and test stacked. Raw values are always kept beside the
 -- cleaned ones (exposure_raw, sum_insured_raw) so every fix can be compared row by row.
 
+-- Address corrections (A28; decisions D-26, D-27), found in the final review (A27). Every later join uses
+-- addresses_clean; sql/01-02 still profile the raw table, and the raw values are kept beside the corrected ones.
+-- D-26: region R11's elevation is recorded in feet (3.25-3.30 times every other region at every percentile; the
+--       others cap at 60.0 m and R11 at 196.9 = 60 x 3.28084), so it is converted to metres.
+-- D-27: year_built = 1900 is a placeholder on about 19,000 addresses (10.8 times any neighbouring year), whose
+--       ratings and claims look like houses of every age; it is replaced by the typical year built of addresses
+--       with the same energy rating.
+CREATE OR REPLACE VIEW addresses_clean AS
+WITH built AS (
+    SELECT energy_rating, round(avg(year_built)) AS year_built_typical
+    FROM addresses WHERE year_built <> 1900 GROUP BY energy_rating
+)
+SELECT a.* REPLACE (
+           CASE WHEN getvariable('d26_r11_elevation_feet') AND a.region = 'R11' THEN round(a.elevation_m / 3.28084, 2)
+                ELSE a.elevation_m END AS elevation_m,
+           CASE WHEN getvariable('d27_year_built_placeholder') AND a.year_built = 1900 THEN CAST(b.year_built_typical AS BIGINT)
+                ELSE a.year_built END AS year_built),
+       a.elevation_m AS elevation_m_raw, a.year_built AS year_built_raw
+FROM addresses a
+LEFT JOIN built b ON b.energy_rating IS NOT DISTINCT FROM a.energy_rating;
+
 CREATE OR REPLACE TABLE contents_rows AS
 WITH stacked AS (
     SELECT 'train' AS src, * EXCLUDE (renewal_decision), renewal_decision FROM policies_contents
@@ -84,7 +105,7 @@ SELECT r.*,
 FROM contents_rows r
 LEFT JOIN agg a USING (row_id)
 LEFT JOIN customers cu USING (customer_id)
-LEFT JOIN addresses ad USING (address_id)
+LEFT JOIN addresses_clean ad USING (address_id)
 LEFT JOIN weather w ON w.address_id = r.address_id AND w.year = r.yr;
 
 -- Evidence: before and after for each fix, and the claim reconciliation.

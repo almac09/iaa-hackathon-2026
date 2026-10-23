@@ -21,7 +21,7 @@ SELECT r.*,
 FROM buildings_rows r
 LEFT JOIN line_target t ON t.line = 'buildings' AND t.row_id = r.row_id
 LEFT JOIN customers cu USING (customer_id)
-LEFT JOIN addresses ad USING (address_id)
+LEFT JOIN addresses_clean ad USING (address_id)
 LEFT JOIN weather w ON w.address_id = r.address_id AND w.year = r.yr;
 
 CREATE OR REPLACE TABLE motor_model AS
@@ -32,7 +32,7 @@ SELECT r.*,
 FROM motor_rows r
 LEFT JOIN line_target t ON t.line = 'motor' AND t.row_id = r.row_id
 LEFT JOIN customers cu USING (customer_id)
-LEFT JOIN addresses ad USING (address_id)
+LEFT JOIN addresses_clean ad USING (address_id)
 LEFT JOIN weather w ON w.address_id = r.address_id AND w.year = r.yr;
 
 -- Contents keeps the banded features of sql/08 (A13) and gains the developed target.

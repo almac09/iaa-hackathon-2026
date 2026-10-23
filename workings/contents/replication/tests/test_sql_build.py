@@ -56,7 +56,8 @@ def build(cfg, extra_claims=()):
     con = duckdb.connect()
     for name, df in {"policies_contents": train, "test_contents": test, "claims": claims,
                      "customers": pd.DataFrame({"customer_id": ["00000001"], "date_of_birth": [date(1983, 1, 1)]}),
-                     "addresses": pd.DataFrame({"address_id": ["A1"], "region": ["R01"]}),
+                     "addresses": pd.DataFrame({"address_id": ["A1"], "region": ["R01"], "elevation_m": [10.0],
+                                                "year_built": [1950], "energy_rating": ["C"]}),
                      "weather": pd.DataFrame({"address_id": ["A1", "A1"], "year": [2023, 2025],
                                               "rainfall_mm": [800.0, 810.0]})}.items():
         con.register(f"{name}_df", df)
@@ -108,3 +109,43 @@ def test_duplicate_claims_counted_once(cfg):
     off = copy.deepcopy(cfg)
     off["decisions"]["D19_dedupe_claims"]["apply"] = False
     assert build(off, dup).loc["R2", "claim_cost"] == pytest.approx(1600.0)
+
+
+def clean_addresses(cfg, apply=True):
+    """addresses_clean (A28) on a hand-built address table."""
+    sql = SQL[SQL.index("CREATE OR REPLACE VIEW addresses_clean"):]
+    sql = sql[:sql.index(";") + 1]
+    con = duckdb.connect()
+    con.register("a_df", pd.DataFrame({
+        "address_id": ["A1", "A2", "A3", "A4", "A5", "A6"],
+        "region": ["R11", "R01", "R01", "R01", "R01", "R02"],
+        "elevation_m": [32.8, 10.0, 12.0, 14.0, 16.0, 20.0],
+        "year_built": [1990, 1900, 1950, 1970, 1900, 2000],
+        "energy_rating": ["C", "C", "C", "C", None, None]}))
+    con.execute("CREATE VIEW addresses AS SELECT * FROM a_df")
+    c = copy.deepcopy(cfg)
+    c["decisions"]["D26_r11_elevation_feet"]["apply"] = apply
+    c["decisions"]["D27_year_built_placeholder"]["apply"] = apply
+    common.set_sql_variables(con, c)
+    con.execute(sql)
+    return con.execute("SELECT * FROM addresses_clean ORDER BY address_id").df().set_index("address_id")
+
+
+def test_r11_elevation_converted_from_feet_and_raw_kept(cfg):
+    a = clean_addresses(cfg)
+    assert a.loc["A1", "elevation_m"] == pytest.approx(10.0, abs=0.01)    # 32.8 ft = 10.0 m
+    assert a.loc["A1", "elevation_m_raw"] == 32.8
+    assert a.loc["A2", "elevation_m"] == 10.0                              # other regions untouched
+
+
+def test_year_built_placeholder_imputed_by_energy_rating(cfg):
+    a = clean_addresses(cfg)
+    assert a.loc["A2", "year_built"] == 1970        # typical rating-C year: mean of 1990, 1950, 1970
+    assert a.loc["A5", "year_built"] == 2000        # missing rating matched to missing rating
+    assert a.loc["A2", "year_built_raw"] == 1900
+    assert a.loc["A3", "year_built"] == 1950        # genuine years untouched
+
+
+def test_address_corrections_switch_off(cfg):
+    a = clean_addresses(cfg, apply=False)
+    assert a.loc["A1", "elevation_m"] == 32.8 and a.loc["A2", "year_built"] == 1900
