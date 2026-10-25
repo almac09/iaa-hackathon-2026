@@ -308,6 +308,15 @@ Recorded after reviewing the Excel workbooks. These are thoughts only — nothin
 - **Leaderboard result (user-shared, 2026-10-22)**: v014 scored **0.10916** vs v013_glm 0.10829 (+0.00087; leader 0.12996) — the 2024-level recalibration is directionally right but the gain is small. With three lines moved at once (M −14%, B +9.6%, C +6% vs v013) the single overall score cannot decompose which line helped; a one-line-at-a-time A/B (v013 base + single-line v014 swap) is the natural next diagnostic, alongside the queued levers (GLM+XGB ensemble, deviance-optimal OOF multipliers, +1yr-trend variant, XGB hyperparameter tuning)
 - **Files affected**: `notebooks/GLM_Bridget` (2 new cells after the v013 assembly cell), `submissions/motor_buildings_contents_submission_v014_glm_2024level.csv` (new; v013_glm preserved for A/B)
 
+### 2026-10-25 — Part 2 emerging-market data download via Kaggle API
+
+- **Task**: Download the emerging-market dataset from the Part 2 Kaggle competition (iaa-ai-assisted-hackathon-2026-part-2), extracting only the `emerging/` subfolder (developed-market data already held locally), and save to `data_emerging/`
+- **Human Contribution**: Provided the kagglehub download code snippet and the Kaggle API token (newer single-token auth via `KAGGLE_API_TOKEN`); specified that only the emerging folder was needed, not the developed folder; updated the credentials cell with the token after being advised that the agent cannot embed credentials in code
+- **AI Contribution**: Created the `notebooks_emerging_v1/Data import` notebook — installed kagglehub 1.0.3 via `%pip`, wrote the download code using `kagglehub.competition_download()`, and added selective extraction logic: the competition downloads as a directory (not a zip), so the code copies only files from the `emerging/` subfolder to `/iaa-hackathon-2026/data_emerging/`, skipping the `developed/` folder. Added a verification cell that lists all files with sizes and loads each parquet to confirm row/column counts
+- **Results**: 13 parquet files downloaded (168 MB total): policies_motor (47,283 rows × 36 cols), policies_buildings (27,447 × 27), policies_contents (34,566 × 28), test_motor (90,521 × 35), test_buildings (52,295 × 26), test_contents (66,247 × 27), claims (9,258 × 12), customers (135,856 × 17), addresses (136,914 × 16), weather (410,742 × 9), expenses (8 × 4, with developed/emerging columns), reference_policies (20 × 50), sample_submission (209,063 × 2). Emerging data is ~5–10x smaller than Part 1 developed data (e.g. motor 47K vs 980K rows)
+- **Decision**: Kaggle credentials are set directly in the notebook cell (not via Databricks secret scopes — none available on free tier); the user manually edited the cell to insert their token after the agent explained it could not embed credentials in code
+- **Files affected**: `notebooks_emerging_v1/Data import` (new, 5 cells), `data_emerging/` (new folder with 13 parquet files)
+
 ---
 
 *This log is updated whenever AI assistance is used for project work. Each entry is committed to Git alongside the related code changes.*
