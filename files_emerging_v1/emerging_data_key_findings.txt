@@ -1,0 +1,17 @@
+
+IAA Hackathon 2026 — Emerging Market Data Key Findings
+Generated: 2026-10-25 12:11
+
+1. 13 parquet files in emerging (11 shared with developed + 2 new)
+2. New tables: expenses (cost assumptions), reference_policies (schema ref)
+3. Age: emerging uses categorical bands (17-24, 25-34, 35-49, 50-64, 65+)
+   vs developed's numeric ages — need mapping for cross-market models
+4. customers: emerging has 'gender'; developed has 'date_of_birth' + 'credit_band'
+5. policies_motor: emerging missing annual_mileage, telematics_opt_in, telematics_score
+6. Exposure recalculated as (period_end - period_start + 1) / 365
+7. All date columns stored as strings — converted to datetime
+8. ~12% missing values across many columns (MCAR pattern)
+9. No full duplicates, no whitespace or case issues
+10. All join keys (customer_id, address_id, policy_id) have referential integrity
+
+Cleaned data files and outputs for next steps are located in files_emerging_v1/.

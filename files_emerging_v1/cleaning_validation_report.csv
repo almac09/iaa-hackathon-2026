@@ -1,0 +1,8 @@
+table,action,detail
+ALL,date_conversion,"period_start, period_end, loss_date, report_date → datetime"
+policies_*,exposure_recalc,"recalculated as (period_end - period_start + 1) / 365 (254 motor, 155 buildings, 200 contents values changed)"
+policies_*,add_year_column,year = period_start.dt.year for joining with weather
+ALL,whitespace_strip,categorical columns checked — no trailing whitespace found
+ALL,duplicate_removal,0 full duplicates found — no removal needed
+ALL,missing_values,"left as-is (≈12% across many cols, likely MCAR; impute downstream)"
+ALL,categorical_case,no case inconsistencies found
