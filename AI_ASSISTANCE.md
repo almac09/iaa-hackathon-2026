@@ -333,6 +333,19 @@ Recorded after reviewing the Excel workbooks. These are thoughts only — nothin
 - **Human review (completed 2026-10-25)**: Reviewed all output files (Excel overview, schema comparison, variable type survey, data quality report, differences summary, cleaning validation report, key findings text file, cleaned parquet files) to get a feel for the data and the data cleaning conducted. EDA deferred to a later stage in notebook 02_EDA_emerging.
 - **Files affected**: `notebooks_emerging_v1/notebooks_emerging_v1/01_Data_Exploration` (new, 13 cells), `files_emerging_v1/` (11 output files: Overview of Emerging Data.xlsx, schema_comparison.csv, variable_type_survey.csv, data_quality_report.csv, cleaning_validation_report.csv, emerging_vs_developed_differences.csv, emerging_data_key_findings.txt, policies_motor_cleaned.parquet, policies_buildings_cleaned.parquet, policies_contents_cleaned.parquet, claims_cleaned.parquet)
 
+### 2026-10-25 — Part 2 modeling approach assessment
+
+- **Task**: Compare the Part 2 emerging-market data constraints against the v4 developed-market pipeline to determine whether the same modeling approach can be reused, or whether a different approach is needed
+- **Human Contribution**: Asked whether we can use the same approach as v4 (develop claims to ultimate, Tweedie XGBoost / GLM / blend, create submissions) or whether the smaller dataset requires changes; noted the v4 results weren't that bad; requested not to run anything major yet
+- **AI Contribution**: Reviewed all four v4 notebooks (01_Data_Prep_and_Claims, 02_XGBoost_Tweedie, 03_GLM_and_Blend, 04_Decision_Log) in detail. Key v4 results: XGBoost D² motor 0.0599 / buildings 0.0588 / contents 0.0470 (avg 0.0553); GLM D² motor 0.0577 / buildings 0.0905 / contents 0.0826 (avg 0.0769); 50/50 blend avg 0.0838; per-line optimal blend avg 0.0844. GLM beat XGBoost on buildings and contents. Assessment: **same framework can be reused with 5 adaptations** —
+  1. Claims development: reuse Part 1's per-peril BF factors structure (BI=1.82 for 2024, subsidence=1.47, etc.) as starting point, since emerging has only 2 years (2023-2024) and no mature years to derive factors from
+  2. Validation: k-fold CV (3-5 folds) instead of time-based split (only 2 years available)
+  3. XGBoost: much simpler — 15-20 features (vs 63), fewer trees, shallower depth, heavier regularization; GLM expected to dominate even more with sparse data
+  4. Features: map age bands to numeric midpoints; drop annual_mileage/telematics (missing); add gender (new); same join logic (customer_id, address_id, policy_id + year for weather)
+  5. Supplementing: use Part 1 claim rates by key risk factors as Bayesian priors for target encoding smoothing; do NOT pool Part 1 + Part 2 training data (different markets, different risk patterns); trend factors from Part 1 as a guide (motor 1.04, buildings 1.096, contents 1.049)
+- **Decision**: Proceed with replicating the v4 framework with these 5 adaptations. Build 3 notebooks: 01_Data_Prep_and_Claims (emerging), 02_XGBoost_Tweedie (emerging), 03_GLM_and_Blend (emerging)
+- **Files affected**: None yet (assessment only)
+
 ---
 
 *This log is updated whenever AI assistance is used for project work. Each entry is committed to Git alongside the related code changes.*
