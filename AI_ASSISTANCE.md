@@ -317,6 +317,22 @@ Recorded after reviewing the Excel workbooks. These are thoughts only — nothin
 - **Decision**: Kaggle credentials are set directly in the notebook cell (not via Databricks secret scopes — none available on free tier); the user manually edited the cell to insert their token after the agent explained it could not embed credentials in code
 - **Files affected**: `notebooks_emerging_v1/Data import` (new, 5 cells), `data_emerging/` (new folder with 13 parquet files)
 
+### 2026-10-25 — Part 2 notebook 01_Data_Exploration completed
+
+- **Task**: First-pass exploration and cleaning of the Part 2 emerging-market data, producing overview files, schema comparisons, data quality checks, and cleaned parquet outputs for downstream use
+- **Human Contribution**: Directed the exploration objectives (Excel overview, schema comparison, variable type survey, data quality checks, join key validation, exposure recalculation, key findings output); reviewed all output files to get a feel for the data and the data cleaning conducted; decided that EDA will be completed at a later stage in a separate notebook 02_EDA_emerging
+- **AI Contribution**: Created `notebooks_emerging_v1/notebooks_emerging_v1/01_Data_Exploration` (13 cells) — imported all 13 parquet files in pandas, produced an Excel overview workbook (one sheet per file, sampled for large tables), a schema comparison between emerging and developed datasets (303 column comparisons, 228 same, 75 differences), a variable type survey (289 columns classified), data quality checks (duplicates, exposure outliers, missing values, date order violations), join key validation (0 orphans across all tables), and an emerging vs developed differences summary (40 records across 5 categories). Cleaned all policy tables: converted date strings to datetime, recalculated exposure as (period_end - period_start + 1) / 365 (254 motor, 155 buildings, 200 contents values changed; 0 values > 1.0), added year column for weather joins. Saved 4 cleaned parquet files and 7 analysis files to `files_emerging_v1/`. Added a key findings text file summarising all 10 main findings
+- **Key findings**:
+  - Emerging uses categorical `_age_band` (17-24, 25-34, 35-49, 50-64, 65+) vs developed's numeric `_age` — need mapping for cross-market models
+  - `customers`: emerging has `gender`; developed has `date_of_birth` + `credit_band` (neither in emerging)
+  - `policies_motor` / `test_motor`: emerging missing `annual_mileage`, `telematics_opt_in`, `telematics_score`
+  - New tables: `expenses.parquet` (cost structure comparison), `reference_policies.parquet` (combined schema reference)
+  - Emerging expense structure: higher fixed expense (85 vs 45 CU), variable expense (0.15 vs 0.12), broker commission (0.20 vs 0.15), cat reinsurance (0.12 vs 0.06), profit margin (0.08 vs 0.05); lower premium tax (0.08 vs 0.12); `commission_comparison_site` has NaN for emerging
+  - ~12% missing values across many columns (MCAR pattern); no full duplicates; no whitespace or case issues; all join keys have referential integrity
+  - Only 2 years of data (2023-2024) vs developed's 4 years (2021-2024)
+- **Human review (completed 2026-10-25)**: Reviewed all output files (Excel overview, schema comparison, variable type survey, data quality report, differences summary, cleaning validation report, key findings text file, cleaned parquet files) to get a feel for the data and the data cleaning conducted. EDA deferred to a later stage in notebook 02_EDA_emerging.
+- **Files affected**: `notebooks_emerging_v1/notebooks_emerging_v1/01_Data_Exploration` (new, 13 cells), `files_emerging_v1/` (11 output files: Overview of Emerging Data.xlsx, schema_comparison.csv, variable_type_survey.csv, data_quality_report.csv, cleaning_validation_report.csv, emerging_vs_developed_differences.csv, emerging_data_key_findings.txt, policies_motor_cleaned.parquet, policies_buildings_cleaned.parquet, policies_contents_cleaned.parquet, claims_cleaned.parquet)
+
 ---
 
 *This log is updated whenever AI assistance is used for project work. Each entry is committed to Git alongside the related code changes.*
