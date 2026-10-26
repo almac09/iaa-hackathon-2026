@@ -1,0 +1,19 @@
+kind,item,scale_box,min,median,max,n_solutions
+segment level consistent with the four scores,buildings_nb,"[0.7, 1.4]",0.9857696267266733,1.0753245388190178,1.1145856265625822,2001
+segment level consistent with the four scores,buildings_ren,"[0.7, 1.4]",0.7000249907112227,0.9312644279303876,1.3997108168041668,2001
+segment level consistent with the four scores,contents_nb,"[0.7, 1.4]",0.7001670325068784,0.7606937706561647,0.9565712329584007,2001
+segment level consistent with the four scores,contents_ren,"[0.7, 1.4]",0.7001717597882589,0.8609145929267368,1.3920533145178497,2001
+segment level consistent with the four scores,motor_nb,"[0.7, 1.4]",1.059987921542619,1.0802172990552943,1.1099944993212691,2001
+segment level consistent with the four scores,motor_ren,"[0.7, 1.4]",0.7000624989131917,0.7522924370709648,0.9341855436223157,2001
+public gain over as is at the true segment levels,all,"[0.7, 1.4]",0.0023851468602245243,0.0033998631330310267,0.006082225085329349,2001
+predicted public score,halfway file (scored 0.15742),"[0.7, 1.4]",0.15741999999999945,0.1574199999999999,0.15742000000000034,2001
+predicted public score,"halfway file, motor new business x1.05","[0.7, 1.4]",0.15783543740247874,0.15798525105563932,0.15817004037410143,2001
+segment level consistent with the four scores,buildings_nb,"[0.6, 1.5]",0.9150332266589858,1.0837753371801953,1.1624425833345813,12307
+segment level consistent with the four scores,buildings_ren,"[0.6, 1.5]",0.600173652257982,0.9725981106124046,1.4999742934894378,12307
+segment level consistent with the four scores,contents_nb,"[0.6, 1.5]",0.6000279725763334,0.7457493928491773,1.1304236414214863,12307
+segment level consistent with the four scores,contents_ren,"[0.6, 1.5]",0.6000587958177346,0.9226728068879188,1.4994938996181661,12307
+segment level consistent with the four scores,motor_nb,"[0.6, 1.5]",1.052540561079083,1.0819906605025915,1.1168973905923518,12307
+segment level consistent with the four scores,motor_ren,"[0.6, 1.5]",0.6000199257537903,0.7242375875117295,1.0657763575400152,12307
+public gain over as is at the true segment levels,all,"[0.6, 1.5]",0.0023851468602245243,0.004575360937506658,0.010435926400933016,12307
+predicted public score,halfway file (scored 0.15742),"[0.6, 1.5]",0.15741999999999945,0.1574199999999999,0.15742000000000034,12307
+predicted public score,"halfway file, motor new business x1.05","[0.6, 1.5]",0.15776975342991761,0.15799543890710976,0.15822247716546056,12307

@@ -1,11 +1,11 @@
 # Home and motor claims cost model: technical documentation
 
-IAA AI-Assisted Hackathon 2026, Part 1. This documents the model behind `work/submissions/submission_final_candidate_20261023.csv`, every data issue we found and how it was resolved, and how the model was validated. It reflects the pack as of audit entry A30 (26 October 2026); section 11 covers Week 2, the emerging market. A visual summary of the whole project, with charts, is in [`FINAL_REPORT.html`](FINAL_REPORT.html).
+IAA AI-Assisted Hackathon 2026, Part 1. This documents the model behind `work/submissions/submission_final_candidate_20261023.csv`, every data issue we found and how it was resolved, and how the model was validated. It reflects the pack as of audit entry A31 (26 October 2026); section 11 covers Week 2, the emerging market. A visual summary of the whole project, with charts, is in [`FINAL_REPORT.html`](FINAL_REPORT.html).
 
 - **Owner:** Gerard Murphy. **AI assistance:** Claude Code (Claude Opus 5.5).
 - **Code:** `workings/contents/replication`, branch `contents/gerard-week2-emerging` (Part 1 final review on `contents/gerard-final-review`). Every figure here comes from a logged run (`audit/run_log.jsonl`) and an evidence file under `audit/evidence/`.
-- **Decisions** are numbered D-01 to D-37 and are recorded in `audit/DECISIONS.md`. Where a decision has a switch, it is in `config.json`; the Week 2 decisions (D-31 to D-37) have none and are set in `python/emerging.py`. None is formally signed off yet.
-- **Audit entries** A01 to A30 are in `audit/AUDIT_LOG.md`. This document summarises them; the log has the full detail.
+- **Decisions** are numbered D-01 to D-39 and are recorded in `audit/DECISIONS.md`. Where a decision has a switch, it is in `config.json`; the Week 2 decisions (D-31 to D-39) have none and are set in `python/emerging.py` or by file. None is formally signed off yet.
+- **Audit entries** A01 to A31 are in `audit/AUDIT_LOG.md`. This document summarises them; the log has the full detail.
 
 ## 1. Summary
 
@@ -508,7 +508,9 @@ The GLMs of the final model were put through formal hypothesis tests, at the own
 | D-34 | Week 2: no emerging factor corrections, emerging-only model or claim history | Awaiting sign-off (A30) |
 | D-35 | Week 2: keep the developed treatment of missing values | Awaiting sign-off (A30) |
 | D-36 | Week 2: gender excluded | **Owner's decision** (A30) |
-| D-37 | Week 2: new-business loading in a scenario file only | **Owner's decision** (A30) |
+| D-37 | Week 2: new-business loading in a scenario file only (reopened as motor-specific, A31) | **Owner's decision** (A30) |
+| D-38 | Week 2: C0 stays the ranking model; no A31 variation adopted | Awaiting sign-off (A31) |
+| D-39 | Week 2: levels by segment (candidate file, probes, final selection) | **Owner's decision** (A31) |
 
 D-08 records the XGBoost feature set used in A13 only. No decision is formally signed off.
 
@@ -661,6 +663,18 @@ Each line's portable model, projected to 2025 with the developed trend, times it
 1. **New business** (D-37), the largest. In 2023-24, emerging new business claimed 1.30 times renewals for motor (95% 1.01-1.68) and 1.27 for contents (0.82-1.77), beyond what the rating factors explain. The developed market shows 1.03 and 1.01. Blended by credibility (Z = n/(n + 1,000), an assumption), the loadings would move the 2025 lines by ×1.089 (motor), ×1.020 (contents) and ×1.035 (buildings); the emerging-only loadings by ×1.207, ×1.182 and ×0.872. The 2024 holdout is 9% new business and cannot test this, so it is not in the adopted file.
 2. **Buildings fire.** About 70 fires drive the buildings level. The 2023 excess is unexplained, and 22% of 2025 buildings exposure lies beyond the developed wildfire range.
 3. **Gender** (D-36). It is predictive for motor frequency (×1.32 for men) and excluded here. Whether it may be used is a legal and ethical question for the owner.
-4. **Leaderboard result.** The portable model as it is scored 0.15601, the new-business scenario 0.15451 and the level reset 0.15021. The board compares levels (the files differ mainly in each line's scale), and its best level is about ×0.91 of as is (worth about +0.003): the 2025 book costs well above what 2023-24 implied, most likely through new business. The leader scored 0.17303, so most of the 0.017 gap is not level. The level reset (D-32) and the new-business loading (D-37) are reopened (A30, A31).
+4. **Leaderboard result** (corrected in A31). The portable model as it is scored 0.15601, the new-business scenario 0.15451 and the level reset 0.15021; the leader 0.17303. The files are rescales of as is by line and new business. Read that way, the board puts motor new business at 0.99-1.18 of as is, motor renewals at 0.70-0.95 and contents at 0.70-0.93 (buildings not identified): the level reset suits renewals and contents but is too low for motor new business. An earlier reading (one common scale, ×0.91, worth +0.003) was wrong. D-32 and D-37 are reopened (section 11.5).
 5. **Not built, and why:** a separate fire model (too few claims to validate); peril-level rebasing (the line models are not peril-based); a motor large-claim threshold rescaled to emerging costs (the level reset scales the large-claim part with the rest); written premium as an offset (D-05).
+
+### 11.5 Model variations, data suitability and levels (A31)
+
+**Can the ranking be improved? Not on the 2023-24 evidence.** Nine variations were each explored on half of the 2024 emerging customers and confirmed once on the other half, under a rule fixed in advance. They were: written premium (as a diagnostic), an emerging residual XGBoost, a joint developed and emerging XGBoost, frequency × severity, Bühlmann–Straub credibility, a buildings treatment, corrections on capped claims, an emerging-only XGBoost with blends, and grouping sparse levels with effects pooled across lines. Four fixes to C0's inputs from the data audit followed: imputing the fields missing at random, vehicle age minus 2, a calibration power and the out-of-range customer-since year. None beats C0 on the held-back half; the best on all of 2024 is +0.0003. Four adversarial reviews found no measurement fault that could hide a gain. Corrections fitted on one year chase its few large claims: motor new business ran 1.81 times C0 in 2023 and 0.93 in 2024.
+
+**Is the data suitable?** Yes, with the treatments already in place. C0 uses no leaky field (customer contacts, renewal decision). New business is encoded five ways, and the one value outside the training range is inert in the buildings trees. The fields about 12% missing are missing at random. The 2025 new business is January, full-year business, unlike training's mid-year starts. A handful of claims carries much of any one year's score, so small gains on 2024 are noise.
+
+**Where the score can move: levels by segment.** Read by line and new business, the public scores put motor new business well above the level reset (0.99-1.18 of as is, against 0.768), with motor renewals and contents near it. Levels by segment are worth at least +0.0024 on the public board, plausibly up to about +0.009. A candidate halfway between as is and the level reset with the emerging motor new-business loading (×1.296) is predicted at 0.1562-0.1586 (median 0.1573), better than as is in 99-100% of consistent solutions. Submitted by the owner, it scored **0.15742**, the best emerging score so far, close to the predicted median. With that fourth score the board pins motor new business at 1.06-1.11 of as is; raising only that segment to ×1.05 is predicted at 0.1578-0.1582 (`submission_emerging_level_midpoint_motornb105_20261026.csv`, unsubmitted; D-39). Probe submissions could identify the levels; the private board decides, so probed levels should be shrunk towards 2023-24.
+
+**The gap to the leader (0.017)** is unlikely to be noise alone or levels alone. Most of it is probably risk ranking that the 2023-24 data cannot reveal: the 2025 book, 77% new business, behaves differently from 2024.
+
+**Office premium.** `python/office_premium.py` builds the annual office premium from the risk premium and the expense table (cat reinsurance on property lines, fixed expense, then expense, commission, tax and profit as shares of premium). For the 20 reference policies, C0's office premium is a median 4.5, 2.8 and 2.5 times the written premium (buildings, contents, motor). The emerging table lacks a comparison-site commission; the developed 10% stands in, an assumption for the owner.
 
