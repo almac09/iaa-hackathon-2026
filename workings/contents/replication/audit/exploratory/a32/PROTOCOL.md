@@ -66,3 +66,33 @@ checked after the weights are cached (Hugging Face offline mode on); the leaf re
 
 Stage 2 (the emerging transfer check) runs only for an arm that passes, under its own pre-registered rule. Every
 result, including failures, goes in the audit log with this file's commit hash.
+
+## Amendments before any score (26 October 2026, after an independent code review; no Stage 1 score had been computed)
+
+1. **Draw customers are kept out of the scored rows.** Target draws are taken only from 2023 customers with no row in
+   the 2024 scored sample, so no arm sees a scored row's own earlier outcome (C0 uses no claim history).
+2. **Trend in the LightGBM offset.** The offset is log exposure + log rate + C0's small-claim trend (slope x (year -
+   centre)), with the rate solved on the trended 2021-22 exposure, so the LightGBM small part sits on C0's 2024 basis
+   before C0's large part is added.
+3. **Decay cross-validation** uses five seeded random folds by customer and level-matched held-out deviance, as the
+   primary metric is level-matched.
+4. **A3 acts on the small-claim part only:** C0_small x (p / p0)^w + C0's large part, as the Data section requires
+   (the large-claim part of every arm is C0's).
+5. **A3's C0 feature** (and p0) uses C0 at the 2023 trend for both the context and the scored rows, so the feature does
+   not shift by a year between them.
+6. **TabPFN settings and checks:** n_estimators pinned at 8 (asserted after fitting); the arm runs at TabPFN's default
+   precision on the Apple GPU; the engineering check compares the Apple GPU with the CPU at float32 on both (tolerance
+   1e-3 in p) and also reports the default-precision difference; predictions in chunks of 10,000 rows; if the
+   checkpoint's sample limit is below a draw's size, ignore_pretraining_limits is set (within the model's documented
+   1,000,000-row range) and recorded. The weights are loaded from an absolute path, offline, with no browser, and their
+   sha256 recorded; a missing file stops the run.
+7. **Contents features** for both arms are C0's portable GLM inputs (log sum insured, raw elevation and river distance,
+   C0's categoricals), not the within-market quantile bands, so an arm that passes can carry over to Stage 2.
+8. **Scoring:** Holm with m = 2 fixed, and both families required with five draws each; the ten-largest-claims check
+   re-solves each line's level on the remaining rows; raw D2 reported; per-line D2 against each line's own constant rate.
+9. **Readings recorded:** LightGBM early stopping uses 100 rounds of patience on its default Tweedie metric; the 17-24
+   band pools the home policyholder bands with the motor driver band; the 2024 outcomes are kept in a file only the
+   scoring step reads.
+10. **Caveats for the result:** C0's structure was adopted under the two-year rule using developed 2024, so 2024 is not
+    a clean holdout for C0 (a bias towards C0); `missed_payments_12m` may carry same-period information (A21 bounded it
+    at 0.0004 for C0), which a flexible arm could exploit more than C0.
