@@ -1,0 +1,14 @@
+line,field,fill_value
+buildings,days_unoccupied,7.0
+buildings,household_size,2.0
+buildings,years_at_address,6.0
+buildings,distance_to_river_km,2.36
+buildings,smoke_alarms,True
+buildings,marital_status,married
+buildings,soil_type,clay
+buildings,roof_type,pitched
+buildings,energy_rating,C
+contents,distance_to_river_km,2.37
+contents,f_security,standard
+contents,f_hvi,0
+motor,vehicle_age,7.0

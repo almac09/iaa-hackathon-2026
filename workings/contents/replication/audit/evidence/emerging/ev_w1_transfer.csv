@@ -1,0 +1,7 @@
+line,year,model,rows,claims_rows,actual,expected,ae,d2_rate,d2_rate_level_matched,market
+buildings,2023,"portable developed model, as is",12580,497,5853658.891092,4902305.509073,1.194062,0.064897,0.068976,emerging
+buildings,2024,"portable developed model, as is",14867,514,3949986.30177,5654412.294467,0.698567,0.096664,0.115972,emerging
+contents,2023,"portable developed model, as is",15834,482,1287551.016654,1604291.428312,0.802567,0.077063,0.086193,emerging
+contents,2024,"portable developed model, as is",18732,487,1319458.935616,1803068.682534,0.731785,0.050392,0.063636,emerging
+motor,2023,"portable developed model, as is",21680,3027,8391623.958832,11787146.096643,0.71193,0.024268,0.034737,emerging
+motor,2024,"portable developed model, as is",25603,3064,9237385.385359,12044272.330011,0.766953,0.02375,0.034823,emerging
