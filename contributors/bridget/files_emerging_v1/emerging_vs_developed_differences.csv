@@ -1,0 +1,41 @@
+category,file,column,detail,impact
+NEW_FILE,expenses.parquet,—,"New table with 8 rows, 4 cols: ['item', 'developed', 'emerging', 'unit']",Reference/lookup table — not present in developed market
+NEW_FILE,reference_policies.parquet,—,"New table with 20 rows, 50 cols: ['row_id', 'policy_id', 'customer_id', 'address_id', 'period_start', 'period_end', 'exposure', 'driver_age_band', 'years_licensed', 'ncb_years', 'vehicle_value_group', 'vehicle_age', 'make_model', 'engine_size_cc', 'body_type', 'transmission', 'seats', 'vehicle_colour', 'fuel_type', 'driver_assist', 'cover_type', 'overnight_parking', 'vehicle_use', 'named_young_driver', 'voluntary_excess', 'compulsory_excess', 'channel', 'payment_method', 'missed_payments_12m', 'new_business', 'renewal_count', 'days_quote_to_inception', 'discount_applied', 'written_premium', 'customer_service_contacts', 'line', 'policyholder_age_band', 'sum_insured', 'construction_type', 'occupancy', 'days_unoccupied', 'smoke_alarms', 'accidental_damage_cover', 'mortgage', 'tenure', 'security_level', 'high_value_items', 'works_from_home', 'lodgers', 'bicycle_cover']",Reference/lookup table — not present in developed market
+EMERGING_ONLY_COL,customers.parquet,gender,"Present in emerging (dtype=object), absent in developed",New variable — may require feature engineering mapping
+DEVELOPED_ONLY_COL,customers.parquet,credit_band,"Present in developed (dtype=object), absent in emerging",Missing variable — cannot use directly for cross-market models
+DEVELOPED_ONLY_COL,customers.parquet,date_of_birth,"Present in developed (dtype=object), absent in emerging",Missing variable — cannot use directly for cross-market models
+EMERGING_ONLY_COL,policies_buildings.parquet,policyholder_age_band,"Present in emerging (dtype=object), absent in developed",New variable — may require feature engineering mapping
+DEVELOPED_ONLY_COL,policies_buildings.parquet,policyholder_age,"Present in developed (dtype=int64), absent in emerging",Missing variable — cannot use directly for cross-market models
+EMERGING_ONLY_COL,policies_contents.parquet,policyholder_age_band,"Present in emerging (dtype=object), absent in developed",New variable — may require feature engineering mapping
+DEVELOPED_ONLY_COL,policies_contents.parquet,policyholder_age,"Present in developed (dtype=int64), absent in emerging",Missing variable — cannot use directly for cross-market models
+EMERGING_ONLY_COL,policies_motor.parquet,driver_age_band,"Present in emerging (dtype=object), absent in developed",New variable — may require feature engineering mapping
+DEVELOPED_ONLY_COL,policies_motor.parquet,annual_mileage,"Present in developed (dtype=float64), absent in emerging",Missing variable — cannot use directly for cross-market models
+DEVELOPED_ONLY_COL,policies_motor.parquet,driver_age,"Present in developed (dtype=int64), absent in emerging",Missing variable — cannot use directly for cross-market models
+DEVELOPED_ONLY_COL,policies_motor.parquet,telematics_opt_in,"Present in developed (dtype=bool), absent in emerging",Missing variable — cannot use directly for cross-market models
+DEVELOPED_ONLY_COL,policies_motor.parquet,telematics_score,"Present in developed (dtype=float64), absent in emerging",Missing variable — cannot use directly for cross-market models
+EMERGING_ONLY_COL,test_buildings.parquet,policyholder_age_band,"Present in emerging (dtype=object), absent in developed",New variable — may require feature engineering mapping
+DEVELOPED_ONLY_COL,test_buildings.parquet,policyholder_age,"Present in developed (dtype=int64), absent in emerging",Missing variable — cannot use directly for cross-market models
+EMERGING_ONLY_COL,test_contents.parquet,policyholder_age_band,"Present in emerging (dtype=object), absent in developed",New variable — may require feature engineering mapping
+DEVELOPED_ONLY_COL,test_contents.parquet,policyholder_age,"Present in developed (dtype=int64), absent in emerging",Missing variable — cannot use directly for cross-market models
+EMERGING_ONLY_COL,test_motor.parquet,driver_age_band,"Present in emerging (dtype=object), absent in developed",New variable — may require feature engineering mapping
+DEVELOPED_ONLY_COL,test_motor.parquet,annual_mileage,"Present in developed (dtype=float64), absent in emerging",Missing variable — cannot use directly for cross-market models
+DEVELOPED_ONLY_COL,test_motor.parquet,driver_age,"Present in developed (dtype=int64), absent in emerging",Missing variable — cannot use directly for cross-market models
+DEVELOPED_ONLY_COL,test_motor.parquet,telematics_opt_in,"Present in developed (dtype=bool), absent in emerging",Missing variable — cannot use directly for cross-market models
+DEVELOPED_ONLY_COL,test_motor.parquet,telematics_score,"Present in developed (dtype=float64), absent in emerging",Missing variable — cannot use directly for cross-market models
+ROW_COUNT,addresses.parquet,—,"emerging=136,914 vs developed=575,983 (ratio=0.24)",Emerging market is ~23% of developed market size
+ROW_COUNT,claims.parquet,—,"emerging=9,258 vs developed=163,150 (ratio=0.06)",Emerging market is ~5% of developed market size
+ROW_COUNT,customers.parquet,—,"emerging=135,856 vs developed=545,240 (ratio=0.25)",Emerging market is ~24% of developed market size
+ROW_COUNT,policies_buildings.parquet,—,"emerging=27,447 vs developed=707,726 (ratio=0.04)",Emerging market is ~3% of developed market size
+ROW_COUNT,policies_contents.parquet,—,"emerging=34,566 vs developed=721,617 (ratio=0.05)",Emerging market is ~4% of developed market size
+ROW_COUNT,policies_motor.parquet,—,"emerging=47,283 vs developed=979,968 (ratio=0.05)",Emerging market is ~4% of developed market size
+ROW_COUNT,sample_submission.parquet,—,"emerging=209,063 vs developed=626,639 (ratio=0.33)",Emerging market is ~33% of developed market size
+ROW_COUNT,test_buildings.parquet,—,"emerging=52,295 vs developed=184,155 (ratio=0.28)",Emerging market is ~28% of developed market size
+ROW_COUNT,test_contents.parquet,—,"emerging=66,247 vs developed=187,498 (ratio=0.35)",Emerging market is ~35% of developed market size
+ROW_COUNT,test_motor.parquet,—,"emerging=90,521 vs developed=254,986 (ratio=0.36)",Emerging market is ~35% of developed market size
+ROW_COUNT,weather.parquet,—,"emerging=410,742 vs developed=2,879,915 (ratio=0.14)",Emerging market is ~14% of developed market size
+BUSINESS,expenses.parquet,—,"Emerging has higher fixed expense (85 vs 45 CU), higher variable expense (0.15 vs 0.12), higher broker commission (0.20 vs 0.15), lower premium tax (0.08 vs 0.12), higher reinsurance (0.12 vs 0.06), higher target profit margin (0.08 vs 0.05)","Pricing model must use emerging expense assumptions, not developed ones"
+BUSINESS,customers.parquet,gender,Emerging has 'gender' (M/F) instead of 'date_of_birth' — age is not directly available from customer table,"Driver/policyholder age must come from policy table age_band, not customer DOB"
+BUSINESS,customers.parquet,credit_band,Developed has 'credit_band' — emerging does not,Credit-based pricing features not available for emerging market
+BUSINESS,policies_motor.parquet,annual_mileage,"Developed has annual_mileage, telematics_opt_in, telematics_score — emerging does not",Telematics-based pricing not available; mileage risk unobservable
+BUSINESS,policies_motor.parquet,exposure,Exposure values > 1 found (max=365) — likely stored as days not year-fraction; capped to 1.0,Must cap exposure before frequency modelling
+BUSINESS,reference_policies.parquet,—,20-row reference table combining motor + buildings + contents schema,Useful for understanding expected columns when test set changes

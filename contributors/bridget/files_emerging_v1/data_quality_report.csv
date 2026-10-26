@@ -1,0 +1,86 @@
+file,check,count,pct,detail
+addresses.parquet,full_duplicates,0,0.0,0 / 136914 rows
+addresses.parquet,missing_values,4037,2.9,flood_zone: 4037 / 136914 missing
+addresses.parquet,missing_values,16421,12.0,distance_to_river_km: 16421 / 136914 missing
+addresses.parquet,missing_values,16480,12.0,soil_type: 16480 / 136914 missing
+addresses.parquet,missing_values,16337,11.9,roof_type: 16337 / 136914 missing
+addresses.parquet,missing_values,16515,12.1,energy_rating: 16515 / 136914 missing
+claims.parquet,full_duplicates,0,0.0,0 / 9258 rows
+claims.parquet,missing_values,4283,46.3,repairer_id: 4283 / 9258 missing
+claims.parquet,missing_values,6545,70.7,third_party_id: 6545 / 9258 missing
+customers.parquet,full_duplicates,0,0.0,0 / 135856 rows
+customers.parquet,missing_values,16517,12.2,occupation: 16517 / 135856 missing
+customers.parquet,missing_values,16348,12.0,marital_status: 16348 / 135856 missing
+customers.parquet,missing_values,16037,11.8,household_size: 16037 / 135856 missing
+customers.parquet,missing_values,16226,11.9,years_at_address: 16226 / 135856 missing
+customers.parquet,missing_values,27433,20.2,campaign_code: 27433 / 135856 missing
+expenses.parquet,full_duplicates,0,0.0,0 / 8 rows
+expenses.parquet,missing_values,1,12.5,emerging: 1 / 8 missing
+policies_buildings.parquet,full_duplicates,0,0.0,0 / 27447 rows
+policies_buildings.parquet,exposure_gt_1,117,0.43,"max=365.0000, min=0.0027, >1: 117, <0: 0"
+policies_buildings.parquet,date_order_violation,0,0.0,period_start > period_end: 0 rows
+policies_buildings.parquet,missing_values,3291,12.0,days_unoccupied: 3291 / 27447 missing
+policies_buildings.parquet,missing_values,3266,11.9,smoke_alarms: 3266 / 27447 missing
+policies_contents.parquet,full_duplicates,0,0.0,0 / 34566 rows
+policies_contents.parquet,exposure_gt_1,146,0.42,"max=365.0000, min=0.0027, >1: 146, <0: 0"
+policies_contents.parquet,date_order_violation,0,0.0,period_start > period_end: 0 rows
+policies_contents.parquet,missing_values,4238,12.3,security_level: 4238 / 34566 missing
+policies_contents.parquet,missing_values,4067,11.8,high_value_items: 4067 / 34566 missing
+policies_motor.parquet,full_duplicates,0,0.0,0 / 47283 rows
+policies_motor.parquet,exposure_gt_1,189,0.4,"max=365.0000, min=0.0027, >1: 189, <0: 0"
+policies_motor.parquet,date_order_violation,0,0.0,period_start > period_end: 0 rows
+policies_motor.parquet,missing_values,5604,11.9,vehicle_age: 5604 / 47283 missing
+policies_motor.parquet,missing_values,5745,12.2,engine_size_cc: 5745 / 47283 missing
+policies_motor.parquet,missing_values,5697,12.0,overnight_parking: 5697 / 47283 missing
+reference_policies.parquet,full_duplicates,0,0.0,0 / 20 rows
+reference_policies.parquet,exposure_gt_1,0,0.0,"max=1.0000, min=0.0685, >1: 0, <0: 0"
+reference_policies.parquet,date_order_violation,0,0.0,period_start > period_end: 0 rows
+reference_policies.parquet,missing_values,13,65.0,driver_age_band: 13 / 20 missing
+reference_policies.parquet,missing_values,13,65.0,years_licensed: 13 / 20 missing
+reference_policies.parquet,missing_values,13,65.0,ncb_years: 13 / 20 missing
+reference_policies.parquet,missing_values,13,65.0,vehicle_value_group: 13 / 20 missing
+reference_policies.parquet,missing_values,15,75.0,vehicle_age: 15 / 20 missing
+reference_policies.parquet,missing_values,13,65.0,make_model: 13 / 20 missing
+reference_policies.parquet,missing_values,13,65.0,engine_size_cc: 13 / 20 missing
+reference_policies.parquet,missing_values,13,65.0,body_type: 13 / 20 missing
+reference_policies.parquet,missing_values,13,65.0,transmission: 13 / 20 missing
+reference_policies.parquet,missing_values,13,65.0,seats: 13 / 20 missing
+reference_policies.parquet,missing_values,13,65.0,vehicle_colour: 13 / 20 missing
+reference_policies.parquet,missing_values,13,65.0,fuel_type: 13 / 20 missing
+reference_policies.parquet,missing_values,13,65.0,driver_assist: 13 / 20 missing
+reference_policies.parquet,missing_values,13,65.0,cover_type: 13 / 20 missing
+reference_policies.parquet,missing_values,14,70.0,overnight_parking: 14 / 20 missing
+reference_policies.parquet,missing_values,13,65.0,vehicle_use: 13 / 20 missing
+reference_policies.parquet,missing_values,13,65.0,named_young_driver: 13 / 20 missing
+reference_policies.parquet,missing_values,7,35.0,policyholder_age_band: 7 / 20 missing
+reference_policies.parquet,missing_values,7,35.0,sum_insured: 7 / 20 missing
+reference_policies.parquet,missing_values,13,65.0,construction_type: 13 / 20 missing
+reference_policies.parquet,missing_values,13,65.0,occupancy: 13 / 20 missing
+reference_policies.parquet,missing_values,14,70.0,days_unoccupied: 14 / 20 missing
+reference_policies.parquet,missing_values,14,70.0,smoke_alarms: 14 / 20 missing
+reference_policies.parquet,missing_values,7,35.0,accidental_damage_cover: 7 / 20 missing
+reference_policies.parquet,missing_values,13,65.0,mortgage: 13 / 20 missing
+reference_policies.parquet,missing_values,14,70.0,tenure: 14 / 20 missing
+reference_policies.parquet,missing_values,14,70.0,security_level: 14 / 20 missing
+reference_policies.parquet,missing_values,15,75.0,high_value_items: 15 / 20 missing
+reference_policies.parquet,missing_values,14,70.0,works_from_home: 14 / 20 missing
+reference_policies.parquet,missing_values,14,70.0,lodgers: 14 / 20 missing
+reference_policies.parquet,missing_values,14,70.0,bicycle_cover: 14 / 20 missing
+sample_submission.parquet,full_duplicates,0,0.0,0 / 209063 rows
+test_buildings.parquet,full_duplicates,0,0.0,0 / 52295 rows
+test_buildings.parquet,exposure_gt_1,0,0.0,"max=1.0000, min=0.0027, >1: 0, <0: 0"
+test_buildings.parquet,date_order_violation,0,0.0,period_start > period_end: 0 rows
+test_buildings.parquet,missing_values,6240,11.9,days_unoccupied: 6240 / 52295 missing
+test_buildings.parquet,missing_values,6341,12.1,smoke_alarms: 6341 / 52295 missing
+test_contents.parquet,full_duplicates,0,0.0,0 / 66247 rows
+test_contents.parquet,exposure_gt_1,0,0.0,"max=1.0000, min=0.0027, >1: 0, <0: 0"
+test_contents.parquet,date_order_violation,0,0.0,period_start > period_end: 0 rows
+test_contents.parquet,missing_values,8050,12.2,security_level: 8050 / 66247 missing
+test_contents.parquet,missing_values,7954,12.0,high_value_items: 7954 / 66247 missing
+test_motor.parquet,full_duplicates,0,0.0,0 / 90521 rows
+test_motor.parquet,exposure_gt_1,0,0.0,"max=1.0000, min=0.0027, >1: 0, <0: 0"
+test_motor.parquet,date_order_violation,0,0.0,period_start > period_end: 0 rows
+test_motor.parquet,missing_values,11070,12.2,vehicle_age: 11070 / 90521 missing
+test_motor.parquet,missing_values,11004,12.2,engine_size_cc: 11004 / 90521 missing
+test_motor.parquet,missing_values,10859,12.0,overnight_parking: 10859 / 90521 missing
+weather.parquet,full_duplicates,0,0.0,0 / 410742 rows

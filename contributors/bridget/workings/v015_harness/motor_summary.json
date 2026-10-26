@@ -1,0 +1,55 @@
+{
+ "line": "motor",
+ "best_config": "d4_mcw10",
+ "best_over": {
+  "max_depth": 4,
+  "min_child_weight": 10
+ },
+ "grid": [
+  {
+   "config": "d4_mcw10",
+   "holdout_deviance": 124.4043,
+   "fit_s": 55.5
+  },
+  {
+   "config": "d5_lr.03_n800_mcw10",
+   "holdout_deviance": 125.9333,
+   "fit_s": 114.8
+  },
+  {
+   "config": "sub70_cs60",
+   "holdout_deviance": 127.2383,
+   "fit_s": 86.4
+  },
+  {
+   "config": "lr.03_n800",
+   "holdout_deviance": 129.6219,
+   "fit_s": 148.5
+  },
+  {
+   "config": "baseline",
+   "holdout_deviance": 130.1326,
+   "fit_s": 93.5
+  },
+  {
+   "config": "mcw20_l5",
+   "holdout_deviance": 130.3504,
+   "fit_s": 93.7
+  },
+  {
+   "config": "lr.10_n300",
+   "holdout_deviance": 133.0744,
+   "fit_s": 56.6
+  },
+  {
+   "config": "d8",
+   "holdout_deviance": 153.0087,
+   "fit_s": 134.8
+  }
+ ],
+ "oof_dev_xgb": 129.13359633335455,
+ "oof_dev_glm": 132.59951074248266,
+ "best_w_glm": 0.4,
+ "best_blend_dev": 127.73153837914737,
+ "elapsed_min": 19.5
+}
