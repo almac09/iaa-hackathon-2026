@@ -1,0 +1,4 @@
+file,total_vs_as_is,buildings_vs_as_is,contents_vs_as_is,motor_vs_as_is,public_score
+submission_emerging_as_is_20261026 (A30),1.000,1.000,1.000,1.000,0.15601
+submission_emerging_level_reset_nb_scenario_20261026 (A30),0.858,0.948,0.764,0.833,0.15451
+submission_emerging_level_reset_20261026 (A30),0.807,0.917,0.750,0.768,0.15021

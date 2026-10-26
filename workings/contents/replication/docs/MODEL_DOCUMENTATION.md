@@ -1,11 +1,11 @@
 # Home and motor claims cost model: technical documentation
 
-IAA AI-Assisted Hackathon 2026, Part 1. This documents the model behind `work/submissions/submission_final_candidate_20261023.csv`, every data issue we found and how it was resolved, and how the model was validated. It reflects the pack as of audit entry A29 (23 October 2026). A visual summary of the whole project, with charts, is in [`FINAL_REPORT.html`](FINAL_REPORT.html).
+IAA AI-Assisted Hackathon 2026, Part 1. This documents the model behind `work/submissions/submission_final_candidate_20261023.csv`, every data issue we found and how it was resolved, and how the model was validated. It reflects the pack as of audit entry A30 (26 October 2026); section 11 covers Week 2, the emerging market. A visual summary of the whole project, with charts, is in [`FINAL_REPORT.html`](FINAL_REPORT.html).
 
 - **Owner:** Gerard Murphy. **AI assistance:** Claude Code (Claude Opus 5.5).
-- **Code:** `workings/contents/replication`, branch `contents/gerard-final-review`. Every figure here comes from a logged run (`audit/run_log.jsonl`) and an evidence file under `audit/evidence/`.
-- **Decisions** are numbered D-01 to D-30 and are recorded in `audit/DECISIONS.md`. Their switches are in `config.json`. None is formally signed off yet.
-- **Audit entries** A01 to A29 are in `audit/AUDIT_LOG.md`. This document summarises them; the log has the full detail.
+- **Code:** `workings/contents/replication`, branch `contents/gerard-week2-emerging` (Part 1 final review on `contents/gerard-final-review`). Every figure here comes from a logged run (`audit/run_log.jsonl`) and an evidence file under `audit/evidence/`.
+- **Decisions** are numbered D-01 to D-37 and are recorded in `audit/DECISIONS.md`. Where a decision has a switch, it is in `config.json`; the Week 2 decisions (D-31 to D-37) have none and are set in `python/emerging.py`. None is formally signed off yet.
+- **Audit entries** A01 to A30 are in `audit/AUDIT_LOG.md`. This document summarises them; the log has the full detail.
 
 ## 1. Summary
 
@@ -502,6 +502,13 @@ The GLMs of the final model were put through formal hypothesis tests, at the own
 | D-28 | Motor bodily-injury lift (D-11) switched off | Adopted (A28) |
 | D-29 | Buildings peril interactions | Adopted (A28) |
 | D-30 | Motor credibility k tuned on capped claims | Adopted (A28) |
+| D-31 | Week 2: carry the developed relativities over through a portable model (shared factors only) | Awaiting sign-off (A30) |
+| D-32 | Week 2: reset each line's level to the emerging 2023-24 experience (buildings pooled as a judgement) | Awaiting sign-off (A30) |
+| D-33 | Week 2: developed reporting pattern for emerging motor; own pattern for the home lines | Awaiting sign-off (A30) |
+| D-34 | Week 2: no emerging factor corrections, emerging-only model or claim history | Awaiting sign-off (A30) |
+| D-35 | Week 2: keep the developed treatment of missing values | Awaiting sign-off (A30) |
+| D-36 | Week 2: gender excluded | **Owner's decision** (A30) |
+| D-37 | Week 2: new-business loading in a scenario file only | **Owner's decision** (A30) |
 
 D-08 records the XGBoost feature set used in A13 only. No decision is formally signed off.
 
@@ -607,3 +614,53 @@ python -m pytest -q tests
 | Decisions for sign-off | `audit/DECISIONS.md` |
 | Evidence tables | `audit/evidence/glm_lines/` (current), `audit/evidence/lines/` (A15 and the development backtest), `audit/evidence/python`, `audit/evidence/r` (GLM pack) |
 | Tests | `tests/` |
+
+## 11. Week 2: the emerging market (A30)
+
+**The task.** Predict the 2025 claim cost of every row in the three emerging-market test files (209,063 rows). The insurer wrote business there in 2023 and 2024, and takes on a broker portfolio at the start of 2025, so 76% of 2025 rows are new business (`docs/kaggle_part2_brief.md` at the repository root). The work is in `python/emerging.py` on branch `contents/gerard-week2-emerging`; the evidence is in `audit/evidence/emerging/`.
+
+### 11.1 What changed
+
+| | Developed (Part 1) | Emerging |
+|---|---|---|
+| History | 2021-24 | 2023-24 |
+| Claims a year | about 6,600 buildings, 6,000 contents, 28,000 motor | about 520, 500 and 3,600 |
+| Rating information | exact ages, mileage, telematics, credit band, regions R01-R12 | age bands, gender, regions E01-E06, construction coded BRK/MIX/STN/WOD |
+| Missing values | 2.5% in each field | about 12% in 15 fields, apparently at random |
+| Claim size | | motor about 0.61 of developed; home lines 0.68-0.79 |
+| 2025 book | like the training years | 3.9 times 2024 by exposure (3.5 by rows), 77% new business by exposure (76% by rows), younger and less experienced |
+
+The Part 1 data errors recur (exposure in days, sum insured 1,000 times too large, year built 1900), and the Part 1 fixes cover them. Buildings fire is the largest single difference: 45% of emerging buildings cost, total losses at 4.7 times the developed rate, and 49 fires in 2023 against 21 in 2024, concentrated in region E02.
+
+### 11.2 What carries over
+
+The same SQL runs on both markets through views that give each market the other's columns. Each line's model is refitted on the developed market with only the shared factors (the portable model, D-31) and tested on the emerging years:
+
+- **Relativities carry over; the level does not.** As it is, the portable model's A/E is 1.19 and 0.70 for buildings (2023, 2024), 0.80 and 0.73 for contents and 0.71 and 0.77 for motor, while it ranks emerging risks (level-matched D2 up to 0.116).
+- **Losing the motor factors costs ranking.** On the developed 2024 backtest, motor's D2 falls from 0.056 to 0.044 without mileage, telematics, exact age, credit band and region.
+- **The level reset is what helps** (D-32). Fitted on one year and scored on the other, it improves contents and motor in both directions (D2 +0.009 to +0.012). Buildings' single-year levels (×1.19 and ×0.68) do not carry from one year to the other, so its pooled level is a judgement.
+- **Nothing else passes** (D-34, D-35): corrections for region, new business, age band and channel, an emerging-only model, claim history (motor +0.0026, 95% −0.0008 to +0.0071) and filling the missing values with developed values.
+- **Development** (D-33): motor uses the developed reporting pattern. As at 2023-12-31, the emerging pattern over-projected 2023 bodily injury by 23% (developed pattern −5.5%). The home lines keep their own patterns: their projection errors (buildings −1.9%, contents +0.6%) are within 2% of the developed pattern's (+1.0% and +1.8%).
+
+### 11.3 The 2025 prediction
+
+Each line's portable model, projected to 2025 with the developed trend, times its level:
+
+| Line | Level (90% range) | 2025 cost per unit of exposure (90% range) | Emerging 2024 actual |
+|---|---|---|---|
+| Buildings | ×0.917 (0.42-1.98) | 460.7 (213-995) | 326.6 |
+| Contents | ×0.750 (0.66-0.85) | 98.2 (86-112) | 88.3 |
+| Motor | ×0.768 (0.63-0.93) | 545.6 (450-661) | 454.9 |
+
+- **Why 2025 is above 2024:** the developed trend (×1.037 to ×1.047), the mix of the 2025 book, mostly the broker portfolio (motor ×1.143: younger and less experienced on the developed relativities), and, for buildings, a level pooled over a heavy and a light fire year.
+- **The ranges** combine the sampling error of the level, year noise at the larger of the developed and emerging between-year values, development error scaled up for the smaller book, and trend error. Buildings is wide because its two years disagree far more than the developed market's year noise allows. With 2023 fire at the 2024 rate its level would be ×0.716.
+- **Files** (in `work/`): the adopted prediction (`submission_emerging_level_reset_20261026.csv`), the portable model as it is (`…_as_is_…`), and a new-business scenario (`…_level_reset_nb_scenario_…`).
+
+### 11.4 Uncertainty and the owner's decisions
+
+1. **New business** (D-37), the largest. In 2023-24, emerging new business claimed 1.30 times renewals for motor (95% 1.01-1.68) and 1.27 for contents (0.82-1.77), beyond what the rating factors explain. The developed market shows 1.03 and 1.01. Blended by credibility (Z = n/(n + 1,000), an assumption), the loadings would move the 2025 lines by ×1.089 (motor), ×1.020 (contents) and ×1.035 (buildings); the emerging-only loadings by ×1.207, ×1.182 and ×0.872. The 2024 holdout is 9% new business and cannot test this, so it is not in the adopted file.
+2. **Buildings fire.** About 70 fires drive the buildings level. The 2023 excess is unexplained, and 22% of 2025 buildings exposure lies beyond the developed wildfire range.
+3. **Gender** (D-36). It is predictive for motor frequency (×1.32 for men) and excluded here. Whether it may be used is a legal and ethical question for the owner.
+4. **Leaderboard result.** The portable model as it is scored 0.15601, the new-business scenario 0.15451 and the level reset 0.15021. The board compares levels (the files differ mainly in each line's scale), and its best level is about ×0.94 of as is: the 2025 book costs well above what 2023-24 implied, most likely through new business. The level reset (D-32) and the new-business loading (D-37) are reopened (A30, A31).
+5. **Not built, and why:** a separate fire model (too few claims to validate); peril-level rebasing (the line models are not peril-based); a motor large-claim threshold rescaled to emerging costs (the level reset scales the large-claim part with the rest); written premium as an offset (D-05).
+

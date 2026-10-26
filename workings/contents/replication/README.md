@@ -4,7 +4,7 @@ IAA AI-Assisted Hackathon 2026, Part 1. This pack reproduces every step of the h
 
 - **Owner:** Gerard Murphy (contents line)
 - **AI assistance:** Claude Code (Claude Opus 5.5)
-- **Status:** final candidate ready (A28): `work/submissions/submission_final_candidate_20261023.csv`, public score 0.12805 (the best so far). Decisions D-01 to D-30 are **not yet formally signed off** (see `audit/DECISIONS.md`); D-26 to D-30 were adopted on the owner's go-ahead and await sign-off. The public leaderboard is the independent check.
+- **Status:** final candidate ready (A28): `work/submissions/submission_final_candidate_20261023.csv`, public score 0.12805 (the best so far). Week 2 (A30): a provisional emerging-market prediction, `work/submissions/submission_emerging_level_reset_20261026.csv`, with two alternatives (docs section 11). Decisions D-01 to D-37 are **not yet formally signed off** (see `audit/DECISIONS.md`); D-26 to D-30 were adopted on the owner's go-ahead and D-31 to D-35 by A30's pre-registered rules, and all await sign-off; D-36 (gender) and D-37 (new-business loading) are left to the owner. The public leaderboard is the independent check.
 
 **Full model documentation:** [`docs/MODEL_DOCUMENTATION.md`](docs/MODEL_DOCUMENTATION.md) describes the current model, every data issue and its resolution, the validation and the decisions.
 
@@ -35,6 +35,7 @@ IAA AI-Assisted Hackathon 2026, Part 1. This pack reproduces every step of the h
 | Final review (26-agent sweep), leaderboard results, visual report of the whole project | A27 | `docs/FINAL_REPORT.html`, `audit/evidence/final_review/` |
 | Final run: address corrections, buildings peril interactions, bodily-injury lift off, motor credibility on capped claims; each tested, then combined into the final candidate | A28 | `python/final_tests.py`, `python/run_glm_lines.py` |
 | Statistical tests of the final model: Type III, chi-square by level, level merging and term dropping, a pairwise interaction screen with a positive control | A29 | `python/stat_tests.py` |
+| Week 2, the emerging market: the pipeline on both markets, transfer test, adaptations, development pattern, missing values, new business, the 2025 prediction with ranges | A30 | `python/emerging.py` |
 
 **How the three languages fit together.** The SQL is the single source of truth for data preparation. Python and R both run the same SQL files through DuckDB, so their cleaned data is identical by construction (the reconciliation checks this byte for byte). The modelling is written twice, independently: Python uses scikit-learn's Newton solver and R uses its own penalised IRLS written in base R. Both use the same objective, so the results should agree to within the tolerances set in `config.json`.
 
