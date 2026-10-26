@@ -1,0 +1,271 @@
+{
+  "_about": "Every parameter and decision flag for the contents replication pack. Python and R both read this file. Decision flags mirror audit/DECISIONS.md: 'signed_off' stays false until a named person approves the decision there.",
+
+  "paths": {
+    "data_dir": "data",
+    "work_dir": "work",
+    "evidence_dir": "audit/evidence",
+    "run_log": "audit/run_log.jsonl",
+    "expected_inputs": "audit/expected_inputs.sha256"
+  },
+
+  "source": {
+    "databricks_data_path": "/Workspace/Users/{user}/iaa-hackathon-2026/data",
+    "_path_note": "{user} is filled in at run time from the logged-in Databricks user, so no personal details are stored here.",
+    "tables": ["addresses", "claims", "customers", "policies_buildings", "policies_contents",
+               "policies_motor", "test_buildings", "test_contents", "test_motor", "weather"]
+  },
+
+  "sql_files": ["sql/01_profile.sql", "sql/02_quality_checks.sql", "sql/03_build_contents.sql",
+                "sql/04_development.sql", "sql/05_severity.sql", "sql/06_persistence.sql",
+                "sql/07_leakage.sql", "sql/08_features.sql"],
+
+  "duckdb_threads": 1,
+
+  "sql_variables": {
+    "valuation_date": "2024-12-31",
+    "exposure_basis_days": 365,
+    "si_threshold": 1000000,
+    "si_divisor": 1000,
+    "band_1": 1000,
+    "band_2": 5000,
+    "band_3": 15000,
+    "lag_cdf_max_loss_year": 2022,
+    "min_exposure_persistence": 0.5,
+    "bld_si_threshold": 10000000,
+    "large_claim_cap": 1000000,
+    "hist_large_claim": 5000,
+    "bf_max_reported_share": 0.75,
+    "bf_mature_share": 0.9,
+    "pattern_decay": 1.0, "use_external_dev_pattern": false
+  },
+
+  "decisions": {
+    "D01_recompute_exposure": {"apply": true, "sql_variable": "d01_recompute_exposure", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D02_rescale_sum_insured": {"apply": true, "sql_variable": "d02_rescale_sum_insured", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D03_target_definition": {"apply": true, "note": "Target = incurred - recoveries, repudiated and out-of-period claims excluded. The ~3% IBNR uplift is estimated in sql/04 but NOT applied to the target.", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D04_exclude_contacts": {"apply": true, "excluded_feature": "f_cs_contacts", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D05_exclude_written_premium": {"apply": true, "excluded_feature": "f_wp_band", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D06_missing_as_level": {"apply": true, "note": "Implemented in sql/08 only; imputation is not implemented, so apply=false is rejected.", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D07_expected_claims_basis": {"apply": true, "note": "Models use a log-exposure offset; earned premium (= annual written premium x exposure) is used for loss ratios and A/E only. Chosen by Gerard Murphy in session 2026-10-20.", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D10_develop_ibnr": {"apply": true, "sql_variable": "d10_develop_ibnr", "note": "Three-line run only (sql/10): every reported claim grossed up by 1/F(age), F the cost-weighted report-lag distribution by line and peril. The GLM pack (run_all.py) is unchanged.", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D11_ibner_motor_bi": {"apply": false, "_a28": "Switched off in A28 at the owner's go-ahead on the final review (item 3, #156): closed bodily-injury claims fell in size as much as open ones in 2023, so the fall is real severity.", "sql_variable": "d11_ibner_motor_bi", "note": "Motor bodily injury only: each loss year lifted to the 2021 claim size of claims reported within 90 days, no inflation (lower bound).", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D12_cap_large_claims": {"apply": true, "sql_variable": "d12_cap_large_claims", "note": "Developed claims capped at sql_variables.large_claim_cap; the line's excess is spread back as a multiplicative loading. Added during the run (A15), not in the approved plan.", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D19_dedupe_claims": {"apply": true, "sql_variable": "d19_dedupe_claims", "note": "Keep one copy of claims identical on every field except claim_id (604 claims, all lines; A18). Found by the data workstream (GitHub #55) and adopted here.", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D17_bf_slow_perils": {"apply": true, "sql_variable": "d17_bf_slow_perils", "note": "Bornhuetter-Ferguson instead of the chain ladder for a loss year with under bf_max_reported_share of its cost reported (2024 subsidence and motor bodily injury); prior from the preceding mature years, no trend.", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D26_r11_elevation_feet": {"apply": true, "sql_variable": "d26_r11_elevation_feet", "note": "Region R11 elevation is recorded in feet; converted to metres in addresses_clean, raw value kept (A27, A28; #154).", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D27_year_built_placeholder": {"apply": true, "sql_variable": "d27_year_built_placeholder", "note": "year_built = 1900 is a placeholder; replaced by the typical year built for the address's energy rating, raw value kept (A27, A28; #155).", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D24_merge_timber": {"apply": true, "sql_variable": "d24_merge_timber", "note": "Buildings construction_type T (2021-22) and W (2023 onwards, every 2025 row) are the same timber category recoded; merged as 'timber', raw value kept (A24). Found by the data workstream (Cian, R4).", "signed_off": false, "signed_off_by": null, "signed_off_date": null},
+    "D13_trend_to_2025": {"apply": true, "note": "Log-linear calendar-year trend per line, fitted jointly with XGBoost by backfitting the year term into the offset, projected to the 2025 rows. Approved by Gerard Murphy in session 2026-10-21.", "signed_off": false, "signed_off_by": null, "signed_off_date": null}
+  },
+
+  "oneway": {
+    "factors": {
+      "policy": ["f_age_band", "f_si_band", "f_tenure", "f_security", "f_hvi", "f_ad_cover", "f_wfh", "f_lodgers",
+                 "f_bike", "f_vol_xs", "f_channel", "f_payment", "f_missed_pay", "f_new_business", "f_renewals",
+                 "f_quote_days", "f_discount", "f_cs_contacts", "f_wp_band"],
+      "customer": ["f_occupation", "f_marital", "f_household", "f_credit", "f_prior_claims", "f_licence_pts",
+                   "f_yrs_at_addr", "f_cust_since", "f_email", "f_mkt_consent", "f_doc_pref", "f_prev_insurer",
+                   "f_campaign", "f_branch", "f_segment"],
+      "address": ["f_region", "f_urban", "f_flood_zone", "f_river_band", "f_elev_band", "f_soil", "f_built",
+                  "f_prop_type", "f_roof", "f_basement", "f_trees", "f_listed", "f_bedrooms", "f_energy", "f_solar"],
+      "weather": ["f_hail_band", "f_wind_band", "f_freeze_band", "f_dry_band", "f_wildfire_band", "f_rain_band",
+                  "f_temp_band"]
+    },
+    "_note": "One-way tables cover every factor, including those excluded from modelling (D-04, D-05), so the leakage stays visible."
+  },
+
+  "model": {
+    "tweedie_power": 1.5,
+    "alpha": 0.0001,
+    "_alpha_note": "L2 penalty (intercept unpenalised) on the scale of scikit-learn's GLM objective: (1/(2 sum w)) sum w d + alpha/2 ||b||^2. R/run_all.R minimises the same objective with its own penalised IRLS.",
+    "fit_year_max": 2023,
+    "score_year": 2024,
+    "factors": ["f_flood_zone", "f_elev_band", "f_river_band", "f_tenure", "f_region", "f_segment", "f_prior_claims",
+                "f_missed_pay", "f_vol_xs", "f_credit", "f_age_band", "f_security", "f_hvi", "f_ad_cover", "f_bike",
+                "f_wfh", "f_lodgers", "f_urban", "f_prop_type"],
+    "numeric": ["z_log_si"],
+    "perils": {"theft": ["cost_theft", "n_theft"], "escape_of_water": ["cost_eow", "n_eow"],
+               "accidental_damage": ["cost_ad", "n_ad"], "flood": ["cost_flood", "n_flood"]},
+    "size_bands": ["cost_band_1", "cost_band_2", "cost_band_3", "cost_band_4"],
+    "relativity_params": ["f_flood_zone", "f_tenure", "f_prior_claims", "f_vol_xs", "f_security", "f_ad_cover", "f_hvi", "z_log_si"]
+  },
+
+  "xgboost": {
+    "_about": "python/run_xgb.py (audit A13). Tweedie power, fit and score years come from 'model'. Tuning never sees the score year: each grid point is fitted on years up to tune_fit_year_max and early-stopped on tune_val_year; the best is refitted on all fit years with the same number of trees and scored once.",
+    "tune_fit_year_max": 2022,
+    "tune_val_year": 2023,
+    "seed": 20261021,
+    "nthread": 8,
+    "max_rounds": 3000,
+    "early_stopping_rounds": 100,
+    "fixed_params": {"eta": 0.05, "subsample": 0.8, "colsample_bytree": 0.8, "reg_lambda": 1.0},
+    "grid": {"max_depth": [1, 2, 3], "min_child_weight": [10, 2000, 20000]},
+    "_grid_note": "min_child_weight is a hessian sum; at the base rate the Tweedie hessian is about 5 per row (median), so 2000 and 20000 mean leaves of roughly 400 and 4000 rows. Run 1 used depth 2-6 and weights 10-200, and its best point sat on the grid edge (audit A13).",
+    "bootstrap": {"n": 1000, "seed": 2024},
+    "feature_sets": {
+      "banded": {"_note": "The GLM's inputs: model.factors as categoricals plus model.numeric."},
+      "raw": {
+        "_note": "Permitted columns at full resolution (D-08). Excluded: IDs, surname, dates, date_of_birth (duplicates age), yr (trees cannot extrapolate a trend), contacts (D-04), written and earned premium (D-05), renewal_decision and all claim columns.",
+        "numeric": ["policyholder_age", "sum_insured", "high_value_items", "voluntary_excess", "compulsory_excess",
+                    "missed_payments_12m", "renewal_count", "days_quote_to_inception", "discount_applied",
+                    "household_size", "prior_claims_5y", "licence_points", "years_at_address", "customer_since_year",
+                    "flood_zone", "distance_to_river_km", "elevation_m", "year_built", "bedrooms", "hail_days",
+                    "wind_exposure_index", "freezing_days", "dry_summer_index", "wildfire_index", "rainfall_mm",
+                    "mean_temperature_c"],
+        "categorical": ["tenure", "security_level", "accidental_damage_cover", "works_from_home", "lodgers",
+                        "bicycle_cover", "channel", "payment_method", "new_business", "occupation", "marital_status",
+                        "credit_band", "email_domain", "marketing_consent", "document_preference", "previous_insurer",
+                        "campaign_code", "branch_id", "marketing_segment", "region", "urban_density", "soil_type",
+                        "property_type", "roof_type", "basement", "trees_within_5m", "listed_building",
+                        "energy_rating", "solar_panels"]
+      }
+    }
+  },
+
+  "lines": {
+    "_about": "python/run_lines.py (audit A15). XGBoost per line on the developed, capped target, with a backfitted log-linear year trend (D-13) and the large-claim loading (D-12). Same protocol as A13: tune on 2021-22 early-stopped on 2023; backtest fit 2021-23, score 2024; final fit 2021-24, predict 2025. Boosting settings (eta, subsampling, seed, threads, rounds) come from 'xgboost'.",
+    "sql_files": ["sql/09_build_lines.sql", "sql/10_development.sql", "sql/11_line_models.sql"],
+    "out_file": "work/submissions/submission_all_lines_xgb_{date}.csv",
+    "grid": {"max_depth": [1, 2, 3, 4]},
+    "min_child_rows": [50, 500, 5000, 20000, 50000],
+    "_min_child_note": "min_child_weight = rows x the line's median Tweedie hessian per row at the base rate, so leaf sizes mean the same thing on every line. Run 1 stopped at 5000 and motor's best sat on that edge (A15), so 20000 and 50000 were added.",
+    "trend_iterations": 4,
+    "models": {
+      "buildings": {
+        "prefix": "B", "table": "buildings_model",
+        "numeric": ["policyholder_age", "sum_insured", "days_unoccupied", "voluntary_excess", "missed_payments_12m",
+                    "renewal_count", "days_quote_to_inception", "discount_applied", "household_size", "prior_claims_5y",
+                    "licence_points", "years_at_address", "customer_since_year", "flood_zone", "distance_to_river_km",
+                    "elevation_m", "year_built", "bedrooms", "hail_days", "wind_exposure_index", "freezing_days",
+                    "dry_summer_index", "wildfire_index", "rainfall_mm", "mean_temperature_c",
+                    "x_clay_dry", "x_fz3_rain"],
+        "categorical": ["construction_type", "occupancy", "smoke_alarms", "accidental_damage_cover", "mortgage", "channel",
+                        "payment_method", "new_business", "occupation", "marital_status", "credit_band", "email_domain",
+                        "marketing_consent", "document_preference", "previous_insurer", "campaign_code", "branch_id",
+                        "marketing_segment", "region", "urban_density", "soil_type", "property_type", "roof_type",
+                        "basement", "trees_within_5m", "listed_building", "energy_rating", "solar_panels"]
+      },
+      "contents": {
+        "prefix": "C", "table": "contents_model_dev",
+        "_note": "The banded set (model.factors and model.numeric), which beat the raw set in A13.",
+        "numeric": "model.numeric", "categorical": "model.factors"
+      },
+      "motor": {
+        "prefix": "M", "table": "motor_model",
+        "numeric": ["driver_age", "years_licensed", "ncb_years", "vehicle_value_group", "vehicle_age", "engine_size_cc",
+                    "seats", "annual_mileage", "telematics_score", "voluntary_excess", "missed_payments_12m",
+                    "renewal_count", "days_quote_to_inception", "discount_applied", "household_size", "prior_claims_5y",
+                    "licence_points", "years_at_address", "customer_since_year", "hail_days", "wind_exposure_index",
+                    "freezing_days", "dry_summer_index", "wildfire_index", "rainfall_mm", "mean_temperature_c"],
+        "categorical": ["make_model", "body_type", "transmission", "vehicle_colour", "fuel_type", "driver_assist",
+                        "cover_type", "overnight_parking", "vehicle_use", "named_young_driver", "telematics_opt_in",
+                        "channel", "payment_method", "new_business", "occupation", "marital_status", "credit_band",
+                        "email_domain", "marketing_consent", "document_preference", "previous_insurer", "campaign_code",
+                        "branch_id", "marketing_segment", "region", "urban_density"]
+      }
+    }
+  },
+
+  "glm_lines": {
+    "_about": "python/run_glm_lines.py (audit A16). Owner's design, 2026-10-22: contents one GLM (no split); buildings small claims XGBoost at depth 3 plus a large-claim GLM; motor small-claim GLM plus a large-claim GLM. Claim history (sql/12, sql/13) enters every line as a credibility factor (k + n) / (k + E), E from a frequency GLM without history, k tuned on 2023 per group. Large claims: cost above the threshold, developed, modelled by a compact Tweedie GLM and scaled to a generalised Pareto mean. Same protocol and development as A15; the D-12 cap is not used.",
+    "sql_files": ["sql/12_claim_history.sql"],
+    "cann": {
+      "_about": "A20. CANN correction of each line's small-claim model, adopted per line only if it improves both 2023 and 2024. Architecture fixed in advance, not tuned.",
+      "_d23": "D-23 (A22): a discretionary addition, so it must also have a significant two-year mean gain (approximate 95% interval from the yearly paired bootstraps).",
+      "enabled": true, "require_significance": true, "n_seeds": 20, "hidden": [128, 64, 32], "dropout": 0.1, "learning_rate": 0.001,
+      "batch_size": 16384, "max_epochs": 40, "patience": 4, "val_share": 0.1, "seed": 2026,
+      "features": {"buildings": "lines.models.buildings", "contents": "xgboost.feature_sets.raw", "motor": "lines.models.motor"}
+    },
+    "bootstrap": {"n": 1000, "seed": 2025, "cluster": "customer_id"},
+    "level": {
+      "_about": "A20. Deviance-optimal level factor per line, adopted only if each year's factor improves the other year; then the uncertainty premium exp(sigma^2/2).",
+      "uncertainty_evidence": "audit/evidence/glm_lines/ev_u1_development_bootstrap.csv", "mack_evidence": "audit/evidence/glm_lines/ev_u2_mack_development.csv", "include_mack": true,
+      "n_boot": 200, "seed": 77, "workers": 14, "z90": 1.645
+    },
+    "expected_sql": "sql/13_history_expected.sql",
+    "credibility_k_grid": [0.5, 1, 2, 4, 8, 16, 32, 64],
+    "credibility_tuning_cap": {"motor": 1000000},
+    "_credibility_tuning_cap_note": "A28 (#157): motor's k is tuned on 2023 claims capped at 1m per row, so the single 15.25m claim does not choose it; buildings and contents unchanged.",
+    "posthoc": {"lines": ["buildings"], "short_exposure": 0.1, "fit_power": false,
+                "_about": "A28 (#158): factor for rows of exposure <= 0.1, estimated on each backtest year, adopted only if the other year improves on both and the two-year mean is significant; the calibration power failed the significance rule in T3, so it is not fitted."},
+    "freq_alpha": 0.001,
+    "out_file": "work/submissions/submission_final_candidate_{date}.csv",
+    "alpha_grid": [0.00001, 0.0001, 0.001],
+    "excess_alpha": 0.001,
+    "thresholds": [25000, 50000, 100000],
+    "models": {
+      "buildings": {
+        "split": true, "small": "xgb", "max_depth": 3, "min_child_rows": 20000,
+        "_small_note": "XGBoost features are lines.models.buildings.",
+        "a16_override": {"excess": {"numeric": ["flood_zone", "sum_insured", "elevation_m", "year_built", "distance_to_river_km"],
+                                    "categorical": ["soil_type", "construction_type"], "n_bands": 5}},
+        "_a16_note": "a16_override: the A16 settings, used only for the 'no A17 changes' significance variant.",
+        "excess": {"numeric": ["flood_zone", "sum_insured", "elevation_m", "year_built", "distance_to_river_km"],
+                   "categorical": ["soil_type", "construction_type"], "n_bands": 5, "smooth": "all", "n_knots": 4,
+                   "continuous": ["x_clay_dry", "x_fz3_rain"], "_continuous_note": "A28: peril interactions, linear terms (#158)."},
+        "freq": {"numeric": ["flood_zone", "sum_insured", "elevation_m", "year_built", "distance_to_river_km",
+                             "dry_summer_index", "freezing_days"],
+                 "categorical": ["region", "construction_type", "soil_type", "occupancy", "energy_rating"],
+                 "continuous": [], "n_bands": 10}
+      },
+      "contents": {
+        "split": false, "small": "glm",
+        "seasonal_exposure": true,
+        "_seasonal_note": "D-22 (A22): exposure is days weighted by the month's relative claim frequency, estimated on each window's fitting years; plain exposure is kept for reported rates.",
+        "numeric": ["policyholder_age", "elevation_m", "distance_to_river_km"],
+        "categorical": ["f_flood_zone", "f_tenure", "f_region", "f_segment", "f_prior_claims", "f_missed_pay", "f_vol_xs", "f_credit", "f_security", "f_hvi", "f_ad_cover", "f_bike", "f_wfh", "f_lodgers", "f_urban", "f_prop_type"],
+        "continuous": "model.numeric", "n_bands": 10, "smooth": "all", "n_knots": 4,
+        "extra_columns": ["policyholder_age", "elevation_m", "distance_to_river_km", "sum_insured", "high_value_items", "voluntary_excess", "compulsory_excess", "missed_payments_12m", "renewal_count", "days_quote_to_inception", "discount_applied", "household_size", "prior_claims_5y", "licence_points", "years_at_address", "customer_since_year", "flood_zone", "year_built", "bedrooms", "hail_days", "wind_exposure_index", "freezing_days", "dry_summer_index", "wildfire_index", "rainfall_mm", "mean_temperature_c", "tenure", "security_level", "accidental_damage_cover", "works_from_home", "lodgers", "bicycle_cover", "channel", "payment_method", "new_business", "occupation", "marital_status", "credit_band", "email_domain", "marketing_consent", "document_preference", "previous_insurer", "campaign_code", "branch_id", "marketing_segment", "region", "urban_density", "soil_type", "property_type", "roof_type", "basement", "trees_within_5m", "listed_building", "energy_rating", "solar_panels"],
+        "a16_override": {"numeric": [], "categorical": "model.factors", "smooth": []},
+        "_a16_note": "a16_override: the A16 settings, used only for the 'no A17 changes' significance variant.",
+        "_smooth_note": "A17: GLM A's age, elevation and river-distance bands replaced by cubic splines on the raw values (+0.0011 D2 on 2023, +0.0019 on 2024).",
+        "freq": {"numeric": [], "categorical": "model.factors", "continuous": "model.numeric", "n_bands": 10}
+      },
+      "motor": {
+        "split": true, "small": "glm",
+        "numeric": ["ncb_years", "driver_age", "annual_mileage", "years_licensed", "vehicle_age", "telematics_score",
+                    "vehicle_value_group", "voluntary_excess", "prior_claims_5y", "missed_payments_12m"],
+        "categorical": ["region", "marketing_segment", "cover_type", "urban_density", "channel", "vehicle_use",
+                        "payment_method", "credit_band"],
+        "continuous": [], "n_bands": 10, "smooth": "all", "n_knots": 4,
+        "_smooth_note": "A17: numerics as cubic splines, plus missed payments and credit band (+0.0053 D2 on 2023, +0.0023 on 2024). The large-claim GLM stays banded: smoothing it failed on 2023.",
+        "a16_override": {"numeric": ["ncb_years", "driver_age", "annual_mileage", "years_licensed", "vehicle_age", "telematics_score", "vehicle_value_group", "voluntary_excess", "prior_claims_5y"],
+                         "categorical": ["region", "marketing_segment", "cover_type", "urban_density", "channel", "vehicle_use", "payment_method"], "smooth": []},
+        "_a16_note": "a16_override: the A16 settings, used only for the 'no A17 changes' significance variant.",
+        "_factor_note": "Features with at least 1% XGBoost gain in A15.",
+        "excess": {"numeric": ["ncb_years", "driver_age", "annual_mileage", "years_licensed"],
+                   "categorical": ["region"], "n_bands": 5},
+        "freq": "same as small"
+      }
+    }
+  },
+
+  "submission": {
+    "_about": "python/make_submission.py. Contents rows are predicted by each model refitted on every training year; rows of other lines get other_lines_value (owner's instruction, 2026-10-21). No trend or IBNR adjustment is applied (A13).",
+    "sample_file": "work/sample_submission.csv",
+    "out_dir": "work/submissions",
+    "contents_prefix": "C",
+    "other_lines_value": 0.1,
+    "xgb_banded": {"max_depth": 2, "min_child_weight": 20000, "n_trees": 234,
+                   "_source": "Chosen by tuning in A13 run 2 (evidence/xgboost/ev_x1_split_test.csv)."}
+  },
+
+  "reconcile": {
+    "tol_d2_python_vs_r": 0.0005,
+    "tol_ratio_python_vs_r": 0.002,
+    "tol_coef_python_vs_r": 0.01,
+    "tol_vs_exploratory": 0.002,
+    "tol_component_total_rel": 0.001,
+    "quasi_separation_abs_coef": 8.0,
+    "_quasi_separation_note": "Coefficients beyond +/-8 (relativity below ~3e-4 or above ~3000) come from levels with almost no claims; they are reported as WARN and the component prediction check is binding (audit A11)."
+  },
+
+  "exploratory_reference": {
+    "_source": "Numbers produced during the exploratory session on 2026-10-20 (audit A07, A09). The pack is expected to reproduce them within tol_vs_exploratory; small differences come from unifying band definitions.",
+    "split_test_d2": {"exposure only": 0.0310, "A single Tweedie": 0.0933, "B per-peril Tweedie": 0.0920,
+                      "C per-size-band Tweedie": 0.0872, "D per-peril freq x sev": 0.0899},
+    "oneway_d2_gain": {"f_cs_contacts": 0.5774, "f_flood_zone": 0.0239, "f_wp_band": 0.0194, "f_elev_band": 0.0175,
+                       "f_si_band": 0.0164, "f_river_band": 0.0132, "f_tenure": 0.0050, "f_region": 0.0037}
+  }
+}

@@ -1,0 +1,16 @@
+line,source,nb_ae_relative_to_renewal,ci_low_95,ci_high_95,nb_claims,credibility_z,credibility_k
+buildings,developed 2021-24,1.070419,0.939716,1.193732,2343,,
+buildings,developed 2021-22,1.127405,0.981232,1.274297,1103,,
+buildings,developed 2023-24,1.027239,0.867411,1.201775,1240,,
+buildings,emerging 2023-24,0.81706,0.486504,1.27496,75,,
+buildings,blended,1.050437,,,75,0.069767,1000.0
+contents,developed 2021-24,1.007231,0.937746,1.093772,2243,,
+contents,developed 2021-22,0.965069,0.875297,1.073819,1023,,
+contents,developed 2023-24,1.041349,0.946042,1.168851,1220,,
+contents,emerging 2023-24,1.266385,0.821541,1.7734,100,,
+contents,blended,1.028416,,,100,0.090909,1000.0
+motor,developed 2021-24,1.031206,0.959098,1.110595,11100,,
+motor,developed 2021-22,1.099741,1.017578,1.191135,5227,,
+motor,developed 2023-24,0.975555,0.842552,1.084855,5873,,
+motor,emerging 2023-24,1.296371,1.008117,1.682141,613,,
+motor,blended,1.124903,,,613,0.380037,1000.0

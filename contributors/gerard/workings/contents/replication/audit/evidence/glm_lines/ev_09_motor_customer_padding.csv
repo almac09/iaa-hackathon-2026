@@ -1,0 +1,3 @@
+src,n_rows,n_padded,n_without_customer_after
+test,254986,25554,0
+train,979968,98110,0

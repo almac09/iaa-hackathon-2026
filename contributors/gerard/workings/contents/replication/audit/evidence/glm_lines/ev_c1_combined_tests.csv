@@ -1,0 +1,19 @@
+line,test,variant,score_year,d2_baseline,d2_variant,pred_over_developed,d2_gain,boot_mean,ci_low_95,ci_high_95,share_not_better,n_boot,significant_95,passes_two_year_rule,two_year_mean,two_year_ci_low_95,two_year_ci_high_95,passes_significance_rule,weight_chosen_2023,weight_chosen_2024,weight_if_adopted
+buildings,C1 timber merge,T and W merged,2023,0.111702,0.111024,0.942782,-0.000678,-0.000681,-0.001513,0.000132,0.951,1000,False,False,-0.000556,-0.001141,2.9e-05,False,,,
+buildings,C1 timber merge,T and W merged,2024,0.110897,0.110464,0.917066,-0.000433,-0.000464,-0.001342,0.000322,0.857,1000,False,False,-0.000556,-0.001141,2.9e-05,False,,,
+buildings,C2 blend,"weight 0.0 (chosen on 2023) / 0.2 (on 2024), scored crosswise",2023,0.111024,0.11058,0.952671,-0.000444,-0.000459,-0.00115,0.000209,0.907,1000,False,False,-0.000222,-0.000562,0.000118,False,0.0,0.2,0.1
+buildings,C2 blend,"weight 0.0 (chosen on 2023) / 0.2 (on 2024), scored crosswise",2024,0.110464,0.110464,0.917066,0.0,0.0,0.0,0.0,1.0,1000,False,False,-0.000222,-0.000562,0.000118,False,0.0,0.2,0.1
+buildings,C2 alternative alone,smoothed GLM,2023,0.111024,0.103954,0.992227,-0.007071,-0.007148,-0.010618,-0.003786,1.0,1000,False,False,-0.005574,-0.00805,-0.003098,False,,,
+buildings,C2 alternative alone,smoothed GLM,2024,0.110464,0.106387,0.990704,-0.004077,-0.004016,-0.007496,-0.000324,0.982,1000,False,False,-0.005574,-0.00805,-0.003098,False,,,
+contents,C2 blend,"weight 0.0 (chosen on 2023) / 0.0 (on 2024), scored crosswise",2023,0.095378,0.095378,0.925646,0.0,0.0,0.0,0.0,1.0,1000,False,False,0.0,0.0,0.0,False,0.0,0.0,0.0
+contents,C2 blend,"weight 0.0 (chosen on 2023) / 0.0 (on 2024), scored crosswise",2024,0.096767,0.096767,1.03907,0.0,0.0,0.0,0.0,1.0,1000,False,False,0.0,0.0,0.0,False,0.0,0.0,0.0
+contents,C2 alternative alone,XGBoost (Bridget's settings),2023,0.095378,0.006032,0.641088,-0.089346,-0.089663,-0.117726,-0.068342,1.0,1000,False,False,-0.062825,-0.075799,-0.049852,False,,,
+contents,C2 alternative alone,XGBoost (Bridget's settings),2024,0.096767,0.060462,0.804798,-0.036305,-0.036545,-0.044431,-0.028491,1.0,1000,False,False,-0.062825,-0.075799,-0.049852,False,,,
+contents,C3 frequency x severity,Poisson x gamma GLM,2023,0.095378,0.094832,0.901943,-0.000546,-0.000542,-0.002002,0.001121,0.754,1000,False,False,-0.000701,-0.001741,0.00034,False,,,
+contents,C3 frequency x severity,Poisson x gamma GLM,2024,0.096767,0.095912,0.988658,-0.000855,-0.000887,-0.0023,0.000454,0.884,1000,False,False,-0.000701,-0.001741,0.00034,False,,,
+motor,C2 blend,"weight 0.0 (chosen on 2023) / 0.2 (on 2024), scored crosswise",2023,0.10097,0.098974,0.927096,-0.001996,-0.001707,-0.007566,0.001891,0.616,1000,False,False,-0.000998,-0.003362,0.001366,False,0.0,0.2,0.1
+motor,C2 blend,"weight 0.0 (chosen on 2023) / 0.2 (on 2024), scored crosswise",2024,0.080618,0.080618,1.052985,0.0,0.0,0.0,0.0,1.0,1000,False,False,-0.000998,-0.003362,0.001366,False,0.0,0.2,0.1
+motor,C2 alternative alone,XGBoost (Bridget's settings),2023,0.10097,0.061559,0.767866,-0.039411,-0.037445,-0.078643,-0.012467,1.0,1000,False,False,-0.025687,-0.042581,-0.008794,False,,,
+motor,C2 alternative alone,XGBoost (Bridget's settings),2024,0.080618,0.068655,0.911525,-0.011963,-0.011957,-0.019266,-0.005597,1.0,1000,False,False,-0.025687,-0.042581,-0.008794,False,,,
+motor,C3 frequency x severity,Poisson x gamma GLM,2023,0.10097,0.099955,0.982728,-0.001015,-0.000979,-0.002053,-0.000132,0.995,1000,False,False,-0.000159,-0.001172,0.000853,False,,,
+motor,C3 frequency x severity,Poisson x gamma GLM,2024,0.080618,0.081315,1.060248,0.000696,0.000715,-0.000648,0.002916,0.311,1000,False,False,-0.000159,-0.001172,0.000853,False,,,

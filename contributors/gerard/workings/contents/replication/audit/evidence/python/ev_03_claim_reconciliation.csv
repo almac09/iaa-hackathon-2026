@@ -1,0 +1,7 @@
+step,description,n_claims,net_cost
+1,all contents claims,24102,66128796.73
+2,less duplicates,-84,-228994.27
+3,less repudiated,-299,0.0
+4,less outside any policy period,-49,-162217.88
+5,claims in target,23670,65737584.58
+6,check: target total on rows,23670,65737584.58

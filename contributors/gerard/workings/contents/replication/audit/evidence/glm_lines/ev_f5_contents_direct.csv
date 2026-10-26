@@ -1,0 +1,3 @@
+line,test,variant,score_year,d2_baseline,d2_variant,pred_over_developed,d2_gain,boot_mean,ci_low_95,ci_high_95,share_not_better,n_boot,significant_95,passes_two_year_rule,two_year_mean,two_year_ci_low_95,two_year_ci_high_95,passes_significance_rule
+contents,T5 contents channel,direct flag,2023,0.095684,0.096238,0.928127,0.000553,0.000549,-0.000555,0.001552,0.154,1000,False,True,0.000623,-3.9e-05,0.001285,False
+contents,T5 contents channel,direct flag,2024,0.096935,0.097627,1.039125,0.000692,0.000682,-0.000132,0.001472,0.048,1000,False,True,0.000623,-3.9e-05,0.001285,False

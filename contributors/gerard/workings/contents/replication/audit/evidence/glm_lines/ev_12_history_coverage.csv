@@ -1,0 +1,7 @@
+line,src,n_rows,mean_prior_own_exposure,share_with_history,share_with_prior_claim
+buildings,test,184155,2.115,0.8151,0.0834
+buildings,train,707726,0.996,0.6354,0.0396
+contents,test,187498,2.114,0.8157,0.0762
+contents,train,721617,1.003,0.6416,0.0367
+motor,test,254986,2.359,0.8475,0.2297
+motor,train,979968,1.113,0.6856,0.1214

@@ -1,0 +1,4 @@
+line,n_claims,n_matched_one,n_matched_many,n_unmatched,n_unmatched_before_2021
+buildings,26442,26375,0,67,46
+contents,24102,24052,0,50,30
+motor,112606,112309,0,297,198

@@ -1,0 +1,11 @@
+table_name,n_rows
+addresses,575983
+claims,163150
+customers,545240
+policies_buildings,707726
+policies_contents,721617
+policies_motor,979968
+test_buildings,184155
+test_contents,187498
+test_motor,254986
+weather,2879915

@@ -1,0 +1,16 @@
+line,peril,max_lag_days,cost_share_reported_by_30d,cost_share_reported_by_90d,cost_share_reported_by_365d
+buildings,accidental_damage,539,0.9497,0.9967,0.9967
+buildings,escape_of_water,569,0.8666,0.9949,0.9972
+buildings,fire,515,0.9859,0.99,0.99
+buildings,flood,503,0.9448,0.9974,0.9974
+buildings,storm,558,0.9371,0.9914,0.9922
+buildings,subsidence,759,0.1891,0.4885,0.9574
+contents,accidental_damage,557,0.9441,0.9949,0.9951
+contents,escape_of_water,565,0.8674,0.993,0.9955
+contents,flood,523,0.9393,0.9887,0.9892
+contents,theft,533,0.9932,0.996,0.996
+motor,bodily_injury,1361,0.1381,0.3496,0.8456
+motor,glass_hail,548,0.9798,0.9937,0.9937
+motor,own_damage,556,0.9479,0.9964,0.9966
+motor,theft,527,0.9959,0.9974,0.9974
+motor,third_party_prop,649,0.7702,0.9825,0.9955

@@ -1,0 +1,7 @@
+key_name,n_rows,n_distinct
+addresses.address_id,575983,575983
+claims.claim_id,163150,163150
+customers.customer_id,545240,545240
+policies_contents.row_id,721617,721617
+test_contents.row_id,187498,187498
+weather.address_id+year,2879915,2879915

@@ -1,0 +1,5 @@
+line,src,n_exposure_changed,n_sum_insured_rescaled,max_sum_insured_after,n_construction_type_recased
+buildings,test,0,370,1061000.0,144386
+buildings,train,4138,1395,953000.0,555824
+motor,test,0,0,,0
+motor,train,5666,0,,0

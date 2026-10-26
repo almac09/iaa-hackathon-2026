@@ -1,0 +1,5 @@
+state,n_pairs,freq_next_per_1000,loss_cost_next,ae_cost_within_flood_zone,ae_cost_vs_earned_premium
+0 none,360090,38.22,108.48,0.971,0.967
+1 small,6309,62.98,160.88,1.403,1.465
+2 mid,5620,59.93,171.34,1.399,1.456
+3 large,2211,84.75,449.43,2.659,3.375

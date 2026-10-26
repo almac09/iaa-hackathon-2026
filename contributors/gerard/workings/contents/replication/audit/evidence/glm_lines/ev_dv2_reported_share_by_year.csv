@@ -1,0 +1,16 @@
+line,yr,mean_reported_share,min_reported_share
+buildings,2021,1.0,1.0
+buildings,2022,0.999998,0.999994
+buildings,2023,0.996512,0.991608
+buildings,2024,0.923705,0.869225
+buildings,2025,1.0,1.0
+contents,2021,1.0,1.0
+contents,2022,1.0,1.0
+contents,2023,0.998253,0.994636
+contents,2024,0.9716,0.91189
+contents,2025,1.0,1.0
+motor,2021,0.997893,0.996872
+motor,2022,0.960131,0.956438
+motor,2023,0.895737,0.86401
+motor,2024,0.770846,0.708927
+motor,2025,1.0,1.0

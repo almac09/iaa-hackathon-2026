@@ -1,0 +1,3 @@
+line,model,term_a,term_b,columns,df,score_robust,score_model,score,p,already_modelled,power_check
+buildings,small (XGBoost) without the A28 interactions,soil_type,dry_summer_index,4,4,3.9799,4.336743,3.9799,0.408733,False,True
+buildings,small (XGBoost) without the A28 interactions,rainfall_mm,flood_zone,1,1,0.442227,0.390696,0.390696,0.531934,False,True

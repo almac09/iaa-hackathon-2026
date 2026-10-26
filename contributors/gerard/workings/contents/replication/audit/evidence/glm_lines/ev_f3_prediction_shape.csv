@@ -1,0 +1,7 @@
+line,test,variant,score_year,d2_baseline,d2_variant,pred_over_developed,d2_gain,boot_mean,ci_low_95,ci_high_95,share_not_better,n_boot,significant_95,passes_two_year_rule,two_year_mean,two_year_ci_low_95,two_year_ci_high_95,passes_significance_rule
+buildings,T3 prediction shape,calibration power,2023,0.111439,0.111474,0.944052,3.4e-05,3.2e-05,-0.000733,0.000733,0.457,1000,False,True,0.00015,-0.000267,0.000566,False
+buildings,T3 prediction shape,calibration power,2024,0.112704,0.112968,0.913457,0.000265,0.000261,-0.000129,0.000661,0.1,1000,False,True,0.00015,-0.000267,0.000566,False
+buildings,T3 prediction shape,short-row factor,2023,0.111439,0.111914,0.944052,0.000474,0.000486,-0.000561,0.001292,0.162,1000,False,True,0.000555,2e-06,0.001107,True
+buildings,T3 prediction shape,short-row factor,2024,0.112704,0.113338,0.913457,0.000635,0.000616,-5.8e-05,0.001143,0.036,1000,False,True,0.000555,2e-06,0.001107,True
+buildings,T3 prediction shape,both,2023,0.111439,0.111912,0.944052,0.000473,0.000482,-0.000825,0.001662,0.224,1000,False,True,0.000682,-3.8e-05,0.001402,False
+buildings,T3 prediction shape,both,2024,0.112704,0.113594,0.913457,0.000891,0.000868,8.6e-05,0.001539,0.018,1000,True,True,0.000682,-3.8e-05,0.001402,False

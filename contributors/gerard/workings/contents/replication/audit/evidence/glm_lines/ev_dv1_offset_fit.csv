@@ -1,0 +1,7 @@
+line,test,variant,score_year,d2_baseline,d2_variant,pred_over_developed,d2_gain,boot_mean,ci_low_95,ci_high_95,share_not_better,n_boot,significant_95,passes_two_year_rule,two_year_mean,two_year_ci_low_95,two_year_ci_high_95,passes_significance_rule
+buildings,D1 offset fit,"reported cost, offset exposure x F",2023,0.111024,0.111024,0.942782,-0.0,-0.0,-0.0,0.0,0.807,1000,False,False,9.7e-05,-0.000133,0.000327,False
+buildings,D1 offset fit,"reported cost, offset exposure x F",2024,0.110464,0.110658,0.917071,0.000194,0.000204,-0.00027,0.000649,0.191,1000,False,False,9.7e-05,-0.000133,0.000327,False
+contents,D1 offset fit,"reported cost, offset exposure x F",2023,0.095378,0.095378,0.925646,0.0,0.0,0.0,0.0,1.0,1000,False,False,0.0,-2e-06,2e-06,False
+contents,D1 offset fit,"reported cost, offset exposure x F",2024,0.096767,0.096767,1.039157,0.0,0.0,-4e-06,4e-06,0.469,1000,False,False,0.0,-2e-06,2e-06,False
+motor,D1 offset fit,"reported cost, offset exposure x F",2023,0.10097,0.100762,0.977015,-0.000208,-0.000215,-0.000349,-7.5e-05,0.998,1000,False,False,-0.000255,-0.000752,0.000241,False
+motor,D1 offset fit,"reported cost, offset exposure x F",2024,0.080618,0.080316,1.089175,-0.000302,-0.000305,-0.001124,0.000843,0.746,1000,False,False,-0.000255,-0.000752,0.000241,False

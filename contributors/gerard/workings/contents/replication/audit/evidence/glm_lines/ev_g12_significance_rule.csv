@@ -1,0 +1,15 @@
+line,component,currently_adopted,gain_2023,gain_2024,two_year_mean,ci_low_95,ci_high_95,significant_two_year,kept_under_two_year_rule,kept_under_significance_rule
+buildings,CANN,True,5.3e-05,5.4e-05,5.4e-05,1.8e-05,8.9e-05,True,True,True
+buildings,history,True,0.000956,0.001673,0.001315,0.000604,0.002025,True,True,True
+buildings,trend,True,4.8e-05,0.001566,0.000807,0.000169,0.001445,True,True,True
+buildings,split,True,0.001388,0.001499,0.001444,-0.00041,0.003297,False,True,False
+buildings,A17 changes,True,0.001666,0.001038,0.001352,0.000734,0.00197,True,True,True
+contents,CANN,True,5.5e-05,4.7e-05,5.1e-05,-0.000195,0.000297,False,True,False
+contents,history,True,0.001642,0.000461,0.001052,2e-06,0.002101,True,True,True
+contents,trend,True,0.000119,0.000666,0.000392,-0.00021,0.000995,False,True,False
+contents,A17 changes,True,0.000996,0.001888,0.001442,0.000282,0.002602,True,True,True
+motor,CANN,False,-0.000186,0.000666,0.00024,-0.00023,0.00071,False,False,False
+motor,history,True,0.00098,0.00296,0.00197,0.000882,0.003058,True,True,True
+motor,trend,True,0.00413,0.00106,0.002595,-0.001146,0.006336,False,True,False
+motor,split,True,-0.001054,0.004889,0.001918,-6.9e-05,0.003904,False,False,False
+motor,A17 changes,True,0.005617,0.002014,0.003816,0.000527,0.007104,True,True,True

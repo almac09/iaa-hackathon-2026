@@ -1,0 +1,256 @@
+<title>Home Contents Week 1 Status</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: a single working-paper column, summary first, evidence tables below; tables scroll inside their own frames on phones. */
+  :root {
+    --bg: #f7f9fb;
+    --paper: #ffffff;
+    --ink: #17212b;
+    --muted: #5a6673;
+    --rule: #d9e0e7;
+    --accent: #0e5f6b;
+    --accent-soft: #e3f0f1;
+    --ok: #1d6b3a;      --ok-bg: #e2f2e7;
+    --warn: #8a5a00;    --warn-bg: #fbf0d6;
+    --crit: #a1262b;    --crit-bg: #f9e1e1;
+    --todo: #44505c;    --todo-bg: #e9edf1;
+    --display: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+    --body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10161c; --paper: #161e26; --ink: #e4eaf0; --muted: #9aa7b4; --rule: #2a3540;
+      --accent: #5fb8c2; --accent-soft: #17323a;
+      --ok: #7fd19b; --ok-bg: #173323; --warn: #f0c46a; --warn-bg: #3a2e14;
+      --crit: #f19a9d; --crit-bg: #3d1d20; --todo: #b7c2cd; --todo-bg: #25303a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #10161c; --paper: #161e26; --ink: #e4eaf0; --muted: #9aa7b4; --rule: #2a3540;
+    --accent: #5fb8c2; --accent-soft: #17323a;
+    --ok: #7fd19b; --ok-bg: #173323; --warn: #f0c46a; --warn-bg: #3a2e14;
+    --crit: #f19a9d; --crit-bg: #3d1d20; --todo: #b7c2cd; --todo-bg: #25303a;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.6 var(--body); }
+  .page { max-width: 920px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 64px; display: grid; gap: 40px; }
+  header { display: grid; gap: 10px; border-bottom: 2px solid var(--ink); padding-bottom: 20px; }
+  .eyebrow { font: 500 12px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  h1 { font: 600 clamp(28px, 4.5vw, 38px)/1.15 var(--display); margin: 0; text-wrap: balance; }
+  h2 { font: 600 22px/1.25 var(--display); margin: 0; text-wrap: balance; }
+  h3 { font: 600 15px/1.4 var(--body); margin: 0; }
+  p { margin: 0; max-width: 68ch; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px 20px; color: var(--muted); font-size: 13px; }
+  .meta b { color: var(--ink); font-weight: 500; }
+  section { display: grid; gap: 14px; min-width: 0; }
+  .lede { background: var(--paper); border: 1px solid var(--rule); border-left: 4px solid var(--accent); padding: 18px 20px; display: grid; gap: 10px; }
+  .lede ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+  ul, ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; max-width: 72ch; }
+  .note { color: var(--muted); font-size: 13px; }
+  .frame { overflow-x: auto; border: 1px solid var(--rule); background: var(--paper); }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font: 500 11.5px/1.4 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); background: var(--bg); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  td.n, th.n { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr.best td { background: var(--accent-soft); }
+  .chip { display: inline-block; font: 500 11.5px/1.5 var(--mono); padding: 1px 8px; border-radius: 3px; white-space: nowrap; }
+  .ok { color: var(--ok); background: var(--ok-bg); }
+  .warn { color: var(--warn); background: var(--warn-bg); }
+  .crit { color: var(--crit); background: var(--crit-bg); }
+  .todo { color: var(--todo); background: var(--todo-bg); }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .grid2 > * { min-width: 0; }
+  code { font: 12.5px var(--mono); background: var(--accent-soft); padding: 1px 5px; border-radius: 3px; overflow-wrap: anywhere; }
+  footer { border-top: 1px solid var(--rule); padding-top: 16px; color: var(--muted); font-size: 12.5px; display: grid; gap: 6px; }
+</style>
+
+<div class="page">
+  <header>
+    <div class="eyebrow">IAA AI-Assisted Hackathon 2026 · Part 1 · Home contents</div>
+    <h1>Home contents: where the analysis stands</h1>
+    <div class="meta">
+      <span>Owner <b>Gerard Murphy</b></span>
+      <span>As at <b>20 October 2026</b></span>
+      <span>AI support <b>Claude Code</b></span>
+      <span>Stage <b>Analysis done · modelling not started · no submission yet</b></span>
+    </div>
+  </header>
+
+  <section>
+    <div class="lede">
+      <h3>In short</h3>
+      <ul>
+        <li>The contents data is understood, cleaned and joined. Four data-quality problems were found and fixed in the pipeline, and <b>two of them also affect motor and buildings</b>.</li>
+        <li>One field, <code>customer_service_contacts</code>, leaks the target. It must be excluded, and the other lines should check for the same problem.</li>
+        <li>The main cost drivers are flood exposure, sum insured, tenure, region and prior claims. A single Tweedie GLM did as well as separate per-peril models, and splitting by claim size made things worse.</li>
+        <li>A policy's own claim history predicts its future claims strongly. That points to credibility-based experience rating, which is the most promising next gain.</li>
+        <li>Everything can be reproduced from raw data in SQL, Python and R, with an audit log. <b>Six decisions are waiting for sign-off</b> before any model is built on them.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Status at a glance</h2>
+    <div class="frame"><table>
+      <thead><tr><th>Workstream</th><th>Status</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td>Data profiling and quality checks</td><td><span class="chip ok">Done</span></td><td>All tables profiled; keys unique; claim-to-policy matching 99.75% exact</td></tr>
+        <tr><td>Data fixes (exposure, sum insured)</td><td><span class="chip warn">Awaiting sign-off</span></td><td>Applied in the pipeline behind switches; raw values kept alongside</td></tr>
+        <tr><td>Claim target</td><td><span class="chip warn">Awaiting sign-off</span></td><td>Built; 2024 not yet developed to ultimate (about +3% IBNR estimated)</td></tr>
+        <tr><td>One-way analysis, 56 factors</td><td><span class="chip ok">Done</span></td><td>Scored out of time (fit 2021–23, test 2024) on the competition metric</td></tr>
+        <tr><td>Model structure test</td><td><span class="chip ok">Done</span></td><td>Single vs per-peril vs per-size-band vs frequency × severity</td></tr>
+        <tr><td>Experience rating</td><td><span class="chip todo">Evidence only</span></td><td>Claim history is not reflected in current premiums; experience-rating model not yet built</td></tr>
+        <tr><td>Replication pack and audit trail</td><td><span class="chip ok">Done</span></td><td>Python and R reconcile: 100 checks, 0 failures; pushed to branch <code>contents/gerard</code></td></tr>
+        <tr><td>Contents model and submission</td><td><span class="chip todo">Not started</span></td><td>Waiting on sign-off and the experience-rating test</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Data problems the whole team should know about</h2>
+    <p class="note">Row counts are training rows unless stated. The 2025 test files have clean exposure in every line.</p>
+    <div class="frame"><table>
+      <thead><tr><th>Problem</th><th>Contents</th><th>Motor / buildings</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td><b>Exposure not in years</b>: some rows in days (up to 365), some on a 360-day year</td><td>3,088 rows; raw exposure overstated training exposure by 37% (810,723 vs 590,859)</td><td>Motor 3,991 rows, buildings 3,044 rows: <span class="chip crit">same problem</span></td><td>Recompute from the period dates</td></tr>
+        <tr><td><b>Sum insured 1,000× too large</b></td><td>1,402 train, 360 test rows (8.2m–152.6m; premium normal)</td><td>Buildings <span class="chip todo">not yet checked</span></td><td>Divide by 1,000 at or above 1m</td></tr>
+        <tr><td><b>Contacts leak the target</b></td><td>Claims generate ~2.6 contacts each in training; test averages 0.40, matching claim-free rows (0.41)</td><td><span class="chip todo">Not yet checked</span></td><td>Exclude from models</td></tr>
+        <tr><td><b>Customer IDs lost leading zeros</b></td><td>Not affected</td><td>Motor: 10% of rows fail to join <span class="chip crit">motor</span></td><td>Pad to 8 digits</td></tr>
+        <tr><td><b>Implausible claim</b> CL30973963</td><td>n/a</td><td>Motor BI, open, 11.9m incurred (10× the next largest)</td><td>Motor owner to decide</td></tr>
+        <tr><td><b>Claims outside any policy period</b></td><td>49 claims</td><td>414 across all lines, mostly Dec 2020 losses</td><td>Exclude</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Contents experience, 2021–2024</h2>
+    <div class="frame"><table>
+      <thead><tr><th>Loss year</th><th class="n">Exposure</th><th class="n">Claims</th><th class="n">Freq / 1,000</th><th class="n">Avg claim</th><th class="n">Loss cost</th><th class="n">Earned premium</th><th class="n">Loss ratio</th></tr></thead>
+      <tbody>
+        <tr><td>2021</td><td class="n">140,931</td><td class="n">5,583</td><td class="n">39.6</td><td class="n">2,663</td><td class="n">105.5</td><td class="n">17.63m</td><td class="n">84.4%</td></tr>
+        <tr><td>2022</td><td class="n">149,986</td><td class="n">6,024</td><td class="n">40.2</td><td class="n">2,663</td><td class="n">107.0</td><td class="n">19.76m</td><td class="n">81.2%</td></tr>
+        <tr><td>2023</td><td class="n">149,975</td><td class="n">6,158</td><td class="n">41.1</td><td class="n">2,848</td><td class="n">117.0</td><td class="n">20.83m</td><td class="n">84.2%</td></tr>
+        <tr><td>2024</td><td class="n">149,967</td><td class="n">5,988</td><td class="n">39.9</td><td class="n">2,925</td><td class="n">116.8</td><td class="n">21.96m</td><td class="n">79.8%</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note"><b>Corrected 20 Oct:</b> <code>written_premium</code> is an annual premium, so earned premium = written premium × exposure. An earlier version of this page divided by written premium and showed 64–75%, falling. On earned premium, the loss ratio is flat at 80–84%. All lines (2021–23): buildings 129–131%, motor 104–107%. Exposure uses the corrected values. Claims are net of excess and recoveries, with declined claims excluded, valued at 31 December 2024. Contents is short-tailed: an estimated 2.9% of 2024 claims were not yet reported, and open-claim estimates look adequate.</p>
+  </section>
+
+  <section>
+    <h2>What drives contents claims cost</h2>
+    <div class="grid2">
+      <div class="frame"><table>
+        <thead><tr><th>Factor</th><th class="n">Range of relativities</th></tr></thead>
+        <tbody>
+          <tr><td>Flood zone</td><td class="n">0.77 – 5.86</td></tr>
+          <tr><td>Elevation above river</td><td class="n">0.72 – 2.14</td></tr>
+          <tr><td>Sum insured (deciles)</td><td class="n">0.49 – 1.68</td></tr>
+          <tr><td>Distance to river</td><td class="n">0.74 – 2.01</td></tr>
+          <tr><td>Prior claims (declared)</td><td class="n">0.93 – 2.16</td></tr>
+          <tr><td>Missed payments</td><td class="n">0.96 – 2.14</td></tr>
+          <tr><td>Region</td><td class="n">0.76 – 1.36</td></tr>
+          <tr><td>Credit band (E high)</td><td class="n">0.95 – 1.36</td></tr>
+          <tr><td>Owner vs renter</td><td class="n">1.12 vs 0.72</td></tr>
+        </tbody>
+      </table></div>
+      <div style="display:grid; gap:10px; align-content:start">
+        <p>Each factor was scored out of time: level rates fitted on 2021–23 and tested on 2024 with the competition metric (Tweedie D², power 1.5). Relativities are stable between 2021–22 and 2023–24.</p>
+        <p><b>No signal:</b> branch, previous insurer, campaign code, occupation, sales channel, renewal count and dry-summer index.</p>
+        <p><b>Excluded by choice:</b> written premium is the second-strongest factor, but it encodes the current pricing, so it serves as a benchmark rather than an input (D-05).</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Should claims be modelled separately?</h2>
+    <p>Same 19 rating factors in every model, fitted on 2021–23 and scored on 2024.</p>
+    <div class="frame"><table>
+      <thead><tr><th>Model structure</th><th class="n">D² (2024)</th><th class="n">Predicted / actual</th></tr></thead>
+      <tbody>
+        <tr><td>Exposure only (baseline)</td><td class="n">0.031</td><td class="n">0.941</td></tr>
+        <tr class="best"><td>A. One Tweedie GLM on total cost</td><td class="n">0.093</td><td class="n">0.975</td></tr>
+        <tr><td>B. Separate Tweedie GLM per peril</td><td class="n">0.092</td><td class="n">0.983</td></tr>
+        <tr><td>D. Per-peril frequency × severity</td><td class="n">0.090</td><td class="n">0.983</td></tr>
+        <tr><td>C. Separate GLM per claim-size band</td><td class="n">0.087</td><td class="n">1.037</td></tr>
+      </tbody>
+    </table></div>
+    <p>Splitting did not improve the score. However, factors <b>do</b> act differently on small and large claims: flood zone 5 is 1.25× for claims under 1,000 and 20× for claims of 15,000 and over, and accidental damage cover is 2.9× against 1.06×. The next step is to capture this with interactions in one model. Keep the per-peril structure ready for Week 2, where a different peril mix would favour it. The gaps between A, B and D have not yet been tested for significance.</p>
+  </section>
+
+  <section>
+    <h2>Claim history predicts future claims</h2>
+    <div class="grid2">
+      <div class="frame"><table>
+        <thead><tr><th>Claim 2 yrs ago</th><th>Claim last yr</th><th class="n">A/E freq (flood zone)</th><th class="n">A/E cost (earned premium)</th></tr></thead>
+        <tbody>
+          <tr><td>No</td><td>No</td><td class="n">0.95</td><td class="n">0.94</td></tr>
+          <tr><td>No</td><td>Yes</td><td class="n">1.52</td><td class="n">1.84</td></tr>
+          <tr><td>Yes</td><td>No</td><td class="n">1.67</td><td class="n">1.66</td></tr>
+          <tr><td>Yes</td><td>Yes</td><td class="n">2.10</td><td class="n">2.59</td></tr>
+        </tbody>
+      </table></div>
+      <div style="display:grid; gap:10px; align-content:start">
+        <p>Older history predicts as strongly as last year's, so a one-step Markov chain is the wrong structure. The pattern fits a stable hidden risk level per policy, which credibility-weighted experience rating handles.</p>
+        <p>Measured against expected claims from <b>earned premium</b>, which reflects everything the current pricing knows, the effect remains: the current rates do not price own-claims history. A large claim (5k+) last year gives next-year cost A/E 3.35. 85% of 2025 policies are renewals with history.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Decisions awaiting sign-off</h2>
+    <div class="frame"><table>
+      <thead><tr><th>ID</th><th>Proposal</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>D-01</td><td>Recompute exposure from period dates</td><td><span class="chip warn">Unsigned</span></td></tr>
+        <tr><td>D-02</td><td>Divide sum insured by 1,000 at or above 1m</td><td><span class="chip warn">Unsigned</span></td></tr>
+        <tr><td>D-03</td><td>Target = incurred − recoveries; exclude declined and out-of-period claims; ~3% IBNR uplift for 2024</td><td><span class="chip warn">Unsigned</span></td></tr>
+        <tr><td>D-04</td><td>Exclude customer service contacts</td><td><span class="chip warn">Unsigned</span></td></tr>
+        <tr><td>D-05</td><td>Keep written premium out of the technical model</td><td><span class="chip warn">Unsigned</span></td></tr>
+        <tr><td>D-06</td><td>Treat missing values as their own level</td><td><span class="chip warn">Unsigned</span></td></tr>
+        <tr><td>D-07</td><td>Model on an exposure offset; use earned premium for loss ratios, A/E and the rate benchmark</td><td><span class="chip ok">Chosen in session</span></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Reproducibility and audit trail</h2>
+    <p>A replication pack rebuilds every number above from the raw parquet files. The SQL is the single source for data preparation. Python and R each run that SQL and then fit the models independently, and a reconciliation script compares the two.</p>
+    <ul>
+      <li>All 32 SQL evidence files are byte-identical between Python and R. One-way results match exactly. Model scores agree to four decimal places, and each model component's predictions agree within 0.05%.</li>
+      <li>The final reconciliation passes 100 of 100 checks. Coefficients agree to five decimal places, after R's GLMs were rewritten as a penalised IRLS solver. One flood level with almost no claims is flagged as a warning, with identical values in both languages.</li>
+      <li>Every run appends a record (input and code hashes, decision switches, results) to a run log. A narrative audit log (A01–A10) and the decision log sit alongside it.</li>
+      <li>The pack is on branch <code>contents/gerard</code> under <code>workings/contents/replication/</code>. Competition data and row-level outputs are excluded from version control.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Needed from the team</h2>
+    <ul>
+      <li><b>Repo visibility.</b> The repo is public and <code>data/</code> holds the competition files. Rule 5b forbids making the data available to non-participants, so the team should confirm it is comfortable with this.</li>
+      <li><b>Motor and buildings owners:</b> apply the exposure fix, and check sum insured and contacts leakage in your lines.</li>
+      <li><b>Alan:</b> agree how this work relates to the existing <code>home_insurance_submission_v001</code> and the <code>workings/home_insurance_model</code> notebook, which haven't been reviewed here.</li>
+      <li><b>Team view:</b> one model for the leaderboard and per-peril models for Week 2, or one approach throughout?</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Next steps</h2>
+    <ol>
+      
+      <li>Get D-01 to D-06 signed off.</li>
+      <li>Build credibility-weighted experience rating on top of the GLM, using only prior years' claims.</li>
+      <li>Add interactions (flood zone × sum insured, accidental damage cover) and try a gradient-boosted challenger.</li>
+      <li>Bootstrap the model comparison, develop 2024 to ultimate, then fit the submission model.</li>
+    </ol>
+  </section>
+
+  <footer>
+    <span>Figures come from the replication pack's evidence files (final run of 20 October 2026, 17:23 BST). Relativities are one-way loss-cost relativities to the all-years average.</span>
+    <span>This page contains aggregate statistics derived from the competition data. Share it only with team members (competition rules, section 5b).</span>
+  </footer>
+</div>

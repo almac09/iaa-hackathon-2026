@@ -1,0 +1,7 @@
+line,fit_year,score_year,fields,d2_rate_as_is,d2_rate_filled,filled_vs_as_is_d2_gain,filled_vs_as_is_boot_mean,filled_vs_as_is_ci_low_95,filled_vs_as_is_ci_high_95,filled_vs_as_is_share_not_better,filled_vs_as_is_n_boot,filled_vs_as_is_significant_95,two_way_mean,two_way_ci_low_95,two_way_ci_high_95,adopt
+buildings,2023,2024,9,0.075199,0.074232,-0.000963,-0.001004,-0.003447,0.001183,0.784,1000,False,-0.000423,-0.003221,0.002375,False
+buildings,2024,2023,9,0.026218,0.026338,0.000117,8e-06,-0.005671,0.004517,0.478,1000,False,-0.000423,-0.003221,0.002375,False
+contents,2023,2024,3,0.063321,0.064658,0.001277,0.001315,-0.000857,0.003453,0.118,1000,False,0.000607,-0.000924,0.002138,False
+contents,2024,2023,3,0.086133,0.086068,-6.4e-05,-6e-06,-0.002379,0.001971,0.483,1000,False,0.000607,-0.000924,0.002138,False
+motor,2023,2024,1,0.035007,0.0344,-0.000574,-0.000573,-0.000827,-0.000314,1.0,1000,False,-0.000359,-0.000622,-9.6e-05,False
+motor,2024,2023,1,0.036101,0.035957,-0.000144,-0.000151,-0.000594,0.000323,0.758,1000,False,-0.000359,-0.000622,-9.6e-05,False

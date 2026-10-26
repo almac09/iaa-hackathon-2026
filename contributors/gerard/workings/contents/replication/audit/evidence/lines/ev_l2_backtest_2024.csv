@@ -1,0 +1,10 @@
+line,model,d2_vs_reported,d2_vs_developed,pred_over_developed,trend_pa
+buildings,exposure only,0.041731,0.037836,0.823003,
+buildings,"XGBoost, no trend",0.110635,0.101977,0.824826,
+buildings,"XGBoost, with trend",0.111444,0.104476,0.874074,0.032749
+contents,exposure only,0.031006,0.030336,0.9162,
+contents,"XGBoost, no trend",0.091979,0.091886,0.933015,
+contents,"XGBoost, with trend",0.092313,0.092701,0.998506,0.03614
+motor,exposure only,0.019196,0.030276,1.06211,
+motor,"XGBoost, no trend",0.071068,0.081807,1.020673,
+motor,"XGBoost, with trend",0.066146,0.081602,1.087457,0.041846

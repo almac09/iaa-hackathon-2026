@@ -1,0 +1,7 @@
+line,test,variant,score_year,d2_baseline,d2_variant,pred_over_developed,d2_gain,boot_mean,ci_low_95,ci_high_95,share_not_better,n_boot,significant_95,passes_two_year_rule,two_year_mean,two_year_ci_low_95,two_year_ci_high_95,passes_significance_rule
+buildings,T2 peril interactions,XGBoost,2023,0.111439,0.11249,0.940403,0.001051,0.00106,-0.000108,0.002122,0.03,1000,False,True,0.00098,0.000249,0.001712,True
+buildings,T2 peril interactions,XGBoost,2024,0.112704,0.113613,0.923335,0.00091,0.000912,-1.3e-05,0.001881,0.028,1000,False,True,0.00098,0.000249,0.001712,True
+buildings,T2 peril interactions,large-claim GLM,2023,0.111439,0.111668,0.94477,0.000229,0.000231,-0.000118,0.000584,0.1,1000,False,True,0.000339,8.7e-05,0.000591,True
+buildings,T2 peril interactions,large-claim GLM,2024,0.112704,0.113153,0.918461,0.000449,0.000445,9.3e-05,0.000816,0.008,1000,True,True,0.000339,8.7e-05,0.000591,True
+buildings,T2 peril interactions,both,2023,0.111439,0.112534,0.941123,0.001095,0.001106,-0.000178,0.00235,0.049,1000,False,True,0.001152,0.0003,0.002005,True
+buildings,T2 peril interactions,both,2024,0.112704,0.113913,0.928348,0.00121,0.001208,7.3e-05,0.002359,0.02,1000,True,True,0.001152,0.0003,0.002005,True

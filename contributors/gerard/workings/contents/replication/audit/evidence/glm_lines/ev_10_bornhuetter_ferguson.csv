@@ -1,0 +1,6 @@
+line,peril,ay,exposure,reported_cost,reported_share,chain_ladder_ultimate,prior_cost_per_exposure,bf_factor,ultimate_used
+buildings,escape_of_water,2024,149917.5,16599208.0,0.944,17583880.0,94.69,,17583880.0
+buildings,storm,2024,149917.5,7340868.0,0.9437,7779082.0,46.83,,7779082.0
+buildings,subsidence,2024,149917.5,7894672.0,0.5943,13283092.0,55.68,1.4289,11280955.0
+motor,bodily_injury,2023,199681.9,47757789.0,0.9344,51112025.0,243.06,,51112025.0
+motor,bodily_injury,2024,199785.6,21002613.0,0.5702,36836461.0,219.73,1.8984,39872286.0

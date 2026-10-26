@@ -1,0 +1,8 @@
+src,column_name,n_missing,n_rows
+addresses,distance_to_river_km,14373,575983
+addresses,elevation_m,0,575983
+addresses,flood_zone,16823,575983
+test,high_value_items,4707,187498
+test,security_level,4677,187498
+train,high_value_items,18088,721617
+train,security_level,18087,721617

@@ -1,0 +1,18 @@
+line,variant,d2_vs_developed,d2_vs_reported,pred_over_developed
+buildings,chosen,0.113775,0.116061,0.934172
+buildings,with CANN (not adopted),0.113779,0.116068,0.934315
+buildings,no history,0.112204,0.114524,0.932593
+buildings,no trend,0.113096,0.116797,0.872568
+buildings,no split,0.111669,0.114869,0.911784
+buildings,no A17 changes,0.113177,0.115427,0.934182
+contents,chosen,0.096935,0.096409,1.038727
+contents,with CANN (not adopted),0.096974,0.096411,1.041993
+contents,no history,0.096419,0.095862,1.035793
+contents,no trend,0.096139,0.096264,0.947211
+contents,no A17 changes,0.094947,0.09442,1.037841
+motor,chosen,0.083183,0.081085,1.005009
+motor,with CANN (not adopted),0.084094,0.080951,1.01919
+motor,no history,0.079074,0.077655,0.999255
+motor,no trend,0.082291,0.084229,0.9452
+motor,no split,0.079753,0.07419,1.06568
+motor,no A17 changes,0.080883,0.080565,0.97924
