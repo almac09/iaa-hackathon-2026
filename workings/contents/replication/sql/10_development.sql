@@ -48,6 +48,14 @@ SELECT line, peril, k, d_cnt, n_cnt, d_cost, n_cost,
 FROM risk
 WHERE d_cnt > 0;
 
+-- Week 2 (A30): optionally replace the pattern with one estimated on another market, which the runner registers as
+-- external_dev_pattern. Off by default, so this market's own pattern is used.
+CREATE TABLE IF NOT EXISTS external_dev_pattern AS SELECT * FROM dev_pattern LIMIT 0;
+CREATE OR REPLACE TABLE dev_pattern AS
+SELECT * FROM dev_pattern WHERE NOT getvariable('use_external_dev_pattern')
+UNION ALL BY NAME
+SELECT * FROM external_dev_pattern WHERE getvariable('use_external_dev_pattern');
+
 -- 1 / F(age) for every distinct (line, peril, age) that has a reported claim.
 CREATE OR REPLACE TABLE dev_factor_by_age AS
 SELECT a.line, a.peril, a.age,

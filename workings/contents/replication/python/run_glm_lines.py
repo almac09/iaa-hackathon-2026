@@ -139,6 +139,7 @@ class Line:
         self.p = cfg["model"]["tweedie_power"]
         self.expected = {}  # window -> E columns by row_id (sql/13)
         self.month_days, self.claim_months, self.weights = None, None, {}  # seasonal exposure (D-22), if used
+        self.windows = WINDOWS  # fitting years and score year per window; another market sets its own (A30)
 
     def use_window(self, window: str) -> None:
         """For a line with seasonal exposure (D-22): set every row's exposure to its days weighted by the month's
@@ -146,7 +147,7 @@ class Line:
         The fitting years keep their total exposure."""
         if self.month_days is None:
             return
-        years = WINDOWS[window][0]
+        years = self.windows[window][0]
         fit = (self.df.src.eq("train") & self.df.yr.isin(years)).to_numpy()
         days = self.month_days[fit].sum(0)
         n = (self.claim_months[self.claim_months.yr.isin(years)].groupby("m").n.sum()
@@ -186,7 +187,7 @@ class Line:
     def tune_trees(self, threshold) -> tuple[int, dict]:
         """Early-stopped tree count for the XGBoost small-claim model on the tuning split."""
         xc, sp = self.cfg["xgboost"], self.spec
-        years, val_year = WINDOWS["tune"]
+        years, val_year = self.windows["tune"]
         d, v = self.rows(years), self.rows([val_year])
         y, yv = self.targets(d, threshold)[0], self.targets(v, threshold)[0]
         lm = self.cfg["lines"]["models"][self.name]
@@ -245,7 +246,7 @@ class Line:
 
     def predict(self, model: LineModel, window: str, ks: dict, d: pd.DataFrame, year=None) -> np.ndarray:
         """Base prediction times the credibility factor, rebalanced so the fitted rows keep their total."""
-        fit = self.rows(WINDOWS[window][0])
+        fit = self.rows(self.windows[window][0])
         base_fit = model.predict(fit)
         rebalance = base_fit.sum() / (base_fit * self.credibility(fit, window, ks)).sum()
         return model.predict(d, year) * self.credibility(d, window, ks) * rebalance
@@ -259,7 +260,7 @@ class Line:
 
 def expected_history(con, lines: dict, window: str, sql: str) -> None:
     """E for every row of every line from the window's frequency models (sql/13), stored on each Line."""
-    years = WINDOWS[window][0]
+    years = next(iter(lines.values())).windows[window][0]
     mu = pd.concat([line.freq_pred(years) for line in lines.values()])
     con.register("freq_pred_df", mu)
     con.execute("CREATE OR REPLACE TABLE freq_pred AS SELECT * FROM freq_pred_df")
@@ -558,9 +559,11 @@ def residual_correlation(results: dict, p: float) -> pd.DataFrame:
                           "claim_indicator_corr": (j.y_b > 0).astype(float).corr((j.y_c > 0).astype(float))}])
 
 
-def prepare(con, cfg: dict, rec: dict, out_dir: Path | None = None) -> tuple[dict, list[Path]]:
+def prepare(con, cfg: dict, rec: dict, out_dir: Path | None = None, windows: dict | None = None
+            ) -> tuple[dict, list[Path]]:
     """Run the SQL and build every Line with its claim history and expected claims for each window. Writes the SQL
-    evidence tables when `out_dir` is given. Shared with python/gap_tests.py so both use the same data."""
+    evidence tables when `out_dir` is given. Shared with python/gap_tests.py so both use the same data. `windows`
+    replaces the developed market's windows, for a market with other years (A30)."""
     gl = cfg["glm_lines"]
     rec["sql_sha256"] = common.run_sql_files(con, cfg)
     for rel in cfg["lines"]["sql_files"] + gl["sql_files"]:
@@ -592,6 +595,7 @@ def prepare(con, cfg: dict, rec: dict, out_dir: Path | None = None) -> tuple[dic
             df = df.merge(con.execute(f"SELECT row_id, {extra} FROM contents_model").df(), on="row_id")
         claims = con.execute(f"SELECT row_id, net_cost, dev_factor FROM line_claims_dev WHERE line = '{name}'").df()
         lines[name] = Line(name, df, claims, cfg)
+        lines[name].windows = windows or WINDOWS
         if gl["models"][name].get("seasonal_exposure"):
             md = con.execute(f"SELECT row_id, {MONTH_DAYS} FROM line_rows WHERE line = '{name}'").df()
             md = md.set_index("row_id").reindex(df.row_id.astype(md.row_id.dtype).to_numpy())
@@ -601,7 +605,7 @@ def prepare(con, cfg: dict, rec: dict, out_dir: Path | None = None) -> tuple[dic
             line.month_days = md.to_numpy(dtype=float)
             line.claim_months = con.execute(f"""SELECT yr, month(loss_date) AS m, count(*) AS n FROM line_claims
                                                 WHERE line = '{name}' GROUP BY ALL""").df()
-    for window in WINDOWS:
+    for window in (windows or WINDOWS):
         expected_history(con, lines, window, expected_sql)
     return lines, outputs
 

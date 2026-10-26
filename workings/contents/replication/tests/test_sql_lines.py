@@ -29,7 +29,7 @@ def cfg():
     return common.load_config()
 
 
-def build(cfg, extra_motor=(), extra_claims=()):
+def build(cfg, extra_motor=(), extra_claims=(), external_pattern=None):
     y = lambda yr: (date(yr, 1, 1), date(yr, 12, 31))  # noqa: E731
     buildings = pd.DataFrame([
         row("B1", "PB1", *y(2024), sum_insured=1_061_000.0, construction_type="BRICK "),
@@ -67,6 +67,9 @@ def build(cfg, extra_motor=(), extra_claims=()):
         con.register(f"{name}_df", df)
         con.execute(f"CREATE TABLE {name} AS SELECT * FROM {name}_df")
     common.set_sql_variables(con, cfg)
+    if external_pattern is not None:  # another market's reporting pattern (A30)
+        con.register("external_dev_pattern", external_pattern)
+        con.execute("SET VARIABLE use_external_dev_pattern = true")
     for s in SQL:
         con.execute(s)
     return con
@@ -145,3 +148,12 @@ def test_bornhuetter_ferguson_for_an_immature_year_with_a_mature_prior(cfg):
     off["decisions"]["D17_bf_slow_perils"]["apply"] = False
     c = build(off, extra_row, extra_claim).execute("SELECT * FROM line_claims_dev").df().set_index("claim_id")
     assert c.loc["C3", "dev_factor"] == pytest.approx(1 / 0.7)
+
+
+def test_an_external_reporting_pattern_replaces_the_markets_own(cfg):
+    own = build(cfg).execute("SELECT * FROM dev_pattern").df()
+    # The same pattern supplied from outside gives the same factors; an empty one (everything reported) gives none.
+    c = build(cfg, external_pattern=own).execute("SELECT * FROM line_claims_dev").df().set_index("claim_id")
+    assert c.loc["C3", "dev_factor"] == pytest.approx(4.0)
+    c = build(cfg, external_pattern=own.head(0)).execute("SELECT * FROM line_claims_dev").df().set_index("claim_id")
+    assert c.loc["C3", "dev_factor"] == pytest.approx(1.0)

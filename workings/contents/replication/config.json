@@ -37,7 +37,7 @@
     "hist_large_claim": 5000,
     "bf_max_reported_share": 0.75,
     "bf_mature_share": 0.9,
-    "pattern_decay": 1.0
+    "pattern_decay": 1.0, "use_external_dev_pattern": false
   },
 
   "decisions": {
