@@ -1,0 +1,195 @@
+{
+ "weights": "tabpfn-v3.5-20260909.safetensors",
+ "weights_sha256": "ece4d67eadfea42eb0e610df5189bea60cb7f31073d81e9c7a019b76eacf0be3",
+ "tabpfn": "9.2.0",
+ "torch": "2.14.1",
+ "device": "mps",
+ "lines": {
+  "buildings": {
+   "2032": {
+    "n_estimators": 8,
+    "use_autocast": true,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000,
+    "seconds": 421.7,
+    "mean_p": 0.0355105958878994,
+    "mean_p0": 0.0351579331039254
+   },
+   "2033": {
+    "n_estimators": 8,
+    "use_autocast": true,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000,
+    "seconds": 457.6,
+    "mean_p": 0.03618243709206581,
+    "mean_p0": 0.03657602891823665
+   },
+   "2034": {
+    "n_estimators": 8,
+    "use_autocast": true,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000,
+    "seconds": 474.1,
+    "mean_p": 0.03260713815689087,
+    "mean_p0": 0.0336351292500271
+   },
+   "2035": {
+    "n_estimators": 8,
+    "use_autocast": true,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000,
+    "seconds": 482.6,
+    "mean_p": 0.0395224429666996,
+    "mean_p0": 0.039112074568645315
+   },
+   "2036": {
+    "n_estimators": 8,
+    "use_autocast": true,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000,
+    "seconds": 488.0,
+    "mean_p": 0.035627853125333786,
+    "mean_p0": 0.03573618783771758
+   }
+  },
+  "contents": {
+   "2032": {
+    "n_estimators": 8,
+    "use_autocast": true,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000,
+    "seconds": 582.1,
+    "mean_p": 0.03408965840935707,
+    "mean_p0": 0.03358717521802955
+   },
+   "2033": {
+    "n_estimators": 8,
+    "use_autocast": true,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000,
+    "seconds": 585.3,
+    "mean_p": 0.029542895033955574,
+    "mean_p0": 0.03071656128433994
+   },
+   "2034": {
+    "n_estimators": 8,
+    "use_autocast": true,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000,
+    "seconds": 587.2,
+    "mean_p": 0.03328832611441612,
+    "mean_p0": 0.033049905980784604
+   },
+   "2035": {
+    "n_estimators": 8,
+    "use_autocast": true,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000,
+    "seconds": 586.6,
+    "mean_p": 0.03061790019273758,
+    "mean_p0": 0.03095960481048992
+   },
+   "2036": {
+    "n_estimators": 8,
+    "use_autocast": true,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000,
+    "seconds": 589.3,
+    "mean_p": 0.030445659533143044,
+    "mean_p0": 0.03201952183605355
+   }
+  },
+  "motor": {
+   "2032": {
+    "n_estimators": 8,
+    "use_autocast": true,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000,
+    "seconds": 1014.1,
+    "mean_p": 0.09425646811723709,
+    "mean_p0": 0.0962694030023587
+   },
+   "2033": {
+    "n_estimators": 8,
+    "use_autocast": true,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000,
+    "seconds": 1014.4,
+    "mean_p": 0.09492295235395432,
+    "mean_p0": 0.09563685565230717
+   },
+   "2034": {
+    "n_estimators": 8,
+    "use_autocast": true,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000,
+    "seconds": 1002.1,
+    "mean_p": 0.09222656488418579,
+    "mean_p0": 0.09291591887334151
+   },
+   "2035": {
+    "n_estimators": 8,
+    "use_autocast": true,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000,
+    "seconds": 1008.2,
+    "mean_p": 0.09701550006866455,
+    "mean_p0": 0.09609284482081262
+   },
+   "2036": {
+    "n_estimators": 8,
+    "use_autocast": true,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000,
+    "seconds": 995.4,
+    "mean_p": 0.09421040862798691,
+    "mean_p0": 0.09532516713215222
+   }
+  }
+ }
+}

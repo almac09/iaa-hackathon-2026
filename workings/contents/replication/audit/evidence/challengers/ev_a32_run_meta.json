@@ -1,0 +1,199 @@
+{
+ "features": {
+  "buildings": {
+   "numeric": [
+    "sum_insured",
+    "days_unoccupied",
+    "voluntary_excess",
+    "missed_payments_12m",
+    "renewal_count",
+    "days_quote_to_inception",
+    "discount_applied",
+    "household_size",
+    "prior_claims_5y",
+    "licence_points",
+    "years_at_address",
+    "customer_since_year",
+    "flood_zone",
+    "distance_to_river_km",
+    "elevation_m",
+    "year_built",
+    "bedrooms",
+    "hail_days",
+    "wind_exposure_index",
+    "freezing_days",
+    "dry_summer_index",
+    "wildfire_index",
+    "rainfall_mm",
+    "mean_temperature_c",
+    "x_clay_dry",
+    "x_fz3_rain"
+   ],
+   "categorical": [
+    "construction_type",
+    "occupancy",
+    "smoke_alarms",
+    "accidental_damage_cover",
+    "mortgage",
+    "channel",
+    "payment_method",
+    "new_business",
+    "marital_status",
+    "email_domain",
+    "marketing_consent",
+    "document_preference",
+    "previous_insurer",
+    "campaign_code",
+    "branch_id",
+    "marketing_segment",
+    "urban_density",
+    "soil_type",
+    "property_type",
+    "roof_type",
+    "basement",
+    "trees_within_5m",
+    "listed_building",
+    "energy_rating",
+    "solar_panels",
+    "policyholder_age_band"
+   ]
+  },
+  "contents": {
+   "numeric": [
+    "elevation_m",
+    "distance_to_river_km",
+    "log_si"
+   ],
+   "categorical": [
+    "f_flood_zone",
+    "f_tenure",
+    "f_segment",
+    "f_prior_claims",
+    "f_missed_pay",
+    "f_vol_xs",
+    "f_security",
+    "f_hvi",
+    "f_ad_cover",
+    "f_bike",
+    "f_wfh",
+    "f_lodgers",
+    "f_urban",
+    "f_prop_type",
+    "policyholder_age_band"
+   ]
+  },
+  "motor": {
+   "numeric": [
+    "years_licensed",
+    "ncb_years",
+    "vehicle_value_group",
+    "vehicle_age",
+    "engine_size_cc",
+    "seats",
+    "voluntary_excess",
+    "missed_payments_12m",
+    "renewal_count",
+    "days_quote_to_inception",
+    "discount_applied",
+    "household_size",
+    "prior_claims_5y",
+    "licence_points",
+    "years_at_address",
+    "customer_since_year",
+    "hail_days",
+    "wind_exposure_index",
+    "freezing_days",
+    "dry_summer_index",
+    "wildfire_index",
+    "rainfall_mm",
+    "mean_temperature_c"
+   ],
+   "categorical": [
+    "make_model",
+    "body_type",
+    "transmission",
+    "vehicle_colour",
+    "fuel_type",
+    "driver_assist",
+    "cover_type",
+    "overnight_parking",
+    "vehicle_use",
+    "named_young_driver",
+    "channel",
+    "payment_method",
+    "new_business",
+    "marital_status",
+    "email_domain",
+    "marketing_consent",
+    "document_preference",
+    "previous_insurer",
+    "campaign_code",
+    "branch_id",
+    "marketing_segment",
+    "urban_density",
+    "driver_age_band"
+   ]
+  }
+ },
+ "rows": {
+  "buildings": {
+   "src": 339593,
+   "y23": 184132,
+   "y24": 100000,
+   "draw_rows": [
+    12580,
+    12580,
+    12580,
+    12580,
+    12580
+   ],
+   "draw_pool_customers": 94013
+  },
+  "contents": {
+   "src": 346480,
+   "y23": 187646,
+   "y24": 100000,
+   "draw_rows": [
+    15834,
+    15834,
+    15834,
+    15834,
+    15834
+   ],
+   "draw_pool_customers": 94867
+  },
+  "motor": {
+   "src": 470693,
+   "y23": 254577,
+   "y24": 100000,
+   "draw_rows": [
+    21680,
+    21681,
+    21680,
+    21680,
+    21680
+   ],
+   "draw_pool_customers": 153682
+  }
+ },
+ "c0": {
+  "buildings": {
+   "threshold": 50000.0,
+   "trees": 193,
+   "slope": 0.011331615275700806,
+   "centre": 2021.5156362230136
+  },
+  "contents": {
+   "threshold": null,
+   "trees": null,
+   "slope": 0.0041267070285171525,
+   "centre": 2021.515586821094
+  },
+  "motor": {
+   "threshold": 50000.0,
+   "trees": null,
+   "slope": 0.06920034205531893,
+   "centre": 2021.5150983522954
+  }
+ }
+}

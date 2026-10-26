@@ -1,0 +1,129 @@
+{
+ "weights": "tabpfn-v3.5-20260909.safetensors",
+ "weights_sha256": "ece4d67eadfea42eb0e610df5189bea60cb7f31073d81e9c7a019b76eacf0be3",
+ "tabpfn": "9.2.0",
+ "torch": "2.14.1",
+ "device": "mps",
+ "lines": {
+  "buildings": {
+   "mps_float32": {
+    "n_estimators": 8,
+    "use_autocast": false,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000
+   },
+   "mps_auto": {
+    "n_estimators": 8,
+    "use_autocast": true,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000
+   },
+   "cpu_float32": {
+    "n_estimators": 8,
+    "use_autocast": false,
+    "devices": [
+     "cpu"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000
+   },
+   "cpu_auto": {
+    "n_estimators": 8,
+    "use_autocast": false,
+    "devices": [
+     "cpu"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000
+   },
+   "max_rel_diff_float32_mps_vs_cpu": 5.330967269401299e-06,
+   "max_rel_diff_default_mps_vs_cpu_float32": 0.00532513577491045
+  },
+  "contents": {
+   "mps_float32": {
+    "n_estimators": 8,
+    "use_autocast": false,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000
+   },
+   "mps_auto": {
+    "n_estimators": 8,
+    "use_autocast": true,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000
+   },
+   "cpu_float32": {
+    "n_estimators": 8,
+    "use_autocast": false,
+    "devices": [
+     "cpu"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000
+   },
+   "cpu_auto": {
+    "n_estimators": 8,
+    "use_autocast": false,
+    "devices": [
+     "cpu"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000
+   },
+   "max_rel_diff_float32_mps_vs_cpu": 3.7178342608967796e-06,
+   "max_rel_diff_default_mps_vs_cpu_float32": 0.005433844868093729
+  },
+  "motor": {
+   "mps_float32": {
+    "n_estimators": 8,
+    "use_autocast": false,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000
+   },
+   "mps_auto": {
+    "n_estimators": 8,
+    "use_autocast": true,
+    "devices": [
+     "mps"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000
+   },
+   "cpu_float32": {
+    "n_estimators": 8,
+    "use_autocast": false,
+    "devices": [
+     "cpu"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000
+   },
+   "cpu_auto": {
+    "n_estimators": 8,
+    "use_autocast": false,
+    "devices": [
+     "cpu"
+    ],
+    "ignore_pretraining_limits": false,
+    "max_number_of_samples": 1000000
+   },
+   "max_rel_diff_float32_mps_vs_cpu": 5.342827080312418e-06,
+   "max_rel_diff_default_mps_vs_cpu_float32": 0.006221639458090067
+  }
+ }
+}

@@ -1,11 +1,11 @@
 # Home and motor claims cost model: technical documentation
 
-IAA AI-Assisted Hackathon 2026, Part 1. This documents the model behind `work/submissions/submission_final_candidate_20261023.csv`, every data issue we found and how it was resolved, and how the model was validated. It reflects the pack as of audit entry A31 (26 October 2026); section 11 covers Week 2, the emerging market. A visual summary of the whole project, with charts, is in [`FINAL_REPORT.html`](FINAL_REPORT.html).
+IAA AI-Assisted Hackathon 2026, Part 1. This documents the model behind `work/submissions/submission_final_candidate_20261023.csv`, every data issue we found and how it was resolved, and how the model was validated. It reflects the pack as of audit entry A32 (26 October 2026); section 11 covers Week 2, the emerging market. A visual summary of the whole project, with charts, is in [`FINAL_REPORT.html`](FINAL_REPORT.html).
 
 - **Owner:** Gerard Murphy. **AI assistance:** Claude Code (Claude Opus 5.5).
 - **Code:** `workings/contents/replication`, branch `contents/gerard-week2-emerging` (Part 1 final review on `contents/gerard-final-review`). Every figure here comes from a logged run (`audit/run_log.jsonl`) and an evidence file under `audit/evidence/`.
-- **Decisions** are numbered D-01 to D-39 and are recorded in `audit/DECISIONS.md`. Where a decision has a switch, it is in `config.json`; the Week 2 decisions (D-31 to D-39) have none and are set in `python/emerging.py` or by file. None is formally signed off yet.
-- **Audit entries** A01 to A31 are in `audit/AUDIT_LOG.md`. This document summarises them; the log has the full detail.
+- **Decisions** are numbered D-01 to D-40 and are recorded in `audit/DECISIONS.md`. Where a decision has a switch, it is in `config.json`; the Week 2 decisions (D-31 to D-40) have none and are set in `python/emerging.py` or by file. None is formally signed off yet.
+- **Audit entries** A01 to A32 are in `audit/AUDIT_LOG.md`. This document summarises them; the log has the full detail.
 
 ## 1. Summary
 
@@ -511,6 +511,7 @@ The GLMs of the final model were put through formal hypothesis tests, at the own
 | D-37 | Week 2: new-business loading in a scenario file only (reopened as motor-specific, A31) | **Owner's decision** (A30) |
 | D-38 | Week 2: C0 stays the ranking model; no A31 variation adopted | Awaiting sign-off (A31) |
 | D-39 | Week 2: levels by segment (candidate file, probes, final selection) | **Owner's decision** (A31) |
+| D-40 | Week 2: no GPU or transfer challenger adopted | Awaiting sign-off (A32) |
 
 D-08 records the XGBoost feature set used in A13 only. No decision is formally signed off.
 
@@ -677,4 +678,13 @@ Each line's portable model, projected to 2025 with the developed trend, times it
 **The gap to the leader (0.017)** is unlikely to be noise alone or levels alone. Most of it is probably risk ranking that the 2023-24 data cannot reveal: the 2025 book, 77% new business, behaves differently from 2024.
 
 **Office premium.** `python/office_premium.py` builds the annual office premium from the risk premium and the expense table (cat reinsurance on property lines, fixed expense, then expense, commission, tax and profit as shares of premium). For the 20 reference policies, C0's office premium is a median 4.5, 2.8 and 2.5 times the written premium (buildings, contents, motor). The emerging table lacks a comparison-site commission; the developed 10% stands in, an assumption for the owner.
+
+### 11.6 Advanced GPU models (A32)
+
+The owner asked whether advanced models using the laptop's Apple GPU could challenge C0. A sourced research sweep found no credible stand-alone challenger. The two best additions to C0 were tested on a developed-market backtest under a protocol committed before any score: fit on 2021-22, adapt on samples of 2023 the size of the emerging book, score 2024 once.
+
+- A **leaf refit** of a developed-market Tweedie LightGBM is worse than C0 by 0.0095 (95% 0.006 to 0.015).
+- **TabPFN-3.5**, the leading tabular foundation model, run locally on the Apple GPU with networking blocked, is level with C0: -0.0005 (95% -0.003 to +0.002). It ranks claim occurrence better than C0, but the rows it flags as likelier to claim have smaller claims, so the gain does not reach cost.
+
+Neither passes; C0 stays (D-40). The limit is the information in the data, not compute. TabPFN-3.5's weights are licensed for non-commercial use only.
 

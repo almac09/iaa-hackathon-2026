@@ -856,3 +856,32 @@
 - **Not adopted, and why:** a post hoc blend of the joint XGBoost with C0 for motor alone is positive on both halves (+0.0018 on all of 2024, 95% +0.0003 to +0.0036), but it was picked after both halves were seen and is below the 0.003 bar. Contents on seasonal exposure scores worse (-0.0002).
 - **Decisions:** D-38 (C0 stays; no variation adopted) and D-39 (levels by segment; the owner chooses the file, any probes and the final selection). D-37 is reopened as a motor-specific question.
 - **Archive:** the exploration scripts, the shared harness, the rule and the confirmation scripts are in `audit/exploratory/a31/`, with local paths redacted and a hash manifest. They need the row-level cache, which `build_cache.py` rebuilds; the cache and every row-level output were deleted after use.
+
+### A32 — GPU and transfer challengers: a developed-market backtest (Stage 1)
+- **When / who:** 2026-10-26, Claude, at the owner's instruction: "Look for advanced GPU models that may challenge this", then "Test the leaf refit and TabPFN-3.5 on the developed backtest first. I'll do the Prior Labs login when you need it; confirm package and weight sizes before any download." Branch `contents/gerard-week2-emerging`.
+- **Research** (five AI research angles, a synthesis and a fact-check, every claim sourced): no GPU model was a credible stand-alone challenger. Shortlisted as additions to C0, each worth +0.000 to +0.004 at best: a neural correction on C0 (dropped, because Week 1's GPU CANN on the developed market gained at most +0.0007, A20), a leaf refit of a developed-market LightGBM (CPU), and TabPFN-3.5 run locally on the Apple GPU. Gradient boosting has no Apple GPU support; the hosted TabPFN variants were excluded because data would leave the machine.
+- **Set-up:**
+  - downloads approved by the owner after sizing: lightgbm 4.7.0 and tabpfn 9.2.0 with 35 dependencies (about 75 MB, pypi.org), into a separate environment that reuses the pack's PyTorch 2.14.1 (the pack's own environment was diffed before and after: unchanged);
+  - the TabPFN-3.5 weights (`tabpfn-v3.5-20260909.safetensors`, 876.0 MB, sha256 ece4d67e…, huggingface.co/Prior-Labs/tabpfn_3_5), fetched by the owner after the owner's own Prior Labs login and licence acceptance (the weights are licensed for non-commercial use; competitions are allowed, client work is not).
+  - Every TabPFN run was made inside a macOS sandbox that denies all networking, from the local weights with Hugging Face offline mode on.
+- **Protocol:** `audit/exploratory/a32/PROTOCOL.md`, committed before any score (d4c4540). An independent code review then found three material faults before any score, and the protocol records ten dated pre-score amendments, committed with the corrected code (21a7f3c):
+  - sampled customers overlapped the scored rows;
+  - the LightGBM offset had no trend;
+  - TabPFN could have started a download.
+- **Design:** developed 2021-22 as the source; five customer samples of developed 2023, each the size of the emerging line (12,580, 15,834 and 21,680 rows), taken from customers with no scored row; a fixed 100,000-row sample of developed 2024 per line scored once. The metric is pooled Tweedie D2 (p = 1.5), each line level-matched, as the gain over C0 refitted on 2021-22. The gate: Holm at one-sided 0.025 over m = 2, a gain of at least +0.003, positive without the ten largest claims, and no loss on new business or the 17-24 band.
+- **Engineering check:** TabPFN on the Apple GPU against the CPU at float32 differed by at most 0.0005% in probability (tolerance 0.1%); at its default precision (autocast on the GPU, the arm's setting) by up to 0.62%. Run time 7 to 17 minutes per sample on the M3 Max GPU.
+- **Result** (`ev_a32_stage1.csv`, `ev_a32_arms.csv`; C0 0.1139 on the scored rows):
+
+  | Arm | Gain over C0 | 95% interval | Gate |
+  |---|---|---|---|
+  | A2, leaf refit of a Tweedie LightGBM | -0.0095 | -0.0149 to -0.0055 | fails |
+  | A3, TabPFN-3.5 occurrence stacker (w = 0.5) | -0.0005 | -0.0026 to +0.0020 | fails |
+
+  A3 by line: buildings -0.0030, contents -0.0012, motor +0.0024; new business -0.0060; the five samples range from -0.0028 to +0.0018. Controls: A3 at w = 0.25 is +0.0004, at w = 1.0 -0.0063; the LightGBM before refitting is -0.0113.
+- **Verification** (two independent agents): every figure reproduces exactly from the raw predictions, and the verdict is robust. Post hoc diagnostics, which cannot change the verdict:
+  - the pre-registered LightGBM overfitted (regularisation on the wrong scale for a Tweedie hessian); rebuilt like C0's buildings model it still trails C0 by 0.003, and on a sound source the leaf refit adds about nothing;
+  - TabPFN genuinely ranks claim occurrence better than C0 (AUC 0.659, 0.673 and 0.703 against 0.654, 0.642 and 0.690). But the rows it flags as likelier to claim have smaller claims (severity falls about threefold across its range), so little of that reaches cost. With hindsight on 2024 the best weight is about 0.2, worth +0.0005.
+- **Deviations:** the leaf refit's interim score was computed before the TabPFN arm ran (its settings were frozen, so it could not influence A3); the rule keeping sampled customers out of the scored rows was applied within each line, not across lines (the models are per line, so there is no leak path).
+- **Caveats:** C0's structure was chosen in Week 1 partly on developed 2024, which favours C0; the pooled baseline is one rate across the lines, as on the leaderboard, which inflates every gain by about 6% against per-line baselines; a severity-aware TabPFN arm (a cost regressor, or frequency x severity) is untested and would need its own pre-registration.
+- **Decision:** D-40. Stage 2 (the emerging transfer check) was not run, as neither arm passed.
+- **Archive:** the protocol, the download script, the verification scripts (paths redacted) and a hash manifest in `audit/exploratory/a32/`; the run metadata in `audit/evidence/challengers/`. The row-level frames were deleted after use.
