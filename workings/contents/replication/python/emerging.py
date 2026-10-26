@@ -305,6 +305,7 @@ def e1(cfg: dict, rec: dict, ctx: Context) -> dict:
             mu = ln.predict(m, "backtest", no_hist, v, year=bt_year)
             cost.append(transfer_rows(name, v.y_full.to_numpy(), mu, v.exposure_plain.to_numpy(), bt_year, label)
                         | {"market": "developed", "trees": tr[0] if tr else None})
+            ln.use_window("final")  # leave the line as the context fitted it, for the later steps
         for year in (2023, 2024):
             v = ctx.emg[name].rows([year])
             mu = ctx.base(name, v, year)
@@ -559,8 +560,10 @@ def e5(cfg: dict, rec: dict, ctx: Context) -> dict:
         for r in imp:
             if r["line"] == name:
                 r.update({"two_way_mean": mean, "two_way_ci_low_95": lo, "two_way_ci_high_95": hi, "adopt": adopt})
-        # New business: developed in sample (2021-24 and by window), emerging 2023-24 under the level reset.
+        # New business: developed in sample (2021-24 and by window), emerging 2023-24 under the level reset. The
+        # developed line goes back to the final window's exposure, which the model was fitted on.
         dl = ctx.dev[name]
+        dl.use_window("final")
         rows = {}
         for label, years in (("developed 2021-24", [2021, 2022, 2023, 2024]), ("developed 2021-22", [2021, 2022]),
                              ("developed 2023-24", [2023, 2024])):
