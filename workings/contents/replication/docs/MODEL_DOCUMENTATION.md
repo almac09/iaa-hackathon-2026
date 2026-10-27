@@ -184,7 +184,8 @@ Code: `python/run_glm_lines.py`, `python/glm_lines.py`, `python/xgb_models.py`, 
   - 53 raw features (policy, customer, address and that year's weather) plus two peril interactions (A28, D-29): clay soil × dry-summer index (subsidence) and flood zone 3 or above, or missing, × rainfall (flood). The large-claim GLM takes the same two as linear terms. Together they add +0.0011 / +0.0012 (two-year mean +0.00115, significant).
   - The year trend sits in the offset, fitted jointly with the trees by backfitting, because trees cannot extrapolate a year feature.
 - **Large claims** (cost above 50k):
-  - Tweedie GLM on spline curves for flood zone, sum insured, elevation, year built and distance to river, plus soil type and construction type. L2 penalty 10⁻³.
+  - Tweedie GLM on spline curves for sum insured, elevation, year built and distance to river; bands for flood zone; soil type and construction type as categories. L2 penalty 10⁻³.
+  - Flood zone is banded because a curve's knots sit at quantiles of the fitting rows, and seven in ten rows with a known zone are zone 1, so the knots coincide. The bands are zone 1, zone 2, zones 3 to 5 together, and missing. A separate category for each zone gained +0.00049 / +0.00016, not significant (final review A27, a side test to item C9, before the A28 interactions).
   - Its level is scaled to the mean of a generalised Pareto distribution fitted to the 950 reported excesses (shape 0.33, adjustment ×1.025). It takes the small-claim trend.
 - **Thresholds:** 50k was chosen on 2023 from 25k, 50k and 100k.
 - **Tried and rejected:** a separate model for weather perils (worse on both test years). The model already uses each year's weather.

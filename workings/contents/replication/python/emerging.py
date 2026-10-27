@@ -9,9 +9,9 @@ mapped to the developed ones. Week 1's cleaning rules (exposure from dates, sum-
 excluded, net cost) then apply unchanged.
 
   E1  Transfer test. Each line's model is refitted on the developed market (2021-24) with only the factors both
-      markets share (the portable model, PORTABLE_DROP) and predicts the emerging 2023 and 2024 rows. Actual
-      against expected by line, year and factor, and D2 against a constant-rate baseline, show what carries over
-      as it is. The cost of portability is measured on the developed 2024 backtest.
+      markets share, less occupation (the portable model, PORTABLE_DROP), and predicts the emerging 2023 and 2024
+      rows. Actual against expected by line, year and factor, and D2 against a constant-rate baseline, show what
+      carries over as it is. The cost of portability is measured on the developed 2024 backtest.
   E2  Adaptation, fitted on emerging 2023 and scored on emerging 2024 (the one out-of-time year), line by line:
         C0   the portable developed model as it is;
         C1   C0 with the line's level reset to the deviance-optimal scale on 2023;
@@ -131,8 +131,13 @@ CONFORM = {
         "customers": "*, NULL::VARCHAR AS credit_band, NULL::DATE AS date_of_birth",
     },
 }
-# Factors the portable model cannot use: absent from the emerging market, or whose levels do not carry over (under
-# 90% of emerging rows have a level the developed market has: region 0%, occupation 56%).
+# Factors the portable model leaves out: absent from the emerging market, or whose levels do not carry over (under
+# 90% of emerging rows have a level the developed market has: region 0%). Occupation passes that test once cleaned
+# (56% as raw labels, counting missing as a level; 100% after trimming, removing a "Self-employed" prefix and
+# ignoring case: the A30 data audit and A31) but stays out for want of evidence that it adds value over the other
+# factors: no developed GLM uses it, the buildings trees lose nothing when it is dropped with the other factors
+# (A30 E1), and added alone to C0 for contents and motor (A31 v5) it lost on the held-back half of 2024 (D-38).
+# Using it would need the emerging labels mapped onto the developed spelling.
 PORTABLE_DROP = {"region", "credit_band", "occupation", "policyholder_age", "driver_age", "annual_mileage",
                  "telematics_score", "telematics_opt_in", "f_region", "f_credit", "f_age_band"}
 BAND = {"buildings": "policyholder_age_band", "contents": "policyholder_age_band", "motor": "driver_age_band"}
