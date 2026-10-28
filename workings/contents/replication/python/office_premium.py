@@ -67,7 +67,7 @@ def build_up(risk: np.ndarray, exposure: np.ndarray, line: np.ndarray, channel: 
 def price_reference(submission: Path, data_dir: Path = Path("data/emerging")) -> pd.DataFrame:
     """The market's reference policies priced from a submission file's risk premiums."""
     ref = pd.read_parquet(data_dir / "reference_policies.parquet")
-    sub = pd.read_csv(submission).set_index("row_id").prediction
+    sub = pd.read_csv(submission, float_precision="round_trip").set_index("row_id").prediction  # exact, as written
     missing = set(ref.row_id) - set(sub.index)
     if missing:
         raise ValueError(f"{len(missing)} reference policies are not in {submission.name}")

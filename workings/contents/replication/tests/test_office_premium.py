@@ -45,3 +45,19 @@ def test_bad_inputs_are_refused():
         op.build_up([1.0], [0.0], np.array(["motor"]), np.array(["direct"]), r)
     with pytest.raises(ValueError, match="channel"):
         op.build_up([1.0], [1.0], np.array(["motor"]), np.array(["telephone"]), r)
+
+
+def test_price_reference_reads_the_submission_exactly(tmp_path):
+    # Find a value pandas' default CSV parser reads one unit in the last place away, then check the risk premium
+    # comes back exactly as written.
+    rng = np.random.default_rng(7)
+    values = rng.gamma(1.5, 300.0, 2000)
+    probe = tmp_path / "probe.csv"
+    pd.DataFrame({"prediction": values}).to_csv(probe, index=False)
+    x = values[pd.read_csv(probe).prediction.to_numpy() != values][0]
+    pd.DataFrame({"row_id": ["B00000001"], "prediction": [x]}).to_csv(tmp_path / "sub.csv", index=False)
+    pd.DataFrame({"row_id": ["B00000001"], "line": ["buildings"], "channel": ["broker"], "new_business": [True],
+                  "exposure": [1.0], "written_premium": [500.0]}).to_parquet(tmp_path / "reference_policies.parquet")
+    EXPENSES.to_parquet(tmp_path / "expenses.parquet")
+    out = op.price_reference(tmp_path / "sub.csv", tmp_path)
+    assert out.risk_premium_period.iloc[0] == x
