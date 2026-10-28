@@ -1,0 +1,9 @@
+{
+  "construction_type_dev": "BRICK, STONE, TIMBER, NON_STANDARD (mapped from raw: W/T->TIMBER)",
+  "construction_type_emg": "BRICK, STONE, TIMBER, MIXED (mapped from raw: BRK/STN/WOD/MIX)",
+  "common_standard": "BRICK, STONE, TIMBER, NON_STANDARD, MIXED",
+  "age_band": "17-24, 25-34, 35-49, 50-64, 65+ (added to developed, already in emerging)",
+  "dev_only_features": "credit_band, date_of_birth, telematics_score, annual_mileage",
+  "emg_only_features": "gender",
+  "note": "For B\u00fchlmann-Strauss credibility: use common columns (construction_type, age_band, sum_insured, exposure, Year, line) as matching keys. credit_band and gender are market-specific and cannot be directly mapped."
+}
