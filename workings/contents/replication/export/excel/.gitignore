@@ -1,0 +1,2 @@
+# Row-level files hold competition data (rules section 5b): never commit them.
+*.parquet

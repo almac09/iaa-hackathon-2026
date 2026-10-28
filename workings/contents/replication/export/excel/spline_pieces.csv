@@ -1,0 +1,55 @@
+line,component,term,lower,lower_included,upper,upper_included,origin,a0,a1,a2,a3,note
+buildings,large,sum_insured,-inf,False,36000.0,False,36000.0,-2.2608426001034645,0.0,0.0,0.0,below the first knot: constant
+buildings,large,sum_insured,36000.0,True,186000.0,False,36000.0,-2.2608426001034645,6.617680471410808e-06,1.5025774874127677e-10,-5.753477620934793e-16,cubic piece
+buildings,large,sum_insured,186000.0,True,263000.0,False,186000.0,0.17081012022139117,1.2859031152483977e-05,-1.0864874420078897e-10,4.485739837553503e-16,cubic piece
+buildings,large,sum_insured,263000.0,True,953000.0,True,263000.0,0.7215659411219612,4.105909994618892e-06,-5.02815395330305e-12,1.2125119974313755e-18,cubic piece
+buildings,large,sum_insured,953000.0,False,inf,False,953000.0,1.559060844005598,0.0,0.0,0.0,above the last knot: constant
+buildings,large,elevation_m,-inf,False,0.0,False,0.0,0.011968581038253738,0.0,0.0,0.0,below the first knot: constant
+buildings,large,elevation_m,0.0,True,4.8,False,0.0,0.011968581038253738,-0.656264820561045,0.1029671080248873,-0.005969422001460647,cubic piece
+buildings,large,elevation_m,4.8,True,11.0,False,4.8,-1.425910706746895,-0.08038703226308688,0.017007431203853975,-0.000934400476451579,cubic piece
+buildings,large,elevation_m,11.0,True,60.02,True,11.0,-1.4932384480536385,0.022750051720306336,-0.0003724176581453947,3.599731056753274e-06,cubic piece
+buildings,large,elevation_m,60.02,False,inf,False,60.02,-0.848912249463357,0.0,0.0,0.0,above the last knot: constant
+buildings,large,year_built,-inf,False,1862.0,False,1862.0,-0.01136360247623512,0.0,0.0,0.0,below the first knot: constant
+buildings,large,year_built,1862.0,True,1946.0,False,1862.0,-0.01136360247623512,0.015250651071664113,-0.00039555093333552095,2.321750782446261e-06,cubic piece
+buildings,large,year_built,1946.0,True,1987.0,False,1946.0,-0.14520532231285682,-0.002055085165880953,0.0001895302638409368,-4.919956449966643e-06,cubic piece
+buildings,large,year_built,1987.0,True,2021.0,True,1987.0,-0.24995175908551215,-0.011324943908105917,-0.0004156243795049603,1.1795835657517495e-05,cubic piece
+buildings,large,year_built,2021.0,False,inf,False,2021.0,-0.6518381099857797,0.0,0.0,0.0,above the last knot: constant
+buildings,large,distance_to_river_km,-inf,False,0.01,False,0.01,-0.2924603723893874,0.0,0.0,0.0,below the first knot: constant
+buildings,large,distance_to_river_km,0.01,True,1.44,False,0.01,-0.2924603723893874,-2.1099975141938065,1.8039270099607114,-0.45258347721514264,cubic piece
+buildings,large,distance_to_river_km,1.44,True,3.6,False,1.44,-0.9443542471747322,0.2727698766220928,-0.13765610729225028,0.021271051912947075,cubic piece
+buildings,large,distance_to_river_km,3.6,True,30.0,True,3.6,-0.7830564530748356,-0.024177847465290798,0.0001803091036467634,1.4482658732378858e-05,cubic piece
+buildings,large,distance_to_river_km,30.0,False,inf,False,30.0,-1.029206180165729,0.0,0.0,0.0,above the last knot: constant
+contents,small,elevation_m,-inf,False,0.0,False,0.0,0.59336362311767,0.0,0.0,0.0,below the first knot: constant
+contents,small,elevation_m,0.0,True,4.8,False,0.0,0.59336362311767,-0.5515255266245181,0.10987325730687598,-0.007490109804630464,cubic piece
+contents,small,elevation_m,4.8,True,11.1,False,4.8,-0.3508252798432863,-0.014458646174566252,0.0020156761201973157,-9.627318486116577e-05,cubic piece
+contents,small,elevation_m,11.1,True,60.02,True,11.1,-0.3859853865874021,-0.0005243751814990779,0.0001961129263212833,-1.827324132930707e-06,cubic piece
+contents,small,elevation_m,60.02,False,inf,False,60.02,-0.15623855245632529,0.0,0.0,0.0,above the last knot: constant
+contents,small,distance_to_river_km,-inf,False,0.01,False,0.01,0.10703764698886284,0.0,0.0,0.0,below the first knot: constant
+contents,small,distance_to_river_km,0.01,True,1.44,False,0.01,0.10703764698886284,-0.3335613663105842,0.2640482216434202,-0.06442631955476949,cubic piece
+contents,small,distance_to_river_km,1.44,True,3.6,False,1.44,-0.018398793022936472,0.02638040501695314,-0.012340689246540927,0.00161316368138034,cubic piece
+contents,small,distance_to_river_km,3.6,True,30.0,True,3.6,-0.0027368647557871125,-0.004352243112559318,-0.0018873885911963215,4.5795878044761056e-05,cubic piece
+contents,small,distance_to_river_km,30.0,False,inf,False,30.0,-0.5904380031687175,0.0,0.0,0.0,above the last knot: constant
+motor,small,ncb_years,-inf,False,0.0,False,0.0,1.1309859843405037,0.0,0.0,0.0,below the first knot: constant
+motor,small,ncb_years,0.0,True,4.0,False,0.0,1.1309859843405037,-0.2541833477697868,0.048729112196900244,-0.004234615504532764,cubic piece
+motor,small,ncb_years,4.0,True,10.0,False,4.0,0.6229029961216634,-0.06761199441215755,-0.002086273857492929,0.0006937677973511432,cubic piece
+motor,small,ncb_years,10.0,True,15.0,True,10.0,0.29197901500681955,-0.017720358588149222,0.01040154649482765,-0.001424334032646038,cubic piece
+motor,small,ncb_years,15.0,False,inf,False,15.0,0.28537413035600995,0.0,0.0,0.0,above the last knot: constant
+motor,small,years_licensed,-inf,False,0.0,False,0.0,3.3931073958543356,0.0,0.0,0.0,below the first knot: constant
+motor,small,years_licensed,0.0,True,15.0,False,0.0,3.3931073958543356,-0.16672323509676673,0.013291893087141278,-0.0003262934436221787,cubic piece
+motor,small,years_licensed,15.0,True,42.0,False,15.0,2.781694441784769,0.011785483072500989,-0.0013913118758567653,2.910284137790476e-05,cubic piece
+motor,small,years_licensed,42.0,True,87.0,True,42.0,2.6584673540840136,0.0003025558697133746,0.0009660182757535203,-1.8030878975451497e-05,cubic piece
+motor,small,years_licensed,87.0,False,inf,False,87.0,2.985205529983977,0.0,0.0,0.0,above the last knot: constant
+motor,small,vehicle_age,-inf,False,0.0,False,0.0,3.1702736827822657,0.0,0.0,0.0,below the first knot: constant
+motor,small,vehicle_age,0.0,True,5.0,False,0.0,3.1702736827822657,0.031706276705918246,-0.0038068544589163955,-0.00014519098973560674,cubic piece
+motor,small,vehicle_age,5.0,True,9.0,False,5.0,3.2154848311219966,-0.017251592113416217,-0.005984719304950497,0.0007311771687567179,cubic piece
+motor,small,vehicle_age,9.0,True,28.0,True,9.0,3.0975182925895535,-0.030032842452697734,0.0027894067201301178,-0.0001372531218010223,cubic piece
+motor,small,vehicle_age,28.0,False,inf,False,28.0,2.592450949522057,0.0,0.0,0.0,above the last knot: constant
+motor,small,vehicle_value_group,-inf,False,1.0,False,1.0,-1.4784370409905874,0.0,0.0,0.0,below the first knot: constant
+motor,small,vehicle_value_group,1.0,True,9.0,False,1.0,-1.4784370409905874,0.04119759641060933,-0.005330276635850388,0.0003478432390993495,cubic piece
+motor,small,vehicle_value_group,9.0,True,13.0,False,9.0,-1.3118982359812708,0.022699072144078215,0.0030179611025339995,-0.00045293315902288246,cubic piece
+motor,small,vehicle_value_group,13.0,True,20.0,True,13.0,-1.2018022919418783,0.025101969331251854,-0.00241723680574059,0.0006242330421456487,cubic piece
+motor,small,vehicle_value_group,20.0,False,inf,False,20.0,-0.9304211766484468,0.0,0.0,0.0,above the last knot: constant
+motor,small,voluntary_excess,-inf,False,0.0,False,0.0,0.21433041615261197,0.0,0.0,0.0,below the first knot: constant
+motor,small,voluntary_excess,0.0,True,250.0,False,0.0,0.21433041615261197,0.0009402566759780736,-7.251536836170831e-06,1.0426238831620053e-08,cubic piece
+motor,small,voluntary_excess,250.0,True,1000.0,True,250.0,0.15908351463051681,-0.0007305919611785817,5.681422875442102e-07,-9.28351766607715e-11,cubic piece
+motor,small,voluntary_excess,1000.0,False,inf,False,1000.0,-0.10844525966356414,0.0,0.0,0.0,above the last knot: constant
