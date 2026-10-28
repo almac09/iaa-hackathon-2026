@@ -1,0 +1,26 @@
+market,check,value,detail
+both,letter by line,buildings B; contents C; motor M,the only letter on each line
+developed,policies,859951,
+developed,policies whose channel changes,0,
+developed,policies whose customer changes,0,
+developed,letter x channel,"p 0.331, V 0.0016","chi-square, one row per policy"
+developed,"number quartiles, broker (millions)",24.9 / 49.9 / 74.9,
+developed,"number quartiles, comparison_site (millions)",24.9 / 49.9 / 74.9,
+developed,"number quartiles, direct (millions)",24.8 / 49.8 / 74.9,
+developed,"digit position x channel, 8 tests","min p 0.207, max V 0.0036","chi-square per digit position, one row per policy; no correction for the 8 tests"
+developed,number vs first start date,"Spearman -0.0002, p 0.89",
+emerging,policies,205431,
+emerging,policies whose channel changes,0,
+emerging,policies whose customer changes,0,
+emerging,letter x channel,"p 0.986, V 0.0009","chi-square, one row per policy"
+emerging,"number quartiles, broker (millions)",25.0 / 50.0 / 74.8,
+emerging,"number quartiles, comparison_site (millions)",24.8 / 49.1 / 74.6,
+emerging,"number quartiles, direct (millions)",25.1 / 49.7 / 74.7,
+emerging,"digit position x channel, 8 tests","min p 0.041, max V 0.0085","chi-square per digit position, one row per policy; no correction for the 8 tests"
+emerging,number vs first start date,"Spearman -0.0021, p 0.34",
+emerging,"2025-only policies vs earlier, number distribution","KS D 0.0041, p 0.51",
+emerging,2025 renewal rows keeping a 2023-24 number,50083 of 50083,
+both,2025 new-business rows reusing a 2021-24 number,0 of 254177,
+both,2025 rows whose new-business flag disagrees with a 2025 first start,0,"so a policy first seen in 2025 is new business, and every earlier policy is a renewal"
+both,numbers shared across market x line,"4263 observed, 4327 expected",expected under independent uniform draws; same-market pairs sharing a customer or an address: 0
+both,policy_ids present in both markets (same line),"621 observed, 605 expected",so a join across markets needs the market in the key

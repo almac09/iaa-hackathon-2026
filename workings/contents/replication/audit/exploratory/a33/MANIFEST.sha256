@@ -1,0 +1,2 @@
+# sha256 manifest of the A33 script (2026-10-28); it reads the competition data and writes aggregate evidence only
+87b6d5684b083cbec88b65fad551c51a1bd65b052689f768ec3c47cd1a560c61  transfer_block.py
