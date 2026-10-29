@@ -144,11 +144,11 @@ def term_row(line, component, term, kind, level="", value=np.nan, lower=np.nan, 
 
 
 def export_glm(name: str, label: str, glm: rgl.GLM, d: pd.DataFrame, values: pd.DataFrame, trend_slope: float,
-               scale: float | None) -> dict:
+               scale: float | None, fitted_on: str = "developed") -> dict:
     """Terms, spline pieces, level maps and per-row contributions of one GLM. `d` is the scored rows, `values` the
     emerging rows whose values the spline lookups must cover, `trend_slope` the slope the component's prediction
     uses (its own for a small-claim GLM; the small-claim model's for the large-claim GLM), `scale` the Pareto
-    adjustment of a large-claim GLM."""
+    adjustment of a large-claim GLM, `fitted_on` the rows whose exposure decided which levels to keep."""
     spec, coef = glm.spec, dict(zip(glm.names, glm.model.coef_))
     terms = [term_row(name, label, "(intercept)", "intercept", contribution=float(glm.model.intercept_))]
     pieces, maps, checks = [], [], []
@@ -163,7 +163,7 @@ def export_glm(name: str, label: str, glm: rgl.GLM, d: pd.DataFrame, values: pd.
         raw = d[f].astype("string").fillna("MISSING")
         for value in sorted(raw.unique()):
             mapped = value if value in spec.keep[f] else "OTHER"
-            note = ("kept" if mapped == value else "under 0.5% of developed exposure: merged into OTHER") + \
+            note = ("kept" if mapped == value else f"under 0.5% of {fitted_on} exposure: merged into OTHER") + \
                    ("" if mapped in lv else "; not a fitted level, so it scores as the base level")
             maps.append({"section": "categorical level", "line": name, "component": label, "term": f,
                          "source_value": value, "mapped_value": mapped, "note": note})
@@ -189,7 +189,7 @@ def export_glm(name: str, label: str, glm: rgl.GLM, d: pd.DataFrame, values: pd.
         miss = f"{c}_missing" in coef
         terms.append(term_row(name, label, c, "spline missing", "MISSING", contribution=coef.get(f"{c}_missing", 0.0),
                               note="a missing value takes this instead of the curve" if miss else
-                              "no missing values in the developed fit, so a missing value contributes 0"))
+                              f"no missing values in the {fitted_on} fit, so a missing value contributes 0"))
         sp, lo, hi = spline_function(st, cvec)
         mine = spline_pieces(sp, lo, hi)
         pieces += [{"line": name, "component": label, "term": c, **p} for p in mine]
@@ -640,9 +640,10 @@ def run(cfg: dict, rec: dict) -> None:
     out["passed"] = out.passed.astype(object).where(out.type == "check", None)  # information rows are not checks
     out.to_csv(OUT / "reconciliation.csv", index=False)
     rec["checks_failed"] = out[(out.type == "check") & ~out.passed.astype(bool)].check.tolist()
+    surrogate = ("buildings_surrogate", "rows_surrogate")  # surrogate_buildings.py's outputs, not this run's
     rec["outputs_sha256"] = {p.relative_to(common.PACK_ROOT).as_posix(): common.sha256_file(p)
                              for p in sorted(OUT.glob("*.csv")) + sorted(OUT.glob("*.json"))
-                             + sorted(OUT.glob("*.parquet"))}
+                             + sorted(OUT.glob("*.parquet")) if not p.name.startswith(surrogate)}
     print(out[["type", "check", "line", "component", "term", "value", "passed"]].to_string(index=False))
 
 

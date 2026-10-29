@@ -40,18 +40,20 @@ class FactorSpec:
     """Turns raw columns into GLM inputs: numerics banded or smoothed, rare categorical levels merged.
 
     Numerics in `smooth` get a cubic B-spline basis instead of bands (knots at training quantiles, flat beyond the
-    training range, one basis column dropped against the intercept) plus a missing indicator, so a curve of a few
-    parameters replaces one free coefficient per band (A17). Everything is fitted on the training rows passed to
-    the constructor and then applied unchanged.
+    outer knots, which sit at the `knot_range` quantiles: the training range by default; one basis column dropped
+    against the intercept) plus a missing indicator, so a curve of a few parameters replaces one free coefficient
+    per band (A17). Everything is fitted on the training rows passed to the constructor and then applied unchanged.
     """
 
     def __init__(self, train: pd.DataFrame, numeric: list[str], categorical: list[str],
-                 min_level_share: float = 0.005, n_bands: int = 10, smooth: list[str] = (), n_knots: int = 4):
+                 min_level_share: float = 0.005, n_bands: int = 10, smooth: list[str] = (), n_knots: int = 4,
+                 knot_range: tuple[float, float] = (0, 1)):
+        # knot_range: the quantiles of the outer knots, beyond which a curve is flat (the full range by default)
         self.categorical = categorical
         self.splines = {}
         for c in smooth:
             x = train[c].dropna().to_numpy(dtype=float)
-            knots = np.unique(np.quantile(x, np.linspace(0, 1, n_knots)))
+            knots = np.unique(np.quantile(x, np.linspace(*knot_range, n_knots)))
             if len(knots) >= 3:  # too few distinct values for a curve: keep the column banded
                 self.splines[c] = SplineTransformer(degree=3, knots=knots.reshape(-1, 1), extrapolation="constant",
                                                     include_bias=False).fit(x.reshape(-1, 1))
