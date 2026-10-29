@@ -1,0 +1,140 @@
+---
+title: "Underwriting calculator"
+page-layout: full
+---
+
+```{ojs}
+import {scorePolicy, splineValue} from "./glm.js"
+const model = await FileAttachment("data/model.json").json()
+const testCases = await FileAttachment("data/test_cases.json").json()
+const line = view(Inputs.radio(["contents", "motor"], {label: "Product line", value: "contents", format: x => x === "contents" ? "Home contents" : "Motor"}))
+const caseList = testCases[line]
+const caseId = view(Inputs.select(caseList.map(d => d.id), {label: "Example policy", value: caseList[0].id, format: id => caseList.find(d => d.id === id).name}))
+const currentCase = caseList.find(d => d.id === caseId)
+const lineModel = model.lines[line]
+const inputs = lineModel.inputs
+function optionLabel(inp, value) {
+  const row = inp.options.find(o => o.value === String(value))
+  return row ? row.label : value
+}
+const inputKeys = Object.keys(inputs)
+const policyForm = view(Inputs.form(inputKeys.map(key => {
+  const inp = inputs[key]
+  const value = currentCase.policy[key]
+  return inp.type === "select"
+    ? Inputs.select(inp.options.map(o => o.value), {label: inp.label, value, format: v => optionLabel(inp, v)})
+    : Inputs.range([inp.min, inp.max], {label: inp.label, value, step: inp.step})
+}), {template: (parts) => html`<div class='controls-grid'>${parts}</div>`}))
+const policy = Object.fromEntries(inputKeys.map((key, i) => [key, policyForm[i]]))
+policy.new_business = view(Inputs.toggle({label: "New business", value: Boolean(currentCase.policy.new_business)}))
+policy.exposure = view(Inputs.range([0.1, 1], {label: "Exposure (years)", value: Number(currentCase.policy.exposure ?? 1), step: 1/365}))
+const result = scorePolicy(model, line, policy)
+const segmentText = result.segment === "nb" ? "New business" : "Renewal"
+const waterfall = []
+for (const [name, comp] of Object.entries(result.components)) {
+  waterfall.push({component: name, step: "Intercept", delta: comp.intercept, running: comp.intercept})
+  let running = comp.intercept
+  for (const t of comp.terms) {
+    running += t.contribution
+    waterfall.push({component: name, step: inputs[t.input]?.label ?? t.term, delta: t.contribution, running})
+  }
+  running += Math.log(comp.exposure)
+  waterfall.push({component: name, step: "Exposure", delta: Math.log(comp.exposure), running})
+  running += Math.log(comp.trend_multiplier)
+  waterfall.push({component: name, step: "2025 trend", delta: Math.log(comp.trend_multiplier), running})
+  if (Math.abs(Math.log(comp.scale)) > 1e-15) {
+    running += Math.log(comp.scale)
+    waterfall.push({component: name, step: "Pareto adjustment", delta: Math.log(comp.scale), running})
+  }
+}
+const splineTerms = Object.values(lineModel.components).flatMap(c => c.terms.filter(t => t.kind === "spline"))
+const chosenSpline = view(Inputs.select(splineTerms.map(t => t.term), {label: "Show spline curve", value: splineTerms[0]?.term, format: x => inputs[x]?.label ?? x}))
+const splineTerm = splineTerms.find(t => t.term === chosenSpline)
+const splineX = d3.range(splineTerm.grid_min, splineTerm.grid_max + 0.5 * (inputs[chosenSpline].step ?? 1), inputs[chosenSpline].step ?? 1)
+  .map(x => ({x, y: Math.exp(splineValue(splineTerm, x))}))
+```
+
+::: {.callout-note}
+These are **synthetic example policies** for demonstration only. No competition rows are published here.
+:::
+
+```{ojs}
+html`<div class='hero-kpis'>
+  <div class='kpi-card'><div class='kpi-label'>Segment</div><div class='kpi-value'>${segmentText}</div></div>
+  <div class='kpi-card'><div class='kpi-label'>As-is cost</div><div class='kpi-value'>${result.as_is.toFixed(2)}</div></div>
+  <div class='kpi-card'><div class='kpi-label'>Final premium</div><div class='kpi-value'>${result.final.toFixed(2)}</div></div>
+</div>`
+```
+
+## Current example
+
+```{ojs}
+html`<p><strong>${currentCase.name}</strong>: ${currentCase.description}</p>`
+```
+
+## Premium build-up
+
+```{ojs}
+Inputs.table(Object.entries(result.components).map(([name, comp]) => ({
+  component: name,
+  base_rate: comp.base,
+  trend: comp.trend_multiplier,
+  scale: comp.scale,
+  exposure: comp.exposure,
+  cost: comp.cost
+})), {format: {base_rate: x => x.toFixed(2), trend: x => x.toFixed(3), scale: x => x.toFixed(3), exposure: x => x.toFixed(3), cost: x => x.toFixed(2)}})
+```
+
+```{ojs}
+Plot.plot({
+  width: 960,
+  height: 180 + 18 * waterfall.length,
+  marginLeft: 180,
+  x: {label: "Log contribution", grid: true},
+  y: {label: null},
+  color: {legend: true},
+  marks: [
+    Plot.ruleX([0]),
+    Plot.barX(waterfall, {x: "delta", y: "step", fill: "component", tip: true})
+  ]
+})
+```
+
+## Factor-by-factor explanation
+
+```{ojs}
+Inputs.table(Object.entries(result.components).flatMap(([component, comp]) => comp.terms.map(t => ({
+  component,
+  factor: inputs[t.input]?.label ?? t.term,
+  selected_value: t.level,
+  log_contribution: t.contribution,
+  relativity: t.relativity
+}))), {format: {log_contribution: x => x.toFixed(4), relativity: x => x.toFixed(3)}})
+```
+
+## Level steps after the model
+
+```{ojs}
+Inputs.table(result.steps.map(s => ({step: s.label, value: s.value, running_premium: s.running})), {format: {value: x => x.toFixed(6), running_premium: x => x.toFixed(2)}})
+```
+
+## Spline factor view
+
+```{ojs}
+Plot.plot({
+  width: 800,
+  x: {label: inputs[chosenSpline].label},
+  y: {label: "Relativity", grid: true},
+  marks: [
+    Plot.line(splineX, {x: "x", y: "y"}),
+    Plot.dot([{x: policy[chosenSpline], y: Math.exp(splineValue(splineTerm, policy[chosenSpline]))}], {x: "x", y: "y", r: 5, fill: "crimson"})
+  ]
+})
+```
+
+## How to read this page
+
+* Start with an example policy.
+* Change one factor at a time to see how the premium moves.
+* The table above shows the **relativity** for each factor: values above 1 raise the premium, values below 1 lower it.
+* For motor, the final price is the sum of a **small-claim GLM** and a **large-claim GLM**, followed by Gerard's segment-level adjustments.

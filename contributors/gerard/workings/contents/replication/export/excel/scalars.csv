@@ -1,0 +1,80 @@
+line,segment,item,value,applied,note
+buildings,,small-claim model,"XGBoost with the year trend in the offset (A15), fitted on developed 2021-24",True,Excel needs a substitute: fit it to rows_components.parquet small_claim
+buildings,,XGBoost base rate (in the offset),350.1811758423766,True,small-claim cost per exposure year in the fitting rows
+buildings,,XGBoost trees,193,True,
+buildings,,XGBoost eta,0.05,True,
+buildings,,XGBoost subsample,0.8,True,
+buildings,,XGBoost colsample_bytree,0.8,True,
+buildings,,XGBoost reg_lambda,1.0,True,
+buildings,,XGBoost max_depth,3,True,
+buildings,,XGBoost min_child_weight,179982.8930230547,True,
+buildings,,"small-claim trend slope (per year, log scale)",0.04587525922327018,True,
+buildings,,small-claim trend origin (year),2022.5232987657048,True,
+buildings,,small-claim trend multiplier 2025,1.1203255482391414,True,
+buildings,,large claims: threshold,50000.0,True,
+buildings,,large claims: n_large,950,True,
+buildings,,large claims: shape,0.33289116025663357,True,generalised Pareto fit to reported cost above the threshold
+buildings,,large claims: scale,32115.045308916735,True,
+buildings,,large claims: mean_excess_empirical,46948.60553684211,True,
+buildings,,large claims: mean_excess_fitted,48140.6382221996,True,
+buildings,,large claims: adjustment,1.025390161682695,True,
+buildings,,large claims: infinite_mean,False,True,
+buildings,,large-claim GLM L2 penalty,0.001,True,
+buildings,,large-claim trend multiplier 2025,1.1203255482391414,True,"the small-claim slope from the large-claim GLM's origin, which equals the small-claim origin"
+contents,,small-claim model,"Tweedie GLM (p = 1.5, log link), fitted on developed 2021-24",True,
+contents,,small-claim GLM L2 penalty,0.0001,True,
+contents,,"small-claim trend slope (per year, log scale)",0.041818621051095524,True,
+contents,,small-claim trend origin (year),2022.5233188875627,True,
+contents,,small-claim trend multiplier 2025,1.109124969756442,True,
+motor,,small-claim model,"Tweedie GLM (p = 1.5, log link), fitted on developed 2021-24",True,
+motor,,small-claim GLM L2 penalty,1e-05,True,
+motor,,"small-claim trend slope (per year, log scale)",0.0362598256137392,True,
+motor,,small-claim trend origin (year),2022.5224641325733,True,
+motor,,small-claim trend multiplier 2025,1.0939937800860275,True,
+motor,,large claims: threshold,50000.0,True,
+motor,,large claims: n_large,591,True,
+motor,,large claims: shape,0.48034963162823324,True,generalised Pareto fit to reported cost above the threshold
+motor,,large claims: scale,25963.875892693926,True,
+motor,,large claims: mean_excess_empirical,65306.418172588834,True,
+motor,,large claims: mean_excess_fitted,49964.1248673549,True,
+motor,,large claims: adjustment,0.7650721975796005,True,
+motor,,large claims: infinite_mean,False,True,
+motor,,large-claim GLM L2 penalty,0.001,True,
+motor,,large-claim trend multiplier 2025,1.0939937800860275,True,"the small-claim slope from the large-claim GLM's origin, which equals the small-claim origin"
+buildings,buildings_nb,level step 1: halfway scale,0.9574847257267345,True,square root of the line's 2023-24 level as written (rounded to 6 dp) in ev_w4_level_2025.csv; computed as A31 candidates.py did; exactly one of the nine nearest doubles reproduces the midpoint file
+buildings,buildings_ren,level step 1: halfway scale,0.9574847257267345,True,square root of the line's 2023-24 level as written (rounded to 6 dp) in ev_w4_level_2025.csv; computed as A31 candidates.py did; exactly one of the nine nearest doubles reproduces the midpoint file
+contents,contents_nb,level step 1: halfway scale,0.8657493863699818,True,square root of the line's 2023-24 level as written (rounded to 6 dp) in ev_w4_level_2025.csv; computed as A31 candidates.py did; exactly one of the nine nearest doubles reproduces the midpoint file
+contents,contents_ren,level step 1: halfway scale,0.8657493863699818,True,square root of the line's 2023-24 level as written (rounded to 6 dp) in ev_w4_level_2025.csv; computed as A31 candidates.py did; exactly one of the nine nearest doubles reproduces the midpoint file
+motor,motor_nb,level step 1: halfway scale,0.9807983046341449,True,square root of A31's re-solved motor level with the emerging new-business loading x1.296 (candidates.py with_loading; its cache was deleted); recovered from the as-is and midpoint files; exactly one of the nine nearest doubles reproduces the midpoint file
+motor,motor_ren,level step 1: halfway scale,0.8614202024859916,True,square root of A31's re-solved motor level with the emerging new-business loading x1.296 (candidates.py with_loading; its cache was deleted); recovered from the as-is and midpoint files; exactly one of the nine nearest doubles reproduces the midpoint file
+motor,motor_nb,level step 2: x1.05 then divided by the halfway scale,1.05,True,"final = (midpoint as read x 1.05) / step 1, as A31 write4.py computed it; the effective level is 1.05 of as is to within rounding"
+buildings,,claim-history credibility k (own),4.0,False,"developed production value; C0 uses no claim history in the emerging market (D-34), so the history factor is 1"
+buildings,,claim-history credibility k (home),inf,False,"developed production value; C0 uses no claim history in the emerging market (D-34), so the history factor is 1"
+buildings,,claim-history credibility k (cross),inf,False,"developed production value; C0 uses no claim history in the emerging market (D-34), so the history factor is 1"
+buildings,,level-uncertainty tilt,1.0,False,"developed production value (ev_g6_summary.csv); part of run_glm_lines' production path, which C0 does not call"
+buildings,,developed level factor,1.03338,False,developed production value (ev_g6_summary.csv); C0's level is the segment steps instead
+contents,,claim-history credibility k (own),2.0,False,"developed production value; C0 uses no claim history in the emerging market (D-34), so the history factor is 1"
+contents,,claim-history credibility k (home),8.0,False,"developed production value; C0 uses no claim history in the emerging market (D-34), so the history factor is 1"
+contents,,claim-history credibility k (cross),8.0,False,"developed production value; C0 uses no claim history in the emerging market (D-34), so the history factor is 1"
+contents,,level-uncertainty tilt,1.0,False,"developed production value (ev_g6_summary.csv); part of run_glm_lines' production path, which C0 does not call"
+contents,,developed level factor,1.0,False,developed production value (ev_g6_summary.csv); C0's level is the segment steps instead
+motor,,claim-history credibility k (own),4.0,False,"developed production value; C0 uses no claim history in the emerging market (D-34), so the history factor is 1"
+motor,,claim-history credibility k (cross),inf,False,"developed production value; C0 uses no claim history in the emerging market (D-34), so the history factor is 1"
+motor,,level-uncertainty tilt,1.005425,False,"developed production value (ev_g6_summary.csv); part of run_glm_lines' production path, which C0 does not call"
+motor,,developed level factor,1.0,False,developed production value (ev_g6_summary.csv); C0's level is the segment steps instead
+all,,claim-history rebalance,,False,"none: production computes it per window when it applies the history factor, which C0 does not (D-34); no value is stored"
+all,,rebalancing constants,,False,none in C0
+all,,E5 missing-value fill,,False,not adopted (D-35): missing values keep their own level
+all,,CANN correction,,False,not adopted on any line (A20)
+contents,,"seasonal exposure weight, month 1",1.1084417865982281,False,"developed 2021-24 weights (D-22): they shaped the fit, but emerging rows are priced on plain exposure, so the replica uses a weight of 1"
+contents,,"seasonal exposure weight, month 2",1.1274552835228635,False,"developed 2021-24 weights (D-22): they shaped the fit, but emerging rows are priced on plain exposure, so the replica uses a weight of 1"
+contents,,"seasonal exposure weight, month 3",0.9630405994343744,False,"developed 2021-24 weights (D-22): they shaped the fit, but emerging rows are priced on plain exposure, so the replica uses a weight of 1"
+contents,,"seasonal exposure weight, month 4",0.9641092293123198,False,"developed 2021-24 weights (D-22): they shaped the fit, but emerging rows are priced on plain exposure, so the replica uses a weight of 1"
+contents,,"seasonal exposure weight, month 5",0.9799023981791887,False,"developed 2021-24 weights (D-22): they shaped the fit, but emerging rows are priced on plain exposure, so the replica uses a weight of 1"
+contents,,"seasonal exposure weight, month 6",0.9697825250480282,False,"developed 2021-24 weights (D-22): they shaped the fit, but emerging rows are priced on plain exposure, so the replica uses a weight of 1"
+contents,,"seasonal exposure weight, month 7",0.9688460604225387,False,"developed 2021-24 weights (D-22): they shaped the fit, but emerging rows are priced on plain exposure, so the replica uses a weight of 1"
+contents,,"seasonal exposure weight, month 8",1.0024760359830565,False,"developed 2021-24 weights (D-22): they shaped the fit, but emerging rows are priced on plain exposure, so the replica uses a weight of 1"
+contents,,"seasonal exposure weight, month 9",0.9582075212163415,False,"developed 2021-24 weights (D-22): they shaped the fit, but emerging rows are priced on plain exposure, so the replica uses a weight of 1"
+contents,,"seasonal exposure weight, month 10",0.9573317416508021,False,"developed 2021-24 weights (D-22): they shaped the fit, but emerging rows are priced on plain exposure, so the replica uses a weight of 1"
+contents,,"seasonal exposure weight, month 11",0.943470450586391,False,"developed 2021-24 weights (D-22): they shaped the fit, but emerging rows are priced on plain exposure, so the replica uses a weight of 1"
+contents,,"seasonal exposure weight, month 12",1.0659944678370539,False,"developed 2021-24 weights (D-22): they shaped the fit, but emerging rows are priced on plain exposure, so the replica uses a weight of 1"

@@ -1,0 +1,107 @@
+{
+  "_note": "Synthetic example policies for the calculator (issue #181). Made up by hand to show the range of the model; NOT competition rows (the repo is public, rules section 5b). AI-assisted (Databricks Genie Code).",
+  "contents": [
+    {
+      "id": "c_low",
+      "name": "Low risk: secure suburban terrace",
+      "description": "Owner aged 50-64, no claims, alarm and locks, high voluntary excess, away from flood risk.",
+      "policy": {
+        "exposure": 1, "new_business": false,
+        "f_flood_zone": "1", "f_tenure": "owner", "f_segment": "midlife_affluent",
+        "f_prior_claims": "0", "f_missed_pay": "0", "f_vol_xs": "1000", "f_security": "alarm_and_locks",
+        "f_hvi": "0", "f_ad_cover": "false", "f_bike": "false", "f_wfh": "true", "f_lodgers": "false",
+        "f_urban": "suburban", "f_prop_type": "terraced", "policyholder_age_band": "50-64",
+        "elevation_m": 50, "distance_to_river_km": 10, "sum_insured": 30000
+      }
+    },
+    {
+      "id": "c_typical",
+      "name": "Typical: family semi",
+      "description": "Owner aged 35-49 in a suburban semi, locks fitted, one high-value item, renewing.",
+      "policy": {
+        "exposure": 1, "new_business": false,
+        "f_flood_zone": "2", "f_tenure": "owner", "f_segment": "midlife_mainstream",
+        "f_prior_claims": "0", "f_missed_pay": "0", "f_vol_xs": "250", "f_security": "locks",
+        "f_hvi": "1", "f_ad_cover": "false", "f_bike": "true", "f_wfh": "true", "f_lodgers": "false",
+        "f_urban": "suburban", "f_prop_type": "semi_detached", "policyholder_age_band": "35-49",
+        "elevation_m": 40, "distance_to_river_km": 5, "sum_insured": 45000
+      }
+    },
+    {
+      "id": "c_young",
+      "name": "Higher risk: young renter, city flat",
+      "description": "New customer aged 17-24 renting in a dense urban area, one prior claim, a missed payment, accidental damage cover.",
+      "policy": {
+        "exposure": 1, "new_business": true,
+        "f_flood_zone": "1", "f_tenure": "renter", "f_segment": "young_budget",
+        "f_prior_claims": "1", "f_missed_pay": "1", "f_vol_xs": "0", "f_security": "standard",
+        "f_hvi": "2", "f_ad_cover": "true", "f_bike": "true", "f_wfh": "false", "f_lodgers": "false",
+        "f_urban": "dense_urban", "f_prop_type": "flat", "policyholder_age_band": "17-24",
+        "elevation_m": 15, "distance_to_river_km": 2.5, "sum_insured": 20000
+      }
+    },
+    {
+      "id": "c_flood",
+      "name": "High risk: riverside detached, high value",
+      "description": "Senior owner of a rural detached house 300 m from a river in flood zone 4, two prior claims, five high-value items.",
+      "policy": {
+        "exposure": 1, "new_business": false,
+        "f_flood_zone": "4", "f_tenure": "owner", "f_segment": "senior_affluent",
+        "f_prior_claims": "2", "f_missed_pay": "0", "f_vol_xs": "500", "f_security": "alarm_and_locks",
+        "f_hvi": "5", "f_ad_cover": "true", "f_bike": "false", "f_wfh": "false", "f_lodgers": "false",
+        "f_urban": "rural", "f_prop_type": "detached", "policyholder_age_band": "65+",
+        "elevation_m": 3, "distance_to_river_km": 0.3, "sum_insured": 120000
+      }
+    }
+  ],
+  "motor": [
+    {
+      "id": "m_retired",
+      "name": "Low risk: retired, full no-claims bonus",
+      "description": "Driver aged 65+, licensed 45 years, 15 years' NCB, third party fire & theft, social use, rural.",
+      "policy": {
+        "exposure": 1, "new_business": false,
+        "marketing_segment": "senior_affluent", "cover_type": "third_party_fire_theft", "urban_density": "rural",
+        "channel": "direct", "vehicle_use": "social", "payment_method": "annual", "driver_age_band": "65+",
+        "prior_claims_5y": 0, "missed_payments_12m": 0, "ncb_years": 15, "years_licensed": 45,
+        "vehicle_age": 12, "vehicle_value_group": 8, "voluntary_excess": 500
+      }
+    },
+    {
+      "id": "m_commuter",
+      "name": "Typical: experienced commuter",
+      "description": "Driver aged 35-49, licensed 20 years, 9 years' NCB, comprehensive cover, commuting, renewing.",
+      "policy": {
+        "exposure": 1, "new_business": false,
+        "marketing_segment": "midlife_mainstream", "cover_type": "comprehensive", "urban_density": "suburban",
+        "channel": "direct", "vehicle_use": "commuting", "payment_method": "annual", "driver_age_band": "35-49",
+        "prior_claims_5y": 0, "missed_payments_12m": 0, "ncb_years": 9, "years_licensed": 20,
+        "vehicle_age": 6, "vehicle_value_group": 11, "voluntary_excess": 250
+      }
+    },
+    {
+      "id": "m_business",
+      "name": "Higher risk: city business user with claims",
+      "description": "Driver aged 50-64 using an expensive car for business in a dense urban area, two prior claims and a missed payment.",
+      "policy": {
+        "exposure": 1, "new_business": false,
+        "marketing_segment": "mature_budget", "cover_type": "comprehensive", "urban_density": "dense_urban",
+        "channel": "broker", "vehicle_use": "business", "payment_method": "monthly", "driver_age_band": "50-64",
+        "prior_claims_5y": 2, "missed_payments_12m": 1, "ncb_years": 2, "years_licensed": 30,
+        "vehicle_age": 4, "vehicle_value_group": 18, "voluntary_excess": 0
+      }
+    },
+    {
+      "id": "m_young",
+      "name": "High risk: new young driver",
+      "description": "New customer aged 17-24, licensed 1 year, no NCB, comprehensive cover bought on a comparison site, paying monthly.",
+      "policy": {
+        "exposure": 1, "new_business": true,
+        "marketing_segment": "young_budget", "cover_type": "comprehensive", "urban_density": "urban",
+        "channel": "comparison_site", "vehicle_use": "social", "payment_method": "monthly", "driver_age_band": "17-24",
+        "prior_claims_5y": 0, "missed_payments_12m": 0, "ncb_years": 0, "years_licensed": 1,
+        "vehicle_age": 10, "vehicle_value_group": 5, "voluntary_excess": 0
+      }
+    }
+  ]
+}

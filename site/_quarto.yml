@@ -1,0 +1,39 @@
+# Quarto website for the IAA Hackathon 2026 team (issue #178).
+# Build locally:  python site/scripts/build_model.py && quarto preview site
+project:
+  type: website
+  output-dir: _site
+  resources:
+    - glm.js
+    - data/model.json
+    - data/test_cases.json
+
+website:
+  title: "IAA Hackathon 2026"
+  description: "Home insurance pricing: an interactive look at our models"
+  repo-url: https://github.com/almac09/iaa-hackathon-2026
+  repo-actions: [issue]
+  page-navigation: true
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: calculator.qmd
+        text: Underwriting calculator
+      - href: how-glms-work.qmd
+        text: How a GLM works
+    right:
+      - icon: github
+        href: https://github.com/almac09/iaa-hackathon-2026
+  page-footer:
+    left: "IAA Hackathon 2026 team. Built with Quarto; AI-assisted (Databricks Genie Code)."
+    right: "Example policies are made up. No competition data is published here."
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: false
+
+execute:
+  echo: false

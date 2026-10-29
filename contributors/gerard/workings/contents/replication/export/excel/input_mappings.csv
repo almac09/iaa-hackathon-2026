@@ -1,0 +1,163 @@
+section,line,component,term,source_value,mapped_value,note
+categorical level,buildings,large,soil_type,MISSING,MISSING,kept
+categorical level,buildings,large,soil_type,chalk,chalk,kept
+categorical level,buildings,large,soil_type,clay,clay,kept
+categorical level,buildings,large,soil_type,loam,loam,kept
+categorical level,buildings,large,soil_type,rock,rock,kept
+categorical level,buildings,large,soil_type,sand,sand,kept
+categorical level,buildings,large,construction_type,brick,brick,kept
+categorical level,buildings,large,construction_type,non_standard,non_standard,kept
+categorical level,buildings,large,construction_type,stone,stone,kept
+categorical level,buildings,large,construction_type,timber,timber,kept
+categorical level,contents,small,f_flood_zone,1,1,kept
+categorical level,contents,small,f_flood_zone,2,2,kept
+categorical level,contents,small,f_flood_zone,3,3,kept
+categorical level,contents,small,f_flood_zone,4,4,kept
+categorical level,contents,small,f_flood_zone,5,5,kept
+categorical level,contents,small,f_flood_zone,MISSING,MISSING,kept
+categorical level,contents,small,f_tenure,owner,owner,kept
+categorical level,contents,small,f_tenure,renter,renter,kept
+categorical level,contents,small,f_segment,mature_affluent,mature_affluent,kept
+categorical level,contents,small,f_segment,mature_budget,mature_budget,kept
+categorical level,contents,small,f_segment,mature_mainstream,mature_mainstream,kept
+categorical level,contents,small,f_segment,midlife_affluent,midlife_affluent,kept
+categorical level,contents,small,f_segment,midlife_budget,midlife_budget,kept
+categorical level,contents,small,f_segment,midlife_mainstream,midlife_mainstream,kept
+categorical level,contents,small,f_segment,senior_affluent,senior_affluent,kept
+categorical level,contents,small,f_segment,senior_budget,senior_budget,kept
+categorical level,contents,small,f_segment,senior_mainstream,senior_mainstream,kept
+categorical level,contents,small,f_segment,young_affluent,young_affluent,kept
+categorical level,contents,small,f_segment,young_budget,young_budget,kept
+categorical level,contents,small,f_segment,young_mainstream,young_mainstream,kept
+categorical level,contents,small,f_prior_claims,0,0,kept
+categorical level,contents,small,f_prior_claims,1,1,kept
+categorical level,contents,small,f_prior_claims,2,2,kept
+categorical level,contents,small,f_prior_claims,3,OTHER,under 0.5% of developed exposure: merged into OTHER
+categorical level,contents,small,f_missed_pay,0,0,kept
+categorical level,contents,small,f_missed_pay,1,1,kept
+categorical level,contents,small,f_missed_pay,2,2,kept
+categorical level,contents,small,f_missed_pay,3,OTHER,under 0.5% of developed exposure: merged into OTHER
+categorical level,contents,small,f_vol_xs,0,0,kept
+categorical level,contents,small,f_vol_xs,1000,1000,kept
+categorical level,contents,small,f_vol_xs,250,250,kept
+categorical level,contents,small,f_vol_xs,500,500,kept
+categorical level,contents,small,f_security,MISSING,MISSING,kept
+categorical level,contents,small,f_security,alarm_and_locks,alarm_and_locks,kept
+categorical level,contents,small,f_security,locks,locks,kept
+categorical level,contents,small,f_security,standard,standard,kept
+categorical level,contents,small,f_hvi,0,0,kept
+categorical level,contents,small,f_hvi,1,1,kept
+categorical level,contents,small,f_hvi,2,2,kept
+categorical level,contents,small,f_hvi,3,3,kept
+categorical level,contents,small,f_hvi,4,4,kept
+categorical level,contents,small,f_hvi,5,5,kept
+categorical level,contents,small,f_hvi,MISSING,MISSING,kept
+categorical level,contents,small,f_ad_cover,false,false,kept
+categorical level,contents,small,f_ad_cover,true,true,kept
+categorical level,contents,small,f_bike,false,false,kept
+categorical level,contents,small,f_bike,true,true,kept
+categorical level,contents,small,f_wfh,false,false,kept
+categorical level,contents,small,f_wfh,true,true,kept
+categorical level,contents,small,f_lodgers,false,false,kept
+categorical level,contents,small,f_lodgers,true,true,kept
+categorical level,contents,small,f_urban,dense_urban,dense_urban,kept
+categorical level,contents,small,f_urban,rural,rural,kept
+categorical level,contents,small,f_urban,suburban,suburban,kept
+categorical level,contents,small,f_urban,urban,urban,kept
+categorical level,contents,small,f_prop_type,detached,detached,kept
+categorical level,contents,small,f_prop_type,flat,flat,kept
+categorical level,contents,small,f_prop_type,semi_detached,semi_detached,kept
+categorical level,contents,small,f_prop_type,terraced,terraced,kept
+categorical level,contents,small,policyholder_age_band,17-24,17-24,kept
+categorical level,contents,small,policyholder_age_band,25-34,25-34,kept
+categorical level,contents,small,policyholder_age_band,35-49,35-49,kept
+categorical level,contents,small,policyholder_age_band,50-64,50-64,kept
+categorical level,contents,small,policyholder_age_band,65+,65+,kept
+categorical level,motor,small,marketing_segment,mature_affluent,mature_affluent,kept
+categorical level,motor,small,marketing_segment,mature_budget,mature_budget,kept
+categorical level,motor,small,marketing_segment,mature_mainstream,mature_mainstream,kept
+categorical level,motor,small,marketing_segment,midlife_affluent,midlife_affluent,kept
+categorical level,motor,small,marketing_segment,midlife_budget,midlife_budget,kept
+categorical level,motor,small,marketing_segment,midlife_mainstream,midlife_mainstream,kept
+categorical level,motor,small,marketing_segment,senior_affluent,senior_affluent,kept
+categorical level,motor,small,marketing_segment,senior_budget,senior_budget,kept
+categorical level,motor,small,marketing_segment,senior_mainstream,senior_mainstream,kept
+categorical level,motor,small,marketing_segment,young_affluent,young_affluent,kept
+categorical level,motor,small,marketing_segment,young_budget,young_budget,kept
+categorical level,motor,small,marketing_segment,young_mainstream,young_mainstream,kept
+categorical level,motor,small,cover_type,comprehensive,comprehensive,kept
+categorical level,motor,small,cover_type,third_party_fire_theft,third_party_fire_theft,kept
+categorical level,motor,small,cover_type,third_party_only,third_party_only,kept
+categorical level,motor,small,urban_density,dense_urban,dense_urban,kept
+categorical level,motor,small,urban_density,rural,rural,kept
+categorical level,motor,small,urban_density,suburban,suburban,kept
+categorical level,motor,small,urban_density,urban,urban,kept
+categorical level,motor,small,channel,broker,broker,kept
+categorical level,motor,small,channel,comparison_site,comparison_site,kept
+categorical level,motor,small,channel,direct,direct,kept
+categorical level,motor,small,vehicle_use,business,business,kept
+categorical level,motor,small,vehicle_use,commuting,commuting,kept
+categorical level,motor,small,vehicle_use,social,social,kept
+categorical level,motor,small,payment_method,annual,annual,kept
+categorical level,motor,small,payment_method,monthly,monthly,kept
+categorical level,motor,small,driver_age_band,17-24,17-24,kept
+categorical level,motor,small,driver_age_band,25-34,25-34,kept
+categorical level,motor,small,driver_age_band,35-49,35-49,kept
+categorical level,motor,small,driver_age_band,50-64,50-64,kept
+categorical level,motor,small,driver_age_band,65+,65+,kept
+categorical level,motor,large,driver_age_band,17-24,17-24,kept
+categorical level,motor,large,driver_age_band,25-34,25-34,kept
+categorical level,motor,large,driver_age_band,35-49,35-49,kept
+categorical level,motor,large,driver_age_band,50-64,50-64,kept
+categorical level,motor,large,driver_age_band,65+,65+,kept
+conforming view,,,policies_motor,,"*, NULL::BIGINT AS driver_age, NULL::DOUBLE AS annual_mileage, NULL::BOOLEAN AS telematics_opt_in, NULL::DOUBLE AS telematics_score",emerging table as the shared SQL reads it (emerging.CONFORM)
+conforming view,,,test_motor,,"*, NULL::BIGINT AS driver_age, NULL::DOUBLE AS annual_mileage, NULL::BOOLEAN AS telematics_opt_in, NULL::DOUBLE AS telematics_score",emerging table as the shared SQL reads it (emerging.CONFORM)
+conforming view,,,policies_buildings,,"* REPLACE (CASE upper(construction_type) WHEN 'BRK' THEN 'brick' WHEN 'STN' THEN 'stone' WHEN 'WOD' THEN 'timber' WHEN 'MIX' THEN 'non_standard' ELSE construction_type END AS construction_type), NULL::BIGINT AS policyholder_age",emerging table as the shared SQL reads it (emerging.CONFORM)
+conforming view,,,test_buildings,,"* REPLACE (CASE upper(construction_type) WHEN 'BRK' THEN 'brick' WHEN 'STN' THEN 'stone' WHEN 'WOD' THEN 'timber' WHEN 'MIX' THEN 'non_standard' ELSE construction_type END AS construction_type), NULL::BIGINT AS policyholder_age",emerging table as the shared SQL reads it (emerging.CONFORM)
+conforming view,,,policies_contents,,"*, NULL::BIGINT AS policyholder_age",emerging table as the shared SQL reads it (emerging.CONFORM)
+conforming view,,,test_contents,,"*, NULL::BIGINT AS policyholder_age",emerging table as the shared SQL reads it (emerging.CONFORM)
+conforming view,,,customers,,"*, NULL::VARCHAR AS credit_band, NULL::DATE AS date_of_birth",emerging table as the shared SQL reads it (emerging.CONFORM)
+construction code,,,construction_type,BRK,brick,"buildings only, applied in the conforming view, so construction_type_raw already holds the category"
+construction code,,,construction_type,STN,stone,"buildings only, applied in the conforming view, so construction_type_raw already holds the category"
+construction code,,,construction_type,WOD,timber,"buildings only, applied in the conforming view, so construction_type_raw already holds the category"
+construction code,,,construction_type,MIX,non_standard,"buildings only, applied in the conforming view, so construction_type_raw already holds the category"
+age band,,,"policyholder_age_band, driver_age_band",emerging band,used as given,the developed rows were cut the same way: CASE WHEN age IS NULL THEN NULL WHEN age <= 24 THEN '17-24' WHEN age <= 34 THEN '25-34' WHEN age <= 49 THEN '35-49' WHEN age <= 64 THEN '50-64' ELSE '65+' END
+dropped factor,,,annual_mileage,,not used,"absent from the emerging market or not carried over (PORTABLE_DROP; occupation: no evidence it adds value, D-31)"
+dropped factor,,,credit_band,,not used,"absent from the emerging market or not carried over (PORTABLE_DROP; occupation: no evidence it adds value, D-31)"
+dropped factor,,,driver_age,,not used,"absent from the emerging market or not carried over (PORTABLE_DROP; occupation: no evidence it adds value, D-31)"
+dropped factor,,,f_age_band,,not used,"absent from the emerging market or not carried over (PORTABLE_DROP; occupation: no evidence it adds value, D-31)"
+dropped factor,,,f_credit,,not used,"absent from the emerging market or not carried over (PORTABLE_DROP; occupation: no evidence it adds value, D-31)"
+dropped factor,,,f_region,,not used,"absent from the emerging market or not carried over (PORTABLE_DROP; occupation: no evidence it adds value, D-31)"
+dropped factor,,,occupation,,not used,"absent from the emerging market or not carried over (PORTABLE_DROP; occupation: no evidence it adds value, D-31)"
+dropped factor,,,policyholder_age,,not used,"absent from the emerging market or not carried over (PORTABLE_DROP; occupation: no evidence it adds value, D-31)"
+dropped factor,,,region,,not used,"absent from the emerging market or not carried over (PORTABLE_DROP; occupation: no evidence it adds value, D-31)"
+dropped factor,,,telematics_opt_in,,not used,"absent from the emerging market or not carried over (PORTABLE_DROP; occupation: no evidence it adds value, D-31)"
+dropped factor,,,telematics_score,,not used,"absent from the emerging market or not carried over (PORTABLE_DROP; occupation: no evidence it adds value, D-31)"
+data fix D-01,,,exposure,period dates,(period_end - period_start + 1) / 365,the raw exposure column is not used
+data fix D-02,,,sum_insured (contents),>= 1000000,divided by 1000,no 2025 contents row reaches the threshold
+data fix D-02,,,sum_insured (buildings),>= 10000000,divided by 1000,
+data fix D-26,,,elevation_m,region R11,"divided by 3.28084, rounded to 2 dp",0 emerging addresses are in R11
+data fix D-27,,,year_built,1900 with energy rating A,2008,"emerging addresses' mean year built for the rating, rounded (sql/03 addresses_clean)"
+data fix D-27,,,year_built,1900 with energy rating B,1993,"emerging addresses' mean year built for the rating, rounded (sql/03 addresses_clean)"
+data fix D-27,,,year_built,1900 with energy rating C,1972,"emerging addresses' mean year built for the rating, rounded (sql/03 addresses_clean)"
+data fix D-27,,,year_built,1900 with energy rating D,1951,"emerging addresses' mean year built for the rating, rounded (sql/03 addresses_clean)"
+data fix D-27,,,year_built,1900 with energy rating E,1929,"emerging addresses' mean year built for the rating, rounded (sql/03 addresses_clean)"
+data fix D-27,,,year_built,1900 with energy rating F,1902,"emerging addresses' mean year built for the rating, rounded (sql/03 addresses_clean)"
+data fix D-27,,,year_built,1900 with energy rating G,1880,"emerging addresses' mean year built for the rating, rounded (sql/03 addresses_clean)"
+data fix D-27,,,year_built,1900 with energy rating missing,1961,"emerging addresses' mean year built for the rating, rounded (sql/03 addresses_clean)"
+contents feature,,,f_ad_cover,,lvl(accidental_damage_cover) AS f_ad_cover,"sql/08: lvl(x) = coalesce(CAST(x AS VARCHAR), 'MISSING')"
+contents feature,,,f_bike,,lvl(bicycle_cover) AS f_bike,"sql/08: lvl(x) = coalesce(CAST(x AS VARCHAR), 'MISSING')"
+contents feature,,,f_flood_zone,,lvl(CAST(flood_zone AS INTEGER)) AS f_flood_zone,"sql/08: lvl(x) = coalesce(CAST(x AS VARCHAR), 'MISSING')"
+contents feature,,,f_hvi,,lvl(CAST(high_value_items AS INTEGER)) AS f_hvi,"sql/08: lvl(x) = coalesce(CAST(x AS VARCHAR), 'MISSING')"
+contents feature,,,f_lodgers,,lvl(lodgers) AS f_lodgers,"sql/08: lvl(x) = coalesce(CAST(x AS VARCHAR), 'MISSING')"
+contents feature,,,f_missed_pay,,"lvl(least(missed_payments_12m, 3)) AS f_missed_pay","sql/08: lvl(x) = coalesce(CAST(x AS VARCHAR), 'MISSING')"
+contents feature,,,f_prior_claims,,"lvl(least(prior_claims_5y, 3)) AS f_prior_claims","sql/08: lvl(x) = coalesce(CAST(x AS VARCHAR), 'MISSING')"
+contents feature,,,f_prop_type,,lvl(property_type) AS f_prop_type,"sql/08: lvl(x) = coalesce(CAST(x AS VARCHAR), 'MISSING')"
+contents feature,,,f_security,,lvl(security_level) AS f_security,"sql/08: lvl(x) = coalesce(CAST(x AS VARCHAR), 'MISSING')"
+contents feature,,,f_segment,,lvl(marketing_segment) AS f_segment,"sql/08: lvl(x) = coalesce(CAST(x AS VARCHAR), 'MISSING')"
+contents feature,,,f_tenure,,lvl(tenure) AS f_tenure,"sql/08: lvl(x) = coalesce(CAST(x AS VARCHAR), 'MISSING')"
+contents feature,,,f_urban,,lvl(urban_density) AS f_urban,"sql/08: lvl(x) = coalesce(CAST(x AS VARCHAR), 'MISSING')"
+contents feature,,,f_vol_xs,,lvl(voluntary_excess) AS f_vol_xs,"sql/08: lvl(x) = coalesce(CAST(x AS VARCHAR), 'MISSING')"
+contents feature,,,f_wfh,,lvl(works_from_home) AS f_wfh,"sql/08: lvl(x) = coalesce(CAST(x AS VARCHAR), 'MISSING')"
+missing values,,,categorical and banded terms,missing,MISSING,its own level where the fit saw one (D-06); otherwise it scores as the base level
+missing values,,,spline terms,missing,see terms.csv kind 'spline missing',the curve is skipped and the missing indicator's coefficient used instead

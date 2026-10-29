@@ -166,8 +166,7 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
-# mkdocs/Zensical documentation
-/site
+# Project website (tracked source; ignore generated artefacts in site/.gitignore)
 
 # mypy
 .mypy_cache/

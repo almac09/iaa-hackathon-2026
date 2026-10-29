@@ -1,0 +1,35 @@
+---
+title: "Hello, world"
+subtitle: "IAA Hackathon 2026: home insurance pricing"
+---
+
+Hello world! This is the IAA Hackathon 2026 team's project site, published from
+[almac09/iaa-hackathon-2026](https://github.com/almac09/iaa-hackathon-2026) with GitHub Pages.
+
+## What's here
+
+* **[Underwriting calculator](calculator.qmd)**: price a single policy with the team's Week 2 model and see
+  how each rating factor moves the premium. Switch between example policies, or change any factor yourself.
+* **[How a GLM works](how-glms-work.qmd)**: a plain-English guide to the kind of model behind the calculator.
+
+## The challenge
+
+Predict the expected 2025 claim cost of each home and motor policy (buildings, contents and motor), with
+claims valued at 31 December 2024. Scoring uses Tweedie deviance (D2).
+
+## The model behind the calculator
+
+The calculator uses Gerard's Week 2 model **C0**, exported for an Excel replica in
+`workings/contents/replication/export/excel/`:
+
+| Product | Small claims | Large claims |
+|---|---|---|
+| Home contents | Tweedie GLM | none (no large-claim split) |
+| Motor | Tweedie GLM | GLM, scaled to a generalised Pareto mean excess |
+| Buildings | XGBoost (not shown) | GLM |
+
+Buildings isn't in the calculator yet because its small-claim model is gradient-boosted trees, not a GLM.
+
+::: {.callout-note}
+Every example policy on this site is made up. No competition data is published here.
+:::

@@ -1,0 +1,59 @@
+---
+title: "How a GLM works"
+---
+
+A generalised linear model (GLM) is a structured way to price risk.
+
+## The core idea
+
+Start with a **base premium** for a simple reference policy, then multiply it up or down for each risk factor:
+
+* A driver with more years of no-claims bonus usually gets a lower price.
+* A home close to a river usually gets a higher price.
+* Extra cover, like accidental damage, usually raises the price.
+
+In the calculator, those adjustments are shown as **relativities**:
+
+* relativity above 1.00 increases the premium
+* relativity below 1.00 decreases the premium
+* relativity exactly 1.00 leaves it unchanged
+
+## Why actuaries like GLMs
+
+* They are explainable: each factor has a visible effect.
+* They are stable: prices move in a controlled, monotonic way.
+* They are auditable: you can trace a premium back to the model terms.
+
+## What the calculator shows
+
+For each example policy, the calculator breaks the premium into:
+
+1. **Intercept / base rate**
+2. **Factor effects** for age, flood zone, excess, prior claims, and so on
+3. **Trend to 2025**
+4. **Exposure** (part-year policies cost less than full-year policies)
+5. For motor large claims, a **Pareto adjustment**
+6. Gerard's **segment-level adjustment** after the model fit
+
+## Two useful ideas
+
+### 1. Log scale versus normal scale
+
+The model itself adds effects on the **log scale**. That is convenient mathematically, but not intuitive for most readers. So the calculator also shows the **relativity**, which is just `exp(log contribution)`.
+
+Examples:
+
+* log contribution `0.20` means relativity `1.22`: about 22% higher
+* log contribution `-0.30` means relativity `0.74`: about 26% lower
+
+### 2. Spline curves
+
+Some numeric factors do not move risk in a straight line. For example, being 100 metres closer to a river may matter much more when a house is already very close to water.
+
+For those factors the model uses a **spline**: a smooth curve rather than one straight line. The calculator plots the curve and marks the current policy on it.
+
+## Limits of this v1 website
+
+* It covers **home contents** and **motor** only.
+* It does not publish or use any competition rows.
+* Buildings small claims are not included yet, because that part of the model is XGBoost rather than a GLM.
