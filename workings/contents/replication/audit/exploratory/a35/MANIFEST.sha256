@@ -1,0 +1,2 @@
+# sha256 manifest of the A35 script (2026-10-29); it reads the export's row-level files and writes aggregate evidence only
+85ce837012dd2a01ad02499027efc5ce3d27d80b213a9015beb5df65cd328025  doc_figures.py

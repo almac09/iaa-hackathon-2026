@@ -1,0 +1,409 @@
+section,line,component,term,source_value,mapped_value,note
+categorical level,buildings,surrogate,construction_type,brick,brick,kept
+categorical level,buildings,surrogate,construction_type,non_standard,non_standard,kept
+categorical level,buildings,surrogate,construction_type,stone,stone,kept
+categorical level,buildings,surrogate,construction_type,timber,timber,kept
+categorical level,buildings,surrogate,occupancy,let,let,kept
+categorical level,buildings,surrogate,occupancy,owner_occupied,owner_occupied,kept
+categorical level,buildings,surrogate,accidental_damage_cover,False,False,kept
+categorical level,buildings,surrogate,accidental_damage_cover,True,True,kept
+categorical level,buildings,surrogate,channel,broker,broker,kept
+categorical level,buildings,surrogate,channel,comparison_site,comparison_site,kept
+categorical level,buildings,surrogate,channel,direct,direct,kept
+categorical level,buildings,surrogate,payment_method,annual,annual,kept
+categorical level,buildings,surrogate,payment_method,monthly,monthly,kept
+categorical level,buildings,surrogate,marital_status,MISSING,MISSING,kept
+categorical level,buildings,surrogate,marital_status,divorced,divorced,kept
+categorical level,buildings,surrogate,marital_status,married,married,kept
+categorical level,buildings,surrogate,marital_status,single,single,kept
+categorical level,buildings,surrogate,marital_status,widowed,widowed,kept
+categorical level,buildings,surrogate,email_domain,inboxly,inboxly,kept
+categorical level,buildings,surrogate,email_domain,mailone,mailone,kept
+categorical level,buildings,surrogate,email_domain,netbox,netbox,kept
+categorical level,buildings,surrogate,email_domain,other,other,kept
+categorical level,buildings,surrogate,email_domain,posthub,posthub,kept
+categorical level,buildings,surrogate,marketing_consent,False,False,kept
+categorical level,buildings,surrogate,marketing_consent,True,True,kept
+categorical level,buildings,surrogate,document_preference,app,app,kept
+categorical level,buildings,surrogate,document_preference,email,email,kept
+categorical level,buildings,surrogate,document_preference,post,post,kept
+categorical level,buildings,surrogate,previous_insurer,INS00,INS00,kept
+categorical level,buildings,surrogate,previous_insurer,INS01,INS01,kept
+categorical level,buildings,surrogate,previous_insurer,INS02,INS02,kept
+categorical level,buildings,surrogate,previous_insurer,INS03,INS03,kept
+categorical level,buildings,surrogate,previous_insurer,INS04,INS04,kept
+categorical level,buildings,surrogate,previous_insurer,INS05,INS05,kept
+categorical level,buildings,surrogate,previous_insurer,INS06,INS06,kept
+categorical level,buildings,surrogate,previous_insurer,INS07,INS07,kept
+categorical level,buildings,surrogate,previous_insurer,INS08,INS08,kept
+categorical level,buildings,surrogate,previous_insurer,INS09,INS09,kept
+categorical level,buildings,surrogate,previous_insurer,INS10,INS10,kept
+categorical level,buildings,surrogate,previous_insurer,INS11,INS11,kept
+categorical level,buildings,surrogate,previous_insurer,INS12,INS12,kept
+categorical level,buildings,surrogate,previous_insurer,INS13,INS13,kept
+categorical level,buildings,surrogate,previous_insurer,INS14,INS14,kept
+categorical level,buildings,surrogate,previous_insurer,INS15,INS15,kept
+categorical level,buildings,surrogate,previous_insurer,INS16,INS16,kept
+categorical level,buildings,surrogate,previous_insurer,INS17,INS17,kept
+categorical level,buildings,surrogate,previous_insurer,INS18,INS18,kept
+categorical level,buildings,surrogate,previous_insurer,INS19,INS19,kept
+categorical level,buildings,surrogate,previous_insurer,INS20,INS20,kept
+categorical level,buildings,surrogate,previous_insurer,INS21,INS21,kept
+categorical level,buildings,surrogate,previous_insurer,INS22,INS22,kept
+categorical level,buildings,surrogate,previous_insurer,INS23,INS23,kept
+categorical level,buildings,surrogate,previous_insurer,INS24,INS24,kept
+categorical level,buildings,surrogate,previous_insurer,INS25,INS25,kept
+categorical level,buildings,surrogate,previous_insurer,INS26,INS26,kept
+categorical level,buildings,surrogate,previous_insurer,INS27,INS27,kept
+categorical level,buildings,surrogate,previous_insurer,INS28,INS28,kept
+categorical level,buildings,surrogate,previous_insurer,INS29,INS29,kept
+categorical level,buildings,surrogate,previous_insurer,INS30,INS30,kept
+categorical level,buildings,surrogate,previous_insurer,INS31,INS31,kept
+categorical level,buildings,surrogate,previous_insurer,INS32,INS32,kept
+categorical level,buildings,surrogate,previous_insurer,INS33,INS33,kept
+categorical level,buildings,surrogate,previous_insurer,INS34,INS34,kept
+categorical level,buildings,surrogate,previous_insurer,INS35,INS35,kept
+categorical level,buildings,surrogate,previous_insurer,INS36,INS36,kept
+categorical level,buildings,surrogate,previous_insurer,INS37,INS37,kept
+categorical level,buildings,surrogate,previous_insurer,INS38,INS38,kept
+categorical level,buildings,surrogate,previous_insurer,INS39,INS39,kept
+categorical level,buildings,surrogate,campaign_code,CMP00,CMP00,kept
+categorical level,buildings,surrogate,campaign_code,CMP01,CMP01,kept
+categorical level,buildings,surrogate,campaign_code,CMP02,CMP02,kept
+categorical level,buildings,surrogate,campaign_code,CMP03,CMP03,kept
+categorical level,buildings,surrogate,campaign_code,CMP04,CMP04,kept
+categorical level,buildings,surrogate,campaign_code,CMP05,CMP05,kept
+categorical level,buildings,surrogate,campaign_code,CMP06,CMP06,kept
+categorical level,buildings,surrogate,campaign_code,CMP07,CMP07,kept
+categorical level,buildings,surrogate,campaign_code,CMP08,CMP08,kept
+categorical level,buildings,surrogate,campaign_code,CMP09,CMP09,kept
+categorical level,buildings,surrogate,campaign_code,CMP10,CMP10,kept
+categorical level,buildings,surrogate,campaign_code,CMP11,CMP11,kept
+categorical level,buildings,surrogate,campaign_code,CMP12,CMP12,kept
+categorical level,buildings,surrogate,campaign_code,CMP13,CMP13,kept
+categorical level,buildings,surrogate,campaign_code,CMP14,CMP14,kept
+categorical level,buildings,surrogate,campaign_code,MISSING,MISSING,kept
+categorical level,buildings,surrogate,branch_id,1,1,kept
+categorical level,buildings,surrogate,branch_id,10,10,kept
+categorical level,buildings,surrogate,branch_id,11,11,kept
+categorical level,buildings,surrogate,branch_id,12,12,kept
+categorical level,buildings,surrogate,branch_id,13,13,kept
+categorical level,buildings,surrogate,branch_id,14,14,kept
+categorical level,buildings,surrogate,branch_id,15,15,kept
+categorical level,buildings,surrogate,branch_id,16,16,kept
+categorical level,buildings,surrogate,branch_id,17,17,kept
+categorical level,buildings,surrogate,branch_id,18,18,kept
+categorical level,buildings,surrogate,branch_id,19,19,kept
+categorical level,buildings,surrogate,branch_id,2,2,kept
+categorical level,buildings,surrogate,branch_id,20,20,kept
+categorical level,buildings,surrogate,branch_id,21,21,kept
+categorical level,buildings,surrogate,branch_id,22,22,kept
+categorical level,buildings,surrogate,branch_id,23,23,kept
+categorical level,buildings,surrogate,branch_id,24,24,kept
+categorical level,buildings,surrogate,branch_id,25,25,kept
+categorical level,buildings,surrogate,branch_id,3,3,kept
+categorical level,buildings,surrogate,branch_id,4,4,kept
+categorical level,buildings,surrogate,branch_id,5,5,kept
+categorical level,buildings,surrogate,branch_id,6,6,kept
+categorical level,buildings,surrogate,branch_id,7,7,kept
+categorical level,buildings,surrogate,branch_id,8,8,kept
+categorical level,buildings,surrogate,branch_id,9,9,kept
+categorical level,buildings,surrogate,marketing_segment,mature_affluent,mature_affluent,kept
+categorical level,buildings,surrogate,marketing_segment,mature_budget,mature_budget,kept
+categorical level,buildings,surrogate,marketing_segment,mature_mainstream,mature_mainstream,kept
+categorical level,buildings,surrogate,marketing_segment,midlife_affluent,midlife_affluent,kept
+categorical level,buildings,surrogate,marketing_segment,midlife_budget,midlife_budget,kept
+categorical level,buildings,surrogate,marketing_segment,midlife_mainstream,midlife_mainstream,kept
+categorical level,buildings,surrogate,marketing_segment,senior_affluent,senior_affluent,kept
+categorical level,buildings,surrogate,marketing_segment,senior_budget,senior_budget,kept
+categorical level,buildings,surrogate,marketing_segment,senior_mainstream,senior_mainstream,kept
+categorical level,buildings,surrogate,marketing_segment,young_affluent,young_affluent,kept
+categorical level,buildings,surrogate,marketing_segment,young_budget,young_budget,kept
+categorical level,buildings,surrogate,marketing_segment,young_mainstream,young_mainstream,kept
+categorical level,buildings,surrogate,urban_density,dense_urban,dense_urban,kept
+categorical level,buildings,surrogate,urban_density,rural,rural,kept
+categorical level,buildings,surrogate,urban_density,suburban,suburban,kept
+categorical level,buildings,surrogate,urban_density,urban,urban,kept
+categorical level,buildings,surrogate,soil_type,MISSING,MISSING,kept
+categorical level,buildings,surrogate,soil_type,chalk,chalk,kept
+categorical level,buildings,surrogate,soil_type,clay,clay,kept
+categorical level,buildings,surrogate,soil_type,loam,loam,kept
+categorical level,buildings,surrogate,soil_type,rock,rock,kept
+categorical level,buildings,surrogate,soil_type,sand,sand,kept
+categorical level,buildings,surrogate,property_type,detached,detached,kept
+categorical level,buildings,surrogate,property_type,flat,flat,kept
+categorical level,buildings,surrogate,property_type,semi_detached,semi_detached,kept
+categorical level,buildings,surrogate,property_type,terraced,terraced,kept
+categorical level,buildings,surrogate,basement,False,False,kept
+categorical level,buildings,surrogate,basement,True,True,kept
+categorical level,buildings,surrogate,trees_within_5m,False,False,kept
+categorical level,buildings,surrogate,trees_within_5m,True,True,kept
+categorical level,buildings,surrogate,listed_building,False,False,kept
+categorical level,buildings,surrogate,listed_building,True,True,kept
+categorical level,buildings,surrogate,energy_rating,A,A,kept
+categorical level,buildings,surrogate,energy_rating,B,B,kept
+categorical level,buildings,surrogate,energy_rating,C,C,kept
+categorical level,buildings,surrogate,energy_rating,D,D,kept
+categorical level,buildings,surrogate,energy_rating,E,E,kept
+categorical level,buildings,surrogate,energy_rating,F,F,kept
+categorical level,buildings,surrogate,energy_rating,G,G,kept
+categorical level,buildings,surrogate,energy_rating,MISSING,MISSING,kept
+categorical level,buildings,surrogate,policyholder_age_band,17-24,17-24,kept
+categorical level,buildings,surrogate,policyholder_age_band,25-34,25-34,kept
+categorical level,buildings,surrogate,policyholder_age_band,35-49,35-49,kept
+categorical level,buildings,surrogate,policyholder_age_band,50-64,50-64,kept
+categorical level,buildings,surrogate,policyholder_age_band,65+,65+,kept
+categorical level,buildings,surrogate,elevation_m*flood_zone,q00|MISSING,q00|MISSING,kept
+categorical level,buildings,surrogate,elevation_m*flood_zone,q00|q00,q00|q00,kept
+categorical level,buildings,surrogate,elevation_m*flood_zone,q00|q01,q00|q01,kept
+categorical level,buildings,surrogate,elevation_m*flood_zone,q00|q02,q00|q02,kept
+categorical level,buildings,surrogate,elevation_m*flood_zone,q00|q03,q00|q03,kept
+categorical level,buildings,surrogate,elevation_m*flood_zone,q00|q04,q00|q04,kept
+categorical level,buildings,surrogate,elevation_m*flood_zone,q01|MISSING,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*flood_zone,q01|q00,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*flood_zone,q01|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*flood_zone,q01|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*flood_zone,q01|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*flood_zone,q01|q04,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*flood_zone,q02|MISSING,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*flood_zone,q02|q00,q02|q00,kept
+categorical level,buildings,surrogate,elevation_m*flood_zone,q02|q01,q02|q01,kept
+categorical level,buildings,surrogate,elevation_m*flood_zone,q02|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*flood_zone,q02|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*flood_zone,q02|q04,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*flood_zone,q03|MISSING,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*flood_zone,q03|q00,q03|q00,kept
+categorical level,buildings,surrogate,elevation_m*flood_zone,q03|q01,q03|q01,kept
+categorical level,buildings,surrogate,elevation_m*flood_zone,q03|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*flood_zone,q03|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*flood_zone,q03|q04,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*flood_zone,q04|MISSING,q04|MISSING,kept
+categorical level,buildings,surrogate,elevation_m*flood_zone,q04|q00,q04|q00,kept
+categorical level,buildings,surrogate,elevation_m*flood_zone,q04|q01,q04|q01,kept
+categorical level,buildings,surrogate,elevation_m*flood_zone,q04|q02,q04|q02,kept
+categorical level,buildings,surrogate,elevation_m*flood_zone,q04|q03,q04|q03,kept
+categorical level,buildings,surrogate,elevation_m*flood_zone,q04|q04,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,sum_insured*year_built,q00|q00,q00|q00,kept
+categorical level,buildings,surrogate,sum_insured*year_built,q00|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,sum_insured*year_built,q00|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,sum_insured*year_built,q00|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,sum_insured*year_built,q00|q04,q00|q04,kept
+categorical level,buildings,surrogate,sum_insured*year_built,q01|q00,q01|q00,kept
+categorical level,buildings,surrogate,sum_insured*year_built,q01|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,sum_insured*year_built,q01|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,sum_insured*year_built,q01|q03,q01|q03,kept
+categorical level,buildings,surrogate,sum_insured*year_built,q01|q04,q01|q04,kept
+categorical level,buildings,surrogate,sum_insured*year_built,q02|q00,q02|q00,kept
+categorical level,buildings,surrogate,sum_insured*year_built,q02|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,sum_insured*year_built,q02|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,sum_insured*year_built,q02|q03,q02|q03,kept
+categorical level,buildings,surrogate,sum_insured*year_built,q02|q04,q02|q04,kept
+categorical level,buildings,surrogate,sum_insured*year_built,q03|q00,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,sum_insured*year_built,q03|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,sum_insured*year_built,q03|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,sum_insured*year_built,q03|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,sum_insured*year_built,q03|q04,q03|q04,kept
+categorical level,buildings,surrogate,sum_insured*year_built,q04|q00,q04|q00,kept
+categorical level,buildings,surrogate,sum_insured*year_built,q04|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,sum_insured*year_built,q04|q02,q04|q02,kept
+categorical level,buildings,surrogate,sum_insured*year_built,q04|q03,q04|q03,kept
+categorical level,buildings,surrogate,sum_insured*year_built,q04|q04,q04|q04,kept
+categorical level,buildings,surrogate,flood_zone*year_built,MISSING|q00,MISSING|q00,kept
+categorical level,buildings,surrogate,flood_zone*year_built,MISSING|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*year_built,MISSING|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*year_built,MISSING|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*year_built,MISSING|q04,MISSING|q04,kept
+categorical level,buildings,surrogate,flood_zone*year_built,q00|q00,q00|q00,kept
+categorical level,buildings,surrogate,flood_zone*year_built,q00|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*year_built,q00|q02,q00|q02,kept
+categorical level,buildings,surrogate,flood_zone*year_built,q00|q03,q00|q03,kept
+categorical level,buildings,surrogate,flood_zone*year_built,q00|q04,q00|q04,kept
+categorical level,buildings,surrogate,flood_zone*year_built,q01|q00,q01|q00,kept
+categorical level,buildings,surrogate,flood_zone*year_built,q01|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*year_built,q01|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*year_built,q01|q03,q01|q03,kept
+categorical level,buildings,surrogate,flood_zone*year_built,q01|q04,q01|q04,kept
+categorical level,buildings,surrogate,flood_zone*year_built,q02|q00,q02|q00,kept
+categorical level,buildings,surrogate,flood_zone*year_built,q02|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*year_built,q02|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*year_built,q02|q03,q02|q03,kept
+categorical level,buildings,surrogate,flood_zone*year_built,q02|q04,q02|q04,kept
+categorical level,buildings,surrogate,flood_zone*year_built,q03|q00,q03|q00,kept
+categorical level,buildings,surrogate,flood_zone*year_built,q03|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*year_built,q03|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*year_built,q03|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*year_built,q03|q04,q03|q04,kept
+categorical level,buildings,surrogate,flood_zone*year_built,q04|q00,q04|q00,kept
+categorical level,buildings,surrogate,flood_zone*year_built,q04|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*year_built,q04|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*year_built,q04|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*year_built,q04|q04,q04|q04,kept
+categorical level,buildings,surrogate,elevation_m*sum_insured,q00|q00,q00|q00,kept
+categorical level,buildings,surrogate,elevation_m*sum_insured,q00|q01,q00|q01,kept
+categorical level,buildings,surrogate,elevation_m*sum_insured,q00|q02,q00|q02,kept
+categorical level,buildings,surrogate,elevation_m*sum_insured,q00|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*sum_insured,q00|q04,q00|q04,kept
+categorical level,buildings,surrogate,elevation_m*sum_insured,q01|q00,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*sum_insured,q01|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*sum_insured,q01|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*sum_insured,q01|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*sum_insured,q01|q04,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*sum_insured,q02|q00,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*sum_insured,q02|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*sum_insured,q02|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*sum_insured,q02|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*sum_insured,q02|q04,q02|q04,kept
+categorical level,buildings,surrogate,elevation_m*sum_insured,q03|q00,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*sum_insured,q03|q01,q03|q01,kept
+categorical level,buildings,surrogate,elevation_m*sum_insured,q03|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*sum_insured,q03|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*sum_insured,q03|q04,q03|q04,kept
+categorical level,buildings,surrogate,elevation_m*sum_insured,q04|q00,q04|q00,kept
+categorical level,buildings,surrogate,elevation_m*sum_insured,q04|q01,q04|q01,kept
+categorical level,buildings,surrogate,elevation_m*sum_insured,q04|q02,q04|q02,kept
+categorical level,buildings,surrogate,elevation_m*sum_insured,q04|q03,q04|q03,kept
+categorical level,buildings,surrogate,elevation_m*sum_insured,q04|q04,q04|q04,kept
+categorical level,buildings,surrogate,flood_zone*sum_insured,MISSING|q00,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*sum_insured,MISSING|q01,MISSING|q01,kept
+categorical level,buildings,surrogate,flood_zone*sum_insured,MISSING|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*sum_insured,MISSING|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*sum_insured,MISSING|q04,MISSING|q04,kept
+categorical level,buildings,surrogate,flood_zone*sum_insured,q00|q00,q00|q00,kept
+categorical level,buildings,surrogate,flood_zone*sum_insured,q00|q01,q00|q01,kept
+categorical level,buildings,surrogate,flood_zone*sum_insured,q00|q02,q00|q02,kept
+categorical level,buildings,surrogate,flood_zone*sum_insured,q00|q03,q00|q03,kept
+categorical level,buildings,surrogate,flood_zone*sum_insured,q00|q04,q00|q04,kept
+categorical level,buildings,surrogate,flood_zone*sum_insured,q01|q00,q01|q00,kept
+categorical level,buildings,surrogate,flood_zone*sum_insured,q01|q01,q01|q01,kept
+categorical level,buildings,surrogate,flood_zone*sum_insured,q01|q02,q01|q02,kept
+categorical level,buildings,surrogate,flood_zone*sum_insured,q01|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*sum_insured,q01|q04,q01|q04,kept
+categorical level,buildings,surrogate,flood_zone*sum_insured,q02|q00,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*sum_insured,q02|q01,q02|q01,kept
+categorical level,buildings,surrogate,flood_zone*sum_insured,q02|q02,q02|q02,kept
+categorical level,buildings,surrogate,flood_zone*sum_insured,q02|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*sum_insured,q02|q04,q02|q04,kept
+categorical level,buildings,surrogate,flood_zone*sum_insured,q03|q00,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*sum_insured,q03|q01,q03|q01,kept
+categorical level,buildings,surrogate,flood_zone*sum_insured,q03|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*sum_insured,q03|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*sum_insured,q03|q04,q03|q04,kept
+categorical level,buildings,surrogate,flood_zone*sum_insured,q04|q00,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*sum_insured,q04|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*sum_insured,q04|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*sum_insured,q04|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,flood_zone*sum_insured,q04|q04,q04|q04,kept
+categorical level,buildings,surrogate,elevation_m*x_fz3_rain,q00|q00,q00|q00,kept
+categorical level,buildings,surrogate,elevation_m*x_fz3_rain,q00|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*x_fz3_rain,q00|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*x_fz3_rain,q00|q04,q00|q04,kept
+categorical level,buildings,surrogate,elevation_m*x_fz3_rain,q01|q00,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*x_fz3_rain,q01|q04,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*x_fz3_rain,q02|q00,q02|q00,kept
+categorical level,buildings,surrogate,elevation_m*x_fz3_rain,q02|q04,q02|q04,kept
+categorical level,buildings,surrogate,elevation_m*x_fz3_rain,q03|q00,q03|q00,kept
+categorical level,buildings,surrogate,elevation_m*x_fz3_rain,q03|q04,q03|q04,kept
+categorical level,buildings,surrogate,elevation_m*x_fz3_rain,q04|q00,q04|q00,kept
+categorical level,buildings,surrogate,elevation_m*x_fz3_rain,q04|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*x_fz3_rain,q04|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*x_fz3_rain,q04|q04,q04|q04,kept
+categorical level,buildings,surrogate,elevation_m*year_built,q00|q00,q00|q00,kept
+categorical level,buildings,surrogate,elevation_m*year_built,q00|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*year_built,q00|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*year_built,q00|q03,q00|q03,kept
+categorical level,buildings,surrogate,elevation_m*year_built,q00|q04,q00|q04,kept
+categorical level,buildings,surrogate,elevation_m*year_built,q01|q00,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*year_built,q01|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*year_built,q01|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*year_built,q01|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*year_built,q01|q04,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*year_built,q02|q00,q02|q00,kept
+categorical level,buildings,surrogate,elevation_m*year_built,q02|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*year_built,q02|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*year_built,q02|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*year_built,q02|q04,q02|q04,kept
+categorical level,buildings,surrogate,elevation_m*year_built,q03|q00,q03|q00,kept
+categorical level,buildings,surrogate,elevation_m*year_built,q03|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*year_built,q03|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*year_built,q03|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,elevation_m*year_built,q03|q04,q03|q04,kept
+categorical level,buildings,surrogate,elevation_m*year_built,q04|q00,q04|q00,kept
+categorical level,buildings,surrogate,elevation_m*year_built,q04|q01,q04|q01,kept
+categorical level,buildings,surrogate,elevation_m*year_built,q04|q02,q04|q02,kept
+categorical level,buildings,surrogate,elevation_m*year_built,q04|q03,q04|q03,kept
+categorical level,buildings,surrogate,elevation_m*year_built,q04|q04,q04|q04,kept
+categorical level,buildings,surrogate,prior_claims_5y*sum_insured,q00|q00,q00|q00,kept
+categorical level,buildings,surrogate,prior_claims_5y*sum_insured,q00|q01,q00|q01,kept
+categorical level,buildings,surrogate,prior_claims_5y*sum_insured,q00|q02,q00|q02,kept
+categorical level,buildings,surrogate,prior_claims_5y*sum_insured,q00|q03,q00|q03,kept
+categorical level,buildings,surrogate,prior_claims_5y*sum_insured,q00|q04,q00|q04,kept
+categorical level,buildings,surrogate,prior_claims_5y*sum_insured,q01|q00,q01|q00,kept
+categorical level,buildings,surrogate,prior_claims_5y*sum_insured,q01|q01,q01|q01,kept
+categorical level,buildings,surrogate,prior_claims_5y*sum_insured,q01|q02,q01|q02,kept
+categorical level,buildings,surrogate,prior_claims_5y*sum_insured,q01|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,prior_claims_5y*sum_insured,q01|q04,q01|q04,kept
+categorical level,buildings,surrogate,prior_claims_5y*sum_insured,q02|q00,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,prior_claims_5y*sum_insured,q02|q01,q02|q01,kept
+categorical level,buildings,surrogate,prior_claims_5y*sum_insured,q02|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,prior_claims_5y*sum_insured,q02|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,prior_claims_5y*sum_insured,q02|q04,q02|q04,kept
+categorical level,buildings,surrogate,prior_claims_5y*x_clay_dry,q00|q00,q00|q00,kept
+categorical level,buildings,surrogate,prior_claims_5y*x_clay_dry,q00|q01,q00|q01,kept
+categorical level,buildings,surrogate,prior_claims_5y*x_clay_dry,q00|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,prior_claims_5y*x_clay_dry,q00|q03,q00|q03,kept
+categorical level,buildings,surrogate,prior_claims_5y*x_clay_dry,q00|q04,q00|q04,kept
+categorical level,buildings,surrogate,prior_claims_5y*x_clay_dry,q01|q00,q01|q00,kept
+categorical level,buildings,surrogate,prior_claims_5y*x_clay_dry,q01|q01,q01|q01,kept
+categorical level,buildings,surrogate,prior_claims_5y*x_clay_dry,q01|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,prior_claims_5y*x_clay_dry,q01|q03,q01|q03,kept
+categorical level,buildings,surrogate,prior_claims_5y*x_clay_dry,q01|q04,q01|q04,kept
+categorical level,buildings,surrogate,prior_claims_5y*x_clay_dry,q02|q00,q02|q00,kept
+categorical level,buildings,surrogate,prior_claims_5y*x_clay_dry,q02|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,prior_claims_5y*x_clay_dry,q02|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,prior_claims_5y*x_clay_dry,q02|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,prior_claims_5y*x_clay_dry,q02|q04,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,MISSING|MISSING,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,MISSING|q00,MISSING|q00,kept
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,MISSING|q01,MISSING|q01,kept
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,MISSING|q02,MISSING|q02,kept
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,MISSING|q03,MISSING|q03,kept
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,MISSING|q04,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q00|MISSING,q00|MISSING,kept
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q00|q00,q00|q00,kept
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q00|q01,q00|q01,kept
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q00|q02,q00|q02,kept
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q00|q03,q00|q03,kept
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q00|q04,q00|q04,kept
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q01|MISSING,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q01|q00,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q01|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q01|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q01|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q01|q04,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q02|MISSING,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q02|q00,q02|q00,kept
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q02|q01,q02|q01,kept
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q02|q02,q02|q02,kept
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q02|q03,q02|q03,kept
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q02|q04,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q03|MISSING,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q03|q00,q03|q00,kept
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q03|q01,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q03|q02,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q03|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q03|q04,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q04|MISSING,q04|MISSING,kept
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q04|q00,q04|q00,kept
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q04|q01,q04|q01,kept
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q04|q02,q04|q02,kept
+categorical level,buildings,surrogate,distance_to_river_km*flood_zone,q04|q03,OTHER,under 0.5% of 2025 buildings exposure: merged into OTHER
+interaction,buildings,surrogate,elevation_m*flood_zone,band of elevation_m | band of flood_zone,qAA|qBB,bands: kind 'interaction band' in buildings_surrogate_terms.csv; then map the pair as a categorical level; a pair with no row here is OTHER
+interaction,buildings,surrogate,sum_insured*year_built,band of sum_insured | band of year_built,qAA|qBB,bands: kind 'interaction band' in buildings_surrogate_terms.csv; then map the pair as a categorical level; a pair with no row here is OTHER
+interaction,buildings,surrogate,flood_zone*year_built,band of flood_zone | band of year_built,qAA|qBB,bands: kind 'interaction band' in buildings_surrogate_terms.csv; then map the pair as a categorical level; a pair with no row here is OTHER
+interaction,buildings,surrogate,elevation_m*sum_insured,band of elevation_m | band of sum_insured,qAA|qBB,bands: kind 'interaction band' in buildings_surrogate_terms.csv; then map the pair as a categorical level; a pair with no row here is OTHER
+interaction,buildings,surrogate,flood_zone*sum_insured,band of flood_zone | band of sum_insured,qAA|qBB,bands: kind 'interaction band' in buildings_surrogate_terms.csv; then map the pair as a categorical level; a pair with no row here is OTHER
+interaction,buildings,surrogate,elevation_m*x_fz3_rain,band of elevation_m | band of x_fz3_rain,qAA|qBB,bands: kind 'interaction band' in buildings_surrogate_terms.csv; then map the pair as a categorical level; a pair with no row here is OTHER
+interaction,buildings,surrogate,elevation_m*year_built,band of elevation_m | band of year_built,qAA|qBB,bands: kind 'interaction band' in buildings_surrogate_terms.csv; then map the pair as a categorical level; a pair with no row here is OTHER
+interaction,buildings,surrogate,prior_claims_5y*sum_insured,band of prior_claims_5y | band of sum_insured,qAA|qBB,bands: kind 'interaction band' in buildings_surrogate_terms.csv; then map the pair as a categorical level; a pair with no row here is OTHER
+interaction,buildings,surrogate,prior_claims_5y*x_clay_dry,band of prior_claims_5y | band of x_clay_dry,qAA|qBB,bands: kind 'interaction band' in buildings_surrogate_terms.csv; then map the pair as a categorical level; a pair with no row here is OTHER
+interaction,buildings,surrogate,distance_to_river_km*flood_zone,band of distance_to_river_km | band of flood_zone,qAA|qBB,bands: kind 'interaction band' in buildings_surrogate_terms.csv; then map the pair as a categorical level; a pair with no row here is OTHER

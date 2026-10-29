@@ -55,6 +55,10 @@ buildings level factor 1.03338, the credibility k by group).
 | `buildings_xgboost.json` | trees | 193 trees | yes |
 | `buildings_xgboost_features.csv` | trees | 218 | yes |
 | `buildings_xgboost_nodes.csv` | trees | 2,577 | yes |
+| `buildings_surrogate_terms.csv` | surrogate | 12,044 | yes |
+| `buildings_surrogate_spline_pieces.csv` | surrogate | 190 | yes |
+| `buildings_surrogate_input_mappings.csv` | surrogate | 408 | yes |
+| `buildings_surrogate_reconciliation.csv` | surrogate | 101 (25 checks, 76 for information) | yes |
 | `input_mappings.csv` | 3 | 162 | yes |
 | `scalars.csv` | 4 | 80 | yes |
 | `reconciliation.csv` | 8 | 46 (40 checks, 6 for information) | yes |
@@ -62,6 +66,7 @@ buildings level factor 1.03338, the credibility k by group).
 | `rows_inputs_<line>.parquet` | 6 | 52,295 / 66,247 / 90,521 | no |
 | `rows_glm_terms_<line>.parquet` | extra | as above | no |
 | `reference_office_premium.parquet` | 7 | 20 | no |
+| `rows_surrogate_buildings.parquet` | surrogate | 52,295 | no |
 
 The Parquet files hold competition data (rules section 5b) and are git-ignored here and in the pack. Do not commit
 or share them outside the team.
@@ -161,6 +166,166 @@ as missing without any error, which changes the price (a `branch_id` of `3.0` fo
 so a quote engine should count such inputs and reject or flag them; for the 2025 rows the count is 0
 (`reconciliation.csv`).
 
+## The buildings surrogate GLM
+
+A GLM that approximates the buildings trees, for pricing the whole 2025 book in a spreadsheet. It is not part of
+any submission and it is not exact: where a price must match the model, use the trees. It replaces only buildings
+`small`; the large claims and the level step apply as above. Written by `python/surrogate_buildings.py` from this
+export (run `deea4b96`, audit A35). The figures below that the run does not write itself (the other random splits,
+the trees' split gain beyond the knots, the tails, the aliasing, the zone, `OTHER` and missing-category figures)
+are from `audit/exploratory/a35/doc_figures.py`, in `audit/evidence/emerging/ev_a35_doc_figures.csv`.
+
+How it was built:
+
+- **Target**: each 2025 buildings row's `small_claim`, the trees' expected cost, not the claims.
+- **Terms**: the 47 features the trees split on.
+  - Ten numerics with at most 20 values in 2025 are factors with one band per value: bedrooms, customer since,
+    discount, flood zone, household size, licence points, missed payments, prior claims, renewal count and
+    voluntary excess.
+  - The other 16 are cubic splines with up to 12 knots at quantiles from the 1st to the 99th percentile (12 for 12
+    of them; fewer where quantiles coincide: 11, 11, 5 and 3), flat beyond them so that the few rows at either end
+    cannot bend the curve. The trees are not flat there for every feature: splits that separate 2025 values at or
+    below the first knot carry 68% of wildfire index's split gain and 15% of mean temperature's, and splits above
+    the last knot 9% of freezing days'; for any other spline it is under 5%. Each of those three carries under 0.5% of the trees'
+    gain, and moving every 2025 row to a climate feature's 0.5th or 99.5th percentile changes the surrogate's total
+    against the trees' by at most 1.6% (mean temperature at its 99.5th percentile).
+  - The 21 categoricals enter as levels.
+  - The ten strongest interactions in the trees enter as `a*b`: the pairs of features split one after the other,
+    ranked by the gain of the second split (share of that gain): elevation x flood zone (8.5%), sum insured x
+    year built (7.5%), flood zone x year built (5.6%), elevation x sum insured (5.4%), flood zone x sum insured
+    (4.6%), elevation x `x_fz3_rain` (4.2%), elevation x year built (3.0%), prior claims x sum insured (2.7%),
+    prior claims x `x_clay_dry` (2.0%) and distance to river x flood zone (1.8%). Each is the cross of two banded
+    factors, each feature cut at its four highest-gain split points in the trees among those with 2025 values on
+    both sides. Flood zone's split at 10, beyond every 2025 value, gives way to its split at 2, so each zone has its
+    own band; prior claims has only two split points. A value on a split point goes to the band above, as in the
+    trees. Cells under 0.5% of exposure are pooled as `OTHER`.
+- **Fit**: log link with an ln(exposure) offset, Tweedie power 2 (gamma, which weighs every policy's relative error
+  alike) and L2 penalty 1e-4. Then ln(0.99949) was added to the intercept, multiplying every prediction by 0.99949,
+  so the 2025 total equals the trees'; the exported intercept already includes it.
+- **Choice**: 15 candidates (4, 6, 8, 10 or 12 knots, each with Tweedie power 1, 1.5 or 2) were fitted on 80% of
+  the rows and scored on the other 20%; the one with the lowest held-out mean squared log error was refitted on
+  every row (`audit/evidence/emerging/ev_a35_surrogate_specification.csv`). The best few are practically level
+  (12 knots: 0.005028 with power 2 and 0.005033 with 1.5; 10 knots with power 2: 0.005036), well within what
+  another random split would change: on two other splits the chosen candidate's error moves by up to 0.000085, more
+  than the gaps between the best few, and the winner changes. Twelve knots is a cap on size: 16 and 20 knots, fitted for comparison, lower the error only slightly (95th
+  percentile 14.2% for both, against 14.4%) for 54 and 102 more parameters.
+
+Accuracy against the trees (relative error per row):
+
+| Rows | Median | 95th percentile | 99th percentile | Largest | Within 10% | Within 20% | Total |
+|---|---|---|---|---|---|---|---|
+| Held out: 10,406 rows, fitted on the other 41,889 | 4.4% | 14.4% | 21.1% | 59% | 86% | 98.7% | +0.11% |
+| Every 2025 row, final fit (in sample) | 4.2% | 14.2% | 21.1% | 60% | 86% | 98.7% | 0 |
+
+New business and renewals fare alike (medians 4.2% and 4.2%, 95th percentiles 14.2% and 14.3%), and the 7
+buildings reference policies are within 5.6%. For comparison, fitted the same way (12 knots, power 2) and scored on
+the held-out rows:
+
+| Interactions | Parameters (80% fit) | Median | 95th percentile | Largest |
+|---|---|---|---|---|
+| None | 398 | 5.9% | 27.6% | 99.9% |
+| Strongest 5 | 470 | 4.7% | 15.7% | 63% |
+| Strongest 10 (this surrogate) | 528 | 4.4% | 14.4% | 59% |
+| Strongest 20 numeric pairs | 637 | 4.1% | 13.2% | 39% |
+
+The final fit, on every row, has 530 parameters: on all the rows the 0.5% rule keeps three cells more and one fewer.
+
+The rating tables are not stand-alone relativities, for two reasons:
+
+- **Crosses.** An interacted feature's effect is its main term plus its crosses, so read it by what it does to the
+  price, not by its own row.
+- **Aliasing.** Some columns are aliased: the 530 design columns, intercept included, have rank 502, and the L2
+  penalty shares an effect between aliased columns.
+  - Of the 28 aliased dimensions, 9 come from the crosses, which overlap their main terms and one another (flood
+    zone is in four), and 19 lie among the main terms themselves.
+  - Of those 19, 17 arise because renewal count and customer since are one-to-one in 2025 (customer since = 2025
+    minus renewal count), one because campaign code is missing exactly when renewal count is 3 or more, and one
+    because the 5% discount occurs exactly on the direct channel.
+  - So read those features together: renewal count with customer since and campaign code's `MISSING` row, and the
+    5% discount with the direct channel.
+  - Renewal count and customer since together contribute at most 0.016 on the log scale. The 5% discount and the
+    direct channel share an effect of -0.033, split equally between their two rows.
+  - A year on, the first pair no longer lines up as in 2025, but that matters little: moving every 2025 row one
+    renewal on, customer since unchanged, changes the surrogate's total against the trees' by +0.6%, and the
+    median error from 4.23% to 4.26%.
+
+`buildings_surrogate_reconciliation.csv` reads the features by their effect on price, one feature at a time: it
+moves every 2025 row to one value and compares the surrogate's total with the trees'.
+
+- **Within 4%.** Distance to river, elevation, sum insured and year built stay within 4% of the trees at every value
+  tried, sum insured at the 2025 maximum included (-3.0%).
+- **Within 1%.** Flood zones 1 to 3 and prior claims of 0 to 3 stay within 1%.
+- **Rare values depart.** Flood zone 4 by +8.3% and zone 5 by +28%; prior claims of 4 by -5.1% and of 5 by -14%.
+  Prior claims of 4 and 5 are rare (15 rows and 1 row in 2025).
+
+On the 2025 rows really in flood zones 4 and 5, the surrogate's totals differ from the trees' by only +0.2% and +0.3%
+(median errors 6.6% and 7.1%). The departure is in combinations that 2025 hardly has, and it is concentrated at
+higher elevations: from 2.8 m for zone 5 and from 5 m for zone 4.
+Only 58 of the 887 zone 5 rows lie at 2.1 m or more: too few for cells of their own in elevation x flood zone, so
+they pool as `OTHER`. Moved to each zone, the 2025 rows are priced against the trees, in total over each elevation
+band, at:
+
+| Elevation | Moved to zone 4 | Moved to zone 5 |
+|---|---|---|
+| Under 2.1 m | +3.3% | +12% |
+| 2.1 m to under 2.8 m | +3.6% | +9.7% |
+| 2.8 m to under 5 m | +2.7% | +26% |
+| 5 m to under 10 m | +13% | +43% |
+| 10 m to under 20 m | +14% | +45% |
+| 20 m or more | +14% | +46% |
+
+Per row, the rows at 2.8 m or more moved to zone 5 are overpriced by a median of 44% (95th percentile 72%, largest
+122%). The quote rule below sends such quotes to the trees. Zone 4 above 2.8 m is different: it keeps a cell of its
+own in elevation x flood zone, which averages the rows at 2.8 to 5 m with those higher up. With every 2025 row moved
+to zone 4, 5,218 of the 34,466 rows at 5 m or more fall in no `OTHER` cell, and the surrogate's total on them is
+8.6% above the trees'. The 93 rows really in zone 4 at 5 m or more are 8.3% high in sample.
+
+To use it, follow `terms.csv` above with these files in place of `terms.csv`, `spline_pieces.csv` and the
+categorical-level rows of `input_mappings.csv` (line `buildings`, component `surrogate`). The rest of
+`input_mappings.csv` still applies first, as for the trees: the surrogate was fitted to inputs that had been through
+the conforming view and the data fixes (D-02, D-27 and the construction codes among them). Then:
+
+- **Booleans** are `True` and `False` here, as in `buildings_xgboost_features.csv`, not the `true` and `false` of
+  `terms.csv`.
+- **Interactions** (`a*b`): band each feature with its `interaction band` rows in `buildings_surrogate_terms.csv`
+  (`lower < x <= upper`, or `MISSING`), join the bands in the order of the name, a first (`qAA|qBB`), and map the
+  pair through `buildings_surrogate_input_mappings.csv` like a categorical level. A pair not listed there is
+  `OTHER`.
+- **Other values not listed**: a categorical value not in the mappings is also `OTHER`, as the fit treats it. Every
+  interaction has an `OTHER` level, but none of the 21 categoricals does, so in a categorical such a value scores
+  as the base level. With the 2025 rows nothing falls back, so count the rows that do: the count should be 0.
+- **Trend**: the surrogate has no year term of its own. Its origin is 2025 (to rounding), so the trend contributes
+  0 in 2025; for another year add the trees' slope x (year - 2025).
+- **Quotes**: use the trees for a quote in any of these cases:
+  - **An input outside the 2025 range.**
+  - **A missing value that the 2025 rows never have**: in any spline but days unoccupied, years at address and
+    distance to river, or in a banded numeric whose `MISSING` row is noted "not seen in fitting" (all but flood zone
+    and household size). The surrogate has no fitted value for those: a missing spline input adds 0, a missing
+    banded input scores as the base level, and a missing interaction input makes the pair `OTHER`. The trees send a
+    missing value down each split's default branch, learnt where the training data had missing values.
+  - **Any interaction pair at `OTHER`**: a combination with under 0.5% of 2025 exposure, priced by one coefficient
+    shared with every other rare cell. This is what catches the zone 5 quotes above: moving every 2025 row to zone 5
+    puts 97% of them in at least one `OTHER` cell, where the surrogate's total is 30% above the trees', against
+    2.6% on the rest.
+  - Of the 2025 rows themselves, 10.8% have such a pair. On them the surrogate's median error is 5.5% (95th
+    percentile 18.8%), against 4.1% (13.6%) on the others; the accuracy above includes them.
+  - **Flood zone 4 at 5 m elevation or more**, which the `OTHER` rule misses: about 9% high, as above.
+
+  Reject or flag, as the trees section says, a quote with a categorical value missing or not in the mappings.
+  Only 4 of the 21 categoricals have a `MISSING` level (marital status, campaign code, soil type and energy
+  rating). For the other 17 the surrogate scores such a value as the base level, and the trees have no `MISSING`
+  level either, so neither model learnt a price for it. With the value missing on every 2025 row, the surrogate's
+  total moves against the trees' by -19% for construction type, +18% for occupancy, -14% for previous insurer and
+  -10% for marketing segment.
+
+`buildings_surrogate_reconciliation.csv` holds the checks: re-evaluated from its exported tables, the surrogate
+matches the fitted GLM to within 1.7e-14, by the lookups and by the pieces, and its 2025 total equals the trees'.
+It also holds the accuracy above, the one-feature comparisons and the sha256 of the files it was fitted to.
+`rows_surrogate_buildings.parquet` has each row's surrogate, its ratio to `small_claim`, each term's log
+contribution and each term's level. Were a spline's values too many for a lookup grid, the run would also write
+`buildings_surrogate_terms_values_seen.parquet` (row-level, not committed), as the main export does; this run did
+not.
+
 ## input_mappings.csv (item 3)
 
 `section, line, component, term, source_value, mapped_value, note`. Sections:
@@ -225,7 +390,7 @@ One row per 2025 emerging test row, in the final file's order:
 | `effective_level` | `final_prediction` / `as_is_file` |
 | `final_from_components` | (small + large) x the steps: the final file to within 1.8e-15 |
 
-To replace the buildings trees with a substitute, fit it to `small_claim`.
+The buildings surrogate GLM above is fitted to `small_claim`.
 
 ## rows_inputs_<line>.parquet (item 6)
 
@@ -318,4 +483,8 @@ comparison-site commission (the developed rate stands in), but no reference poli
 
 From the pack root: `python python/export_excel.py`. It refits C0 on the developed market (about two minutes),
 stops if the refit is more than rounding away from the as-is file or the level steps do not reproduce the files,
-and appends a record to `audit/run_log.jsonl`.
+and appends a record to `audit/run_log.jsonl`. Then `python python/surrogate_buildings.py` refits the surrogate
+from the new export (about a minute), rewrites its files and its evidence file, and appends its own record; and
+`python audit/exploratory/a35/doc_figures.py audit/evidence/emerging` recomputes the surrogate figures the run does
+not write (a few minutes) into `ev_a35_doc_figures.csv`. It writes no run record, so update its `MANIFEST.sha256`
+if the script changes.

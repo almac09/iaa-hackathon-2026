@@ -1,0 +1,149 @@
+section,figure,value
+choice,"seed 2: held-out mean squared log error, 4 knots, power 1",0.005778013239334392
+choice,"seed 2: held-out mean squared log error, 4 knots, power 1.5",0.005477710766249042
+choice,"seed 2: held-out mean squared log error, 4 knots, power 2",0.005560511048075335
+choice,"seed 2: held-out mean squared log error, 6 knots, power 1",0.00563572205935492
+choice,"seed 2: held-out mean squared log error, 6 knots, power 1.5",0.005328179632313925
+choice,"seed 2: held-out mean squared log error, 6 knots, power 2",0.005396615333043011
+choice,"seed 2: held-out mean squared log error, 8 knots, power 1",0.005522951535967092
+choice,"seed 2: held-out mean squared log error, 8 knots, power 1.5",0.005218979091221678
+choice,"seed 2: held-out mean squared log error, 8 knots, power 2",0.005271482847970156
+choice,"seed 2: held-out mean squared log error, 10 knots, power 1",0.005416313722870476
+choice,"seed 2: held-out mean squared log error, 10 knots, power 1.5",0.005111617281196392
+choice,"seed 2: held-out mean squared log error, 10 knots, power 2",0.005146474771068407
+choice,"seed 2: held-out mean squared log error, 12 knots, power 1",0.005407550779106219
+choice,"seed 2: held-out mean squared log error, 12 knots, power 1.5",0.0050958150119319885
+choice,"seed 2: held-out mean squared log error, 12 knots, power 2",0.00511296410996648
+choice,"seed 3: held-out mean squared log error, 4 knots, power 1",0.0056152115637008795
+choice,"seed 3: held-out mean squared log error, 4 knots, power 1.5",0.0052888389801691235
+choice,"seed 3: held-out mean squared log error, 4 knots, power 2",0.005346859726340985
+choice,"seed 3: held-out mean squared log error, 6 knots, power 1",0.00548804613823836
+choice,"seed 3: held-out mean squared log error, 6 knots, power 1.5",0.005160541123472793
+choice,"seed 3: held-out mean squared log error, 6 knots, power 2",0.005218004155853737
+choice,"seed 3: held-out mean squared log error, 8 knots, power 1",0.005384638744549591
+choice,"seed 3: held-out mean squared log error, 8 knots, power 1.5",0.00505113090611791
+choice,"seed 3: held-out mean squared log error, 8 knots, power 2",0.005088008013104438
+choice,"seed 3: held-out mean squared log error, 10 knots, power 1",0.005287887817848849
+choice,"seed 3: held-out mean squared log error, 10 knots, power 1.5",0.004958994002748932
+choice,"seed 3: held-out mean squared log error, 10 knots, power 2",0.004984067502667128
+choice,"seed 3: held-out mean squared log error, 12 knots, power 1",0.005298803174234004
+choice,"seed 3: held-out mean squared log error, 12 knots, power 1.5",0.004968392097819187
+choice,"seed 3: held-out mean squared log error, 12 knots, power 2",0.004971476556000639
+knots,"sum_insured: share of its split gain, on splits inside the 2025 range, at or below the first knot (74000)",0.0
+knots,"sum_insured: share of its split gain, on splits inside the 2025 range, above the last knot (533000)",0.0
+knots,sum_insured: share of all the trees' split gain,0.11887290147053618
+knots,"days_unoccupied: share of its split gain, on splits inside the 2025 range, at or below the first knot (0)",0.0
+knots,"days_unoccupied: share of its split gain, on splits inside the 2025 range, above the last knot (101)",0.0
+knots,days_unoccupied: share of all the trees' split gain,0.0034325191618912454
+knots,"days_quote_to_inception: share of its split gain, on splits inside the 2025 range, at or below the first knot (0)",0.0
+knots,"days_quote_to_inception: share of its split gain, on splits inside the 2025 range, above the last knot (30)",0.0
+knots,days_quote_to_inception: share of all the trees' split gain,0.004375485954744649
+knots,"years_at_address: share of its split gain, on splits inside the 2025 range, at or below the first knot (1)",0.0
+knots,"years_at_address: share of its split gain, on splits inside the 2025 range, above the last knot (23)",0.0
+knots,years_at_address: share of all the trees' split gain,0.003262162182240753
+knots,"distance_to_river_km: share of its split gain, on splits inside the 2025 range, at or below the first knot (0.08)",0.0
+knots,"distance_to_river_km: share of its split gain, on splits inside the 2025 range, above the last knot (12.31)",0.0
+knots,distance_to_river_km: share of all the trees' split gain,0.022659313285862324
+knots,"elevation_m: share of its split gain, on splits inside the 2025 range, at or below the first knot (0.4)",0.0
+knots,"elevation_m: share of its split gain, on splits inside the 2025 range, above the last knot (37.4)",0.0
+knots,elevation_m: share of all the trees' split gain,0.1854795796311367
+knots,"year_built: share of its split gain, on splits inside the 2025 range, at or below the first knot (1864)",0.0
+knots,"year_built: share of its split gain, on splits inside the 2025 range, above the last knot (2021)",0.0
+knots,year_built: share of all the trees' split gain,0.08417705844971778
+knots,"hail_days: share of its split gain, on splits inside the 2025 range, at or below the first knot (2)",0.0
+knots,"hail_days: share of its split gain, on splits inside the 2025 range, above the last knot (28)",0.0
+knots,hail_days: share of all the trees' split gain,0.00021229765032970653
+knots,"wind_exposure_index: share of its split gain, on splits inside the 2025 range, at or below the first knot (0.8)",0.0
+knots,"wind_exposure_index: share of its split gain, on splits inside the 2025 range, above the last knot (8.5)",0.0
+knots,wind_exposure_index: share of all the trees' split gain,0.00223751414798162
+knots,"freezing_days: share of its split gain, on splits inside the 2025 range, at or below the first knot (0)",0.0
+knots,"freezing_days: share of its split gain, on splits inside the 2025 range, above the last knot (57)",0.08614067307812588
+knots,freezing_days: share of all the trees' split gain,0.0029426249995218256
+knots,"dry_summer_index: share of its split gain, on splits inside the 2025 range, at or below the first knot (0.329)",0.0
+knots,"dry_summer_index: share of its split gain, on splits inside the 2025 range, above the last knot (0.91906)",0.0
+knots,dry_summer_index: share of all the trees' split gain,0.006502417289901703
+knots,"wildfire_index: share of its split gain, on splits inside the 2025 range, at or below the first knot (0.31)",0.6769527770610352
+knots,"wildfire_index: share of its split gain, on splits inside the 2025 range, above the last knot (0.844)",0.0
+knots,wildfire_index: share of all the trees' split gain,0.003139698700340492
+knots,"rainfall_mm: share of its split gain, on splits inside the 2025 range, at or below the first knot (797)",0.04434234763221504
+knots,"rainfall_mm: share of its split gain, on splits inside the 2025 range, above the last knot (1972)",0.0
+knots,rainfall_mm: share of all the trees' split gain,0.010812924521864066
+knots,"mean_temperature_c: share of its split gain, on splits inside the 2025 range, at or below the first knot (11)",0.1509983392163882
+knots,"mean_temperature_c: share of its split gain, on splits inside the 2025 range, above the last knot (18.7)",0.0
+knots,mean_temperature_c: share of all the trees' split gain,0.0025836893108920943
+knots,"x_clay_dry: share of its split gain, on splits inside the 2025 range, at or below the first knot (0)",0.0
+knots,"x_clay_dry: share of its split gain, on splits inside the 2025 range, above the last knot (0.852)",0.006163873098322748
+knots,x_clay_dry: share of all the trees' split gain,0.03857766003227738
+knots,"x_fz3_rain: share of its split gain, on splits inside the 2025 range, at or below the first knot (0)",0.0
+knots,"x_fz3_rain: share of its split gain, on splits inside the 2025 range, above the last knot (1.88706)",0.0
+knots,x_fz3_rain: share of all the trees' split gain,0.056484956191754046
+tails,every row at hail_days = 2 (its 0.5% quantile): surrogate total against the trees',0.003066479344117967
+tails,every row at hail_days = 30 (its 99.5% quantile): surrogate total against the trees',0.001183695532837703
+tails,every row at wind_exposure_index = 0.5 (its 0.5% quantile): surrogate total against the trees',-0.0030329748127319034
+tails,every row at wind_exposure_index = 8.8 (its 99.5% quantile): surrogate total against the trees',-0.0020562889518496164
+tails,every row at freezing_days = 0 (its 0.5% quantile): surrogate total against the trees',-0.005272306735226939
+tails,every row at freezing_days = 59 (its 99.5% quantile): surrogate total against the trees',0.0022112396146238833
+tails,every row at dry_summer_index = 0.312 (its 0.5% quantile): surrogate total against the trees',-0.0048923321938035835
+tails,every row at dry_summer_index = 0.941 (its 99.5% quantile): surrogate total against the trees',0.0061013569368437715
+tails,every row at wildfire_index = 0.294 (its 0.5% quantile): surrogate total against the trees',-0.0029805807723671807
+tails,every row at wildfire_index = 0.862 (its 99.5% quantile): surrogate total against the trees',-0.001645560391970835
+tails,every row at rainfall_mm = 771 (its 0.5% quantile): surrogate total against the trees',-0.00997921686305725
+tails,every row at rainfall_mm = 2049 (its 99.5% quantile): surrogate total against the trees',0.007285688455648698
+tails,every row at mean_temperature_c = 10.8 (its 0.5% quantile): surrogate total against the trees',0.0012227113816594137
+tails,every row at mean_temperature_c = 18.8 (its 99.5% quantile): surrogate total against the trees',0.01551941703645321
+aliasing,"design columns, intercept included / rank deficit",530 / 28
+aliasing,"main-term columns, intercept included / rank deficit",398 / 19
+aliasing,main-term rank deficit once renewal_count is also left out,2
+aliasing,main-term rank deficit once customer_since_year is also left out,1
+aliasing,main-term rank deficit once discount_applied is also left out,0
+aliasing,share of 2025 rows with customer_since_year = 2025 - renewal_count,1.0
+aliasing,share of 2025 rows on which campaign_code is missing exactly when renewal_count >= 3,1.0
+aliasing,share of 2025 rows on which a 5% discount goes exactly with the direct channel,1.0
+aliasing,largest |renewal_count + customer_since_year contribution| on a row (log scale),0.01600786244790605
+aliasing,contribution of discount_applied = q01 (log scale),-0.016739512074040022
+aliasing,contribution of channel = direct (log scale),-0.016739512074040022
+renewal,every row one renewal on: surrogate total against the trees',0.00585932211128859
+renewal,"every row one renewal on: median relative error, as is / moved",0.042281 / 0.042595
+zones,rows really in zone 4: rows / surrogate total against the trees' / median relative error,2228 / 0.002232 / 0.066379
+zones,"every row moved to zone 4, elevation under 2.1 m: rows / surrogate total against the trees'",6792 / 0.033169
+zones,"every row moved to zone 4, elevation 2.1 to under 2.8 m: rows / surrogate total against the trees'",2846 / 0.036348
+zones,"every row moved to zone 4, elevation 2.8 to under 5 m: rows / surrogate total against the trees'",8191 / 0.027345
+zones,"every row moved to zone 4, elevation 5 to under 10 m: rows / surrogate total against the trees'",14465 / 0.129737
+zones,"every row moved to zone 4, elevation 10 to under 20 m: rows / surrogate total against the trees'",14224 / 0.137809
+zones,"every row moved to zone 4, elevation 20 m or more: rows / surrogate total against the trees'",5777 / 0.141171
+zones,every row moved to zone 4: share with an OTHER pair / total on them / total on the rest,0.805507 / 0.103598 / 0.028513
+zones,"every row moved to zone 4, 5 m or more: rows / with no OTHER pair / total on those",34466 / 5218 / 0.085622
+zones,rows really in zone 4 at 5 m or more: rows / surrogate total against the trees',93 / 0.082846
+zones,rows really in zone 5: rows / surrogate total against the trees' / median relative error,887 / 0.003226 / 0.071483
+zones,"every row moved to zone 5, elevation under 2.1 m: rows / surrogate total against the trees'",6792 / 0.120230
+zones,"every row moved to zone 5, elevation 2.1 to under 2.8 m: rows / surrogate total against the trees'",2846 / 0.097497
+zones,"every row moved to zone 5, elevation 2.8 to under 5 m: rows / surrogate total against the trees'",8191 / 0.257137
+zones,"every row moved to zone 5, elevation 5 to under 10 m: rows / surrogate total against the trees'",14465 / 0.431243
+zones,"every row moved to zone 5, elevation 10 to under 20 m: rows / surrogate total against the trees'",14224 / 0.451009
+zones,"every row moved to zone 5, elevation 20 m or more: rows / surrogate total against the trees'",5777 / 0.459748
+zones,every row moved to zone 5: share with an OTHER pair / total on them / total on the rest,0.974720 / 0.304715 / 0.025676
+zones,"every row moved to zone 5, 2.8 m or more: per-row median / 95th percentile / largest overpricing",0.438139 / 0.716236 / 1.217208
+zones,rows really in zone 5 at 2.1 m or more (outside elevation band q00),58
+other,2025 rows with an interaction pair pooled as OTHER: share,0.10756286451859642
+other,median / 95th percentile relative error on them; on the rest,0.055341 / 0.188368; 0.041146 / 0.136104
+missing,every row with construction_type missing: surrogate total against the trees' / per-row median |gap|,-0.193615 / 0.196488
+missing,every row with occupancy missing: surrogate total against the trees' / per-row median |gap|,0.180074 / 0.182604
+missing,every row with accidental_damage_cover missing: surrogate total against the trees' / per-row median |gap|,-0.048115 / 0.057593
+missing,every row with channel missing: surrogate total against the trees' / per-row median |gap|,-0.002010 / 0.041983
+missing,every row with payment_method missing: surrogate total against the trees' / per-row median |gap|,-0.084457 / 0.080283
+missing,every row with email_domain missing: surrogate total against the trees' / per-row median |gap|,-0.017745 / 0.043175
+missing,every row with marketing_consent missing: surrogate total against the trees' / per-row median |gap|,0.000490 / 0.042381
+missing,every row with document_preference missing: surrogate total against the trees' / per-row median |gap|,-0.001126 / 0.042281
+missing,every row with previous_insurer missing: surrogate total against the trees' / per-row median |gap|,-0.140514 / 0.139321
+missing,every row with branch_id missing: surrogate total against the trees' / per-row median |gap|,-0.067360 / 0.071630
+missing,every row with marketing_segment missing: surrogate total against the trees' / per-row median |gap|,-0.103679 / 0.107197
+missing,every row with urban_density missing: surrogate total against the trees' / per-row median |gap|,-0.000204 / 0.042225
+missing,every row with property_type missing: surrogate total against the trees' / per-row median |gap|,-0.000196 / 0.042856
+missing,every row with basement missing: surrogate total against the trees' / per-row median |gap|,-0.002688 / 0.042408
+missing,every row with trees_within_5m missing: surrogate total against the trees' / per-row median |gap|,-0.002929 / 0.042146
+missing,every row with listed_building missing: surrogate total against the trees' / per-row median |gap|,-0.018468 / 0.043642
+missing,every row with policyholder_age_band missing: surrogate total against the trees' / per-row median |gap|,-0.002156 / 0.042231
+missing,categoricals in the terms / with an OTHER level / with a MISSING level,21 / 0 / 4
+cells,"parameters, 80% fit / final fit",528 / 530
+cells,columns only in the final fit,distance_to_river_km*flood_zone=MISSING|q03; elevation_m*sum_insured=q03|q01; flood_zone*year_built=q02|q03
+cells,columns only in the 80% fit,flood_zone*year_built=q00|q01

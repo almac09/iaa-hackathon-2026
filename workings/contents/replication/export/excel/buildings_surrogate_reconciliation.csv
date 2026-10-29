@@ -1,0 +1,102 @@
+check,line,component,term,value,passed,note,type
+"spline pieces against the fitted curve, max absolute difference (log scale)",buildings,surrogate,sum_insured,1.1102230246251565e-16,True,,check
+"spline pieces against the fitted curve, max absolute difference (log scale)",buildings,surrogate,days_unoccupied,4.7704895589362195e-17,True,,check
+"spline pieces against the fitted curve, max absolute difference (log scale)",buildings,surrogate,days_quote_to_inception,1.5612511283791264e-17,True,,check
+"spline pieces against the fitted curve, max absolute difference (log scale)",buildings,surrogate,years_at_address,6.938893903907228e-18,True,,check
+"spline pieces against the fitted curve, max absolute difference (log scale)",buildings,surrogate,distance_to_river_km,2.7755575615628914e-17,True,,check
+"spline pieces against the fitted curve, max absolute difference (log scale)",buildings,surrogate,elevation_m,1.6653345369377348e-16,True,,check
+"spline pieces against the fitted curve, max absolute difference (log scale)",buildings,surrogate,year_built,5.551115123125783e-17,True,,check
+"spline pieces against the fitted curve, max absolute difference (log scale)",buildings,surrogate,hail_days,4.4350645118235166e-18,True,,check
+"spline pieces against the fitted curve, max absolute difference (log scale)",buildings,surrogate,wind_exposure_index,5.204170427930421e-18,True,,check
+"spline pieces against the fitted curve, max absolute difference (log scale)",buildings,surrogate,freezing_days,1.3877787807814457e-17,True,,check
+"spline pieces against the fitted curve, max absolute difference (log scale)",buildings,surrogate,dry_summer_index,1.0408340855860843e-17,True,,check
+"spline pieces against the fitted curve, max absolute difference (log scale)",buildings,surrogate,wildfire_index,3.469446951953614e-18,True,,check
+"spline pieces against the fitted curve, max absolute difference (log scale)",buildings,surrogate,rainfall_mm,5.551115123125783e-17,True,,check
+"spline pieces against the fitted curve, max absolute difference (log scale)",buildings,surrogate,mean_temperature_c,3.469446951953614e-18,True,,check
+"spline pieces against the fitted curve, max absolute difference (log scale)",buildings,surrogate,x_clay_dry,8.326672684688674e-17,True,,check
+"spline pieces against the fitted curve, max absolute difference (log scale)",buildings,surrogate,x_fz3_rain,1.6653345369377348e-16,True,,check
+"per-row term contributions sum to the model's log prediction, max relative difference",buildings,surrogate,,1.554312234475219e-14,True,,check
+"surrogate re-evaluated from its exported tables (lookup) against the fitted GLM, max relative difference",buildings,surrogate,,1.687538997430238e-14,True,,check
+"surrogate re-evaluated from its exported tables (pieces) against the fitted GLM, max relative difference",buildings,surrogate,,1.687538997430238e-14,True,,check
+"surrogate 2025 total against the trees' total, relative difference",buildings,surrogate,,2.220446049250313e-16,True,,check
+"ln of this added to the intercept, so the 2025 totals agree (the exported intercept includes it)",buildings,surrogate,,0.9994918628780843,,,information
+solver iterations of the final fit (limit 1000),buildings,surrogate,,6,True,,check
+warnings raised by the final fit,buildings,surrogate,,0,True,,check
+"design columns, intercept included, and their rank: L2 shares an effect between aliased columns",buildings,surrogate,,530 / 502,,,information
+"against the trees, every 2025 row (in sample): mean squared log error",buildings,surrogate,,0.004945780612260926,,,information
+"against the trees, every 2025 row (in sample): log rate variation explained",buildings,surrogate,,0.9847423415297257,,,information
+"against the trees, every 2025 row (in sample): median relative error",buildings,surrogate,,0.04232583212065655,,,information
+"against the trees, every 2025 row (in sample): 95th percentile relative error",buildings,surrogate,,0.14242528934052098,,,information
+"against the trees, every 2025 row (in sample): 99th percentile relative error",buildings,surrogate,,0.21148481250824663,,,information
+"against the trees, every 2025 row (in sample): largest relative error",buildings,surrogate,,0.5963803557221168,,,information
+"against the trees, every 2025 row (in sample): share within 10%",buildings,surrogate,,0.8603881824266182,,,information
+"against the trees, every 2025 row (in sample): share within 20%",buildings,surrogate,,0.9872071899799216,,,information
+"against the trees, every 2025 row (in sample): total difference",buildings,surrogate,,2.220446049250313e-16,,,information
+"against the trees, the 20% held out when choosing the specification: log rate variation explained",buildings,surrogate,,0.984512265145632,,from ev_a35_surrogate_specification.csv,information
+"against the trees, the 20% held out when choosing the specification: median relative error",buildings,surrogate,,0.04387210030824901,,from ev_a35_surrogate_specification.csv,information
+"against the trees, the 20% held out when choosing the specification: 95th percentile relative error",buildings,surrogate,,0.14371051942816904,,from ev_a35_surrogate_specification.csv,information
+"against the trees, the 20% held out when choosing the specification: 99th percentile relative error",buildings,surrogate,,0.211108691755022,,from ev_a35_surrogate_specification.csv,information
+"against the trees, the 20% held out when choosing the specification: largest relative error",buildings,surrogate,,0.592599049496348,,from ev_a35_surrogate_specification.csv,information
+"against the trees, the 20% held out when choosing the specification: total difference",buildings,surrogate,,0.0011283522360989728,,from ev_a35_surrogate_specification.csv,information
+"against the trees, new business: median and 95th percentile relative error",buildings,surrogate,,0.042356 / 0.142218,,,information
+"against the trees, renewals: median and 95th percentile relative error",buildings,surrogate,,0.042225 / 0.143356,,,information
+"against the trees, the 7 buildings reference policies: largest relative error",buildings,surrogate,,0.056173106079146384,,,information
+trees rescored from buildings_xgboost.json for the one-feature check: rows that differ from small_claim,buildings,surrogate,,0,True,,check
+"x_fz3_rain rebuilt from its sources, for moving them: rows that differ from the input",buildings,surrogate,,0,True,,check
+"x_clay_dry rebuilt from its sources, for moving them: rows that differ from the input",buildings,surrogate,,0,True,,check
+every 2025 row at distance_to_river_km = 0.01: surrogate total against the trees' total,buildings,surrogate,,-0.00434326908923488,,,information
+every 2025 row at distance_to_river_km = 0.23: surrogate total against the trees' total,buildings,surrogate,,0.0039622766053915015,,,information
+every 2025 row at distance_to_river_km = 1.04: surrogate total against the trees' total,buildings,surrogate,,0.02251688765756721,,,information
+every 2025 row at distance_to_river_km = 2.37: surrogate total against the trees' total,buildings,surrogate,,0.02539849558014562,,,information
+every 2025 row at distance_to_river_km = 4.42: surrogate total against the trees' total,buildings,surrogate,,0.03404234628862857,,,information
+every 2025 row at distance_to_river_km = 8.62: surrogate total against the trees' total,buildings,surrogate,,0.036408496046100636,,,information
+every 2025 row at distance_to_river_km = 24.55: surrogate total against the trees' total,buildings,surrogate,,0.035979862839607524,,,information
+every 2025 row at elevation_m = 0: surrogate total against the trees' total,buildings,surrogate,,0.017426482543808186,,,information
+every 2025 row at elevation_m = 1: surrogate total against the trees' total,buildings,surrogate,,0.013430380803607145,,,information
+every 2025 row at elevation_m = 3.6: surrogate total against the trees' total,buildings,surrogate,,0.0258553845735765,,,information
+every 2025 row at elevation_m = 7.6: surrogate total against the trees' total,buildings,surrogate,,0.013303514232635205,,,information
+every 2025 row at elevation_m = 13.5: surrogate total against the trees' total,buildings,surrogate,,0.014885802879976096,,,information
+every 2025 row at elevation_m = 25.8: surrogate total against the trees' total,buildings,surrogate,,0.014269661041056647,,,information
+every 2025 row at elevation_m = 60: surrogate total against the trees' total,buildings,surrogate,,0.024105217409486457,,,information
+every 2025 row at flood_zone = 1: surrogate total against the trees' total,buildings,surrogate,,-0.00521055936097925,,,information
+every 2025 row at flood_zone = 2: surrogate total against the trees' total,buildings,surrogate,,-0.0001410130944016208,,,information
+every 2025 row at flood_zone = 3: surrogate total against the trees' total,buildings,surrogate,,0.0061682400359286405,,,information
+every 2025 row at flood_zone = 4: surrogate total against the trees' total,buildings,surrogate,,0.08260348091861869,,,information
+every 2025 row at flood_zone = 5: surrogate total against the trees' total,buildings,surrogate,,0.2796326957646136,,,information
+every 2025 row at prior_claims_5y = 0: surrogate total against the trees' total,buildings,surrogate,,0.0010124521515175733,,,information
+every 2025 row at prior_claims_5y = 1: surrogate total against the trees' total,buildings,surrogate,,-0.0036889541007224524,,,information
+every 2025 row at prior_claims_5y = 2: surrogate total against the trees' total,buildings,surrogate,,0.003266166312575036,,,information
+every 2025 row at prior_claims_5y = 3: surrogate total against the trees' total,buildings,surrogate,,0.001678647411893941,,,information
+every 2025 row at prior_claims_5y = 4: surrogate total against the trees' total,buildings,surrogate,,-0.05062782588080339,,,information
+every 2025 row at prior_claims_5y = 5: surrogate total against the trees' total,buildings,surrogate,,-0.1428333053598454,,,information
+every 2025 row at sum_insured = 45000: surrogate total against the trees' total,buildings,surrogate,,0.012856084519885957,,,information
+every 2025 row at sum_insured = 102000: surrogate total against the trees' total,buildings,surrogate,,-0.007532419626845033,,,information
+every 2025 row at sum_insured = 179000: surrogate total against the trees' total,buildings,surrogate,,0.019929884067332315,,,information
+every 2025 row at sum_insured = 240000: surrogate total against the trees' total,buildings,surrogate,,0.003065513720376778,,,information
+every 2025 row at sum_insured = 310000: surrogate total against the trees' total,buildings,surrogate,,0.0004993375485253804,,,information
+every 2025 row at sum_insured = 432000: surrogate total against the trees' total,buildings,surrogate,,0.0066859084018626724,,,information
+every 2025 row at sum_insured = 894000: surrogate total against the trees' total,buildings,surrogate,,-0.029932658435848913,,,information
+every 2025 row at year_built = 1862: surrogate total against the trees' total,buildings,surrogate,,-0.00322925856289602,,,information
+every 2025 row at year_built = 1877: surrogate total against the trees' total,buildings,surrogate,,0.0021321592567544734,,,information
+every 2025 row at year_built = 1935: surrogate total against the trees' total,buildings,surrogate,,-0.0018553831477776672,,,information
+every 2025 row at year_built = 1966: surrogate total against the trees' total,buildings,surrogate,,-5.102524149758203e-06,,,information
+every 2025 row at year_built = 1996: surrogate total against the trees' total,buildings,surrogate,,-0.0028425724071602376,,,information
+every 2025 row at year_built = 2018: surrogate total against the trees' total,buildings,surrogate,,0.02265380189246824,,,information
+every 2025 row at year_built = 2021: surrogate total against the trees' total,buildings,surrogate,,-0.027742780378383403,,,information
+specification,buildings,surrogate,,"10 interactions cut at up to 4 tree split points each; splines with 12 knots from the 1% to the 99% quantile, one band per value for numerics with at most 20 values; Tweedie power 2; L2 0.0001",,,information
+interaction elevation_m*flood_zone: share of the trees' parent-and-child split gain,buildings,surrogate,,0.08515575660112416,,,information
+interaction sum_insured*year_built: share of the trees' parent-and-child split gain,buildings,surrogate,,0.07522740007852091,,,information
+interaction flood_zone*year_built: share of the trees' parent-and-child split gain,buildings,surrogate,,0.05627442293832583,,,information
+interaction elevation_m*sum_insured: share of the trees' parent-and-child split gain,buildings,surrogate,,0.0538994797960587,,,information
+interaction flood_zone*sum_insured: share of the trees' parent-and-child split gain,buildings,surrogate,,0.045973151498643616,,,information
+interaction elevation_m*x_fz3_rain: share of the trees' parent-and-child split gain,buildings,surrogate,,0.042204174483093375,,,information
+interaction elevation_m*year_built: share of the trees' parent-and-child split gain,buildings,surrogate,,0.030239465009788774,,,information
+interaction prior_claims_5y*sum_insured: share of the trees' parent-and-child split gain,buildings,surrogate,,0.02657791319092603,,,information
+interaction prior_claims_5y*x_clay_dry: share of the trees' parent-and-child split gain,buildings,surrogate,,0.019840932038304993,,,information
+interaction distance_to_river_km*flood_zone: share of the trees' parent-and-child split gain,buildings,surrogate,,0.018131145228671118,,,information
+sha256 of buildings_xgboost.json,buildings,surrogate,,6c3e60fbab158f180b2034844215d739cf0253dbdbac61552e009dead336b0c2,,,information
+sha256 of buildings_xgboost_features.csv,buildings,surrogate,,03760a156d7bf4853301270b2daa8046a50746d6255a635e83b5b72010acf9a6,,,information
+sha256 of buildings_xgboost_nodes.csv,buildings,surrogate,,1eca49dcff08b42009adaa63293f307c7db6ae89031543c2d93096ec530abb28,,,information
+sha256 of scalars.csv,buildings,surrogate,,33b1ec738a4eab4268e2e94bd081f0365799fabca24150343f6aeae99a655d47,,,information
+sha256 of rows_inputs_buildings.parquet,buildings,surrogate,,04d0ab243e19df8c5e98e70aa4ce789d9742e1b93efbf8a81a03ccb5a3338541,,,information
+sha256 of rows_components.parquet,buildings,surrogate,,d96951257a6d9b3b5d4752fc43cf1a40b72fca88bc773026b569a63e9a8b1577,,,information
