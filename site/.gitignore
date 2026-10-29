@@ -1,3 +1,4 @@
 _site/
 .quarto/
 data/model.json
+data/eda/

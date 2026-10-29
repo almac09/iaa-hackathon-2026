@@ -1,0 +1,314 @@
+---
+title: "What the data told us"
+subtitle: "The team's exploratory data analysis, in one place"
+toc: true
+toc-depth: 2
+---
+
+Before building any model, four of us explored the data separately, in notebooks, SQL, Excel and R. This page
+puts that work together and tells it as one story:
+
+1. what we were given;
+2. what was wrong with it;
+3. what the claims experience looks like;
+4. how the emerging market (Part 2) differs.
+
+Each section credits the people whose work it draws on, and the [sources](#sources) list at the end says where
+to find the detail.
+
+::: {.callout-note}
+## Only aggregates are shown
+This site is public, and the competition rules (section 5b) forbid publishing the competition data. Every
+chart here is drawn from a **summary table** (counts, totals and ratios by line, year or peril), not from
+policy or claim rows. The build script refuses any table that has an ID column or more than 200 rows.
+:::
+
+```{ojs}
+rowCounts = FileAttachment("data/eda/row_counts.csv").csv({typed: true})
+```
+
+```{ojs}
+claimsByYear = FileAttachment("data/eda/claims_by_line_year.csv").csv({typed: true})
+```
+
+```{ojs}
+exposureUnits = FileAttachment("data/eda/exposure_units.csv").csv({typed: true})
+```
+
+```{ojs}
+lossRatio = FileAttachment("data/eda/loss_ratio_by_line_year.csv").csv({typed: true})
+```
+
+```{ojs}
+severity = FileAttachment("data/eda/severity_by_peril_contents.csv").csv({typed: true})
+```
+
+```{ojs}
+concentration = FileAttachment("data/eda/cost_concentration_contents.csv").csv({typed: true})
+```
+
+```{ojs}
+contacts = FileAttachment("data/eda/contacts_by_claim_status.csv").csv({typed: true})
+```
+
+```{ojs}
+target = FileAttachment("data/eda/target_by_line_year.csv").csv({typed: true})
+```
+
+```{ojs}
+reportLag = FileAttachment("data/eda/report_lag_by_peril.csv").csv({typed: true})
+```
+
+```{ojs}
+newBusiness = FileAttachment("data/eda/new_business_emerging.csv").csv({typed: true})
+```
+
+```{ojs}
+lineColours = ({domain: ["buildings", "contents", "motor"], range: ["#4e79a7", "#f28e2b", "#59a14f"], legend: true})
+```
+
+```{ojs}
+fmt = d3.format(",")
+```
+
+## 1. What we were given
+
+Three lines of insurance (home buildings, home contents and private motor), each with four years of policy
+history (2021-24) and a 2025 test file to price. Claims sit in one shared table, valued at 31 December 2024.
+Customers, addresses and address-level weather join on.
+
+```{ojs}
+Inputs.table(rowCounts.map(d => ({table: d.table_name, rows: d.n_rows})), {format: {rows: fmt}, rows: 12})
+```
+
+Policies are split into one row per policy per calendar year, so a 2024 row never runs past the valuation
+date. The first letter of `policy_id` (B, C or M) gives the line, and matches the claims table's own `line`
+field one for one.
+
+## 2. What was wrong with it
+
+This is where most of the early effort went, and where the team overlapped most. Several of us found the
+same problems independently, which gave us confidence they were real. Cian logged each fix as a numbered rule
+with its evidence and a GitHub issue (`notebooks/01b_corrections`, rules R1-R6, issues #51-#56). Gerard
+reproduced and extended them in SQL with a full audit trail (`MODEL_DOCUMENTATION.md`, section 2.2).
+Bridget's and Alan's notebooks found the exposure and leakage problems on their own.
+
+| Issue | What we saw | What we did | Found by |
+|---|---|---|---|
+| **Exposure in mixed units** | About 0.5% of training rows hold days (up to 365) or use a 360-day year instead of a fraction of 365. Contents exposure was overstated by 37%. The test files are clean. | Recompute every row as (end - start + 1) / 365 | Everyone; rule R2 (#52) |
+| **Sum insured 1,000x too large** | About 0.2% of home rows (contents up to 152.6m, buildings up to 594m). The same policy in another year is about 1/1,000 of that. | Divide by 1,000 above a threshold | Cian R3 (#53), Gerard |
+| **Motor customer IDs lost their leading zeros** | 98,110 training and 25,554 test rows (10%) matched no customer; padded, all match | Left-pad to 8 characters | Cian R1 (#51), Gerard |
+| **Duplicate claims** | 604 claims identical except for the claim ID | Keep one copy | Cian R5 (#55) |
+| **Construction type** | Mixed case, and timber coded `T` to 2022 but `W` from 2023 (96% of `T` buildings switch) | Normalise and merge as `timber` | Cian R4 (#54), Bridget (emerging) |
+| **Customer service contacts leak the outcome** | Claimants average 3.0 contacts, non-claimants 0.4, the test file 0.4 (see chart below) | Excluded from every model | Alan, Gerard |
+| **Written premium is annual** | It doesn't scale with time on cover, so loss ratios on it are wrong | Earned premium = written premium x exposure, for loss ratios only | Gerard, Alan |
+| **Claims outside any policy period** | 413 claims, mostly 2020 losses before the first policy row | Excluded from the target | Cian R6 (#56) |
+| **Elevation in feet for region R11**, and **year built = 1900 as a placeholder** | R11 runs 3.28x every other region. 19,014 addresses say 1900. | Convert to metres; impute year built from the energy rating | Gerard (final review, #154, #155) |
+| **One 11.89m motor bodily-injury claim** | Ten times the next largest, about 10% of 2023 motor cost | Kept, handled by a large-claim model | Gerard |
+
+### Exposure: the problem everyone found first
+
+The rows with bad exposure are few, but they are big. One row recorded as 365 "years" outweighs thousands of
+normal rows.
+
+```{ojs}
+Plot.plot({
+  marginLeft: 60, height: 260, color: {legend: true},
+  x: {label: "Policy year", tickFormat: d => String(d)},
+  y: {label: "Training rows with wrong exposure", grid: true},
+  marks: [
+    Plot.line(exposureUnits.filter(d => d.src === "train").map(d => ({...d, bad: d.n_rows - d.n_consistent_with_dates})),
+      {x: "yr", y: "bad", stroke: "line", marker: true, tip: true}),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+### Leakage: a field that knows the answer
+
+`customer_service_contacts` looked like the strongest predictor in every line. That was the warning sign:
+claimants contact the insurer *because* they claimed. The 2025 test file looks like the training rows with no
+claim, so a model using it would treat every test policy as a non-claimant.
+
+```{ojs}
+Plot.plot({
+  marginLeft: 150, height: 160,
+  x: {label: "Average customer service contacts (contents)", grid: true},
+  y: {label: null},
+  marks: [
+    Plot.barX(contacts, {x: "mean_contacts", y: "grp", fill: d => d.grp === "train with claim" ? "#e15759" : "#9c9c9c", sort: {y: "x"}}),
+    Plot.text(contacts, {x: "mean_contacts", y: "grp", text: d => d.mean_contacts.toFixed(2), dx: 18}),
+    Plot.ruleX([0])
+  ]
+})
+```
+
+## 3. The claims experience
+
+### Volume and cost by loss year
+
+About 163,000 claims. Motor accounts for about 69% of them. Note the 2024 open claims: they are
+why 2024 can't be taken at face value.
+
+```{ojs}
+viewof claimsMeasure = Inputs.radio(new Map([["Number of claims", "n_claims"], ["Open claims", "n_open"], ["Incurred cost", "incurred"]]), {value: "n_claims", label: "Show"})
+```
+
+```{ojs}
+Plot.plot({
+  marginLeft: 80, height: 300, color: lineColours,
+  x: {label: "Loss year", tickFormat: d => String(d)},
+  y: {label: null, grid: true, tickFormat: "~s"},
+  marks: [
+    Plot.line(claimsByYear.filter(d => d.loss_year >= 2021), {x: "loss_year", y: claimsMeasure, stroke: "line", marker: true, tip: true}),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+### Cost per policy-year, as reported and once developed
+
+The key chart for setting the price level. Reported cost per unit of exposure rises steadily for the home
+lines. Motor appears to *fall* in 2024 (575 to 454), but only because those claims, especially bodily injury,
+haven't been reported or settled yet. Developing them to ultimate (chain ladder by peril, with
+Bornhuetter-Ferguson for the slowest perils) moves 2024 motor back to about 561. Taking reported 2024 at face
+value would have built a false downward trend into the price.
+
+```{ojs}
+viewof targetLine = Inputs.select(["motor", "buildings", "contents"], {label: "Line", value: "motor"})
+```
+
+```{ojs}
+Plot.plot({
+  marginLeft: 60, height: 300, color: {legend: true},
+  x: {label: "Policy year", tickFormat: d => String(d)},
+  y: {label: "Cost per exposure-year (CU)", grid: true, zero: true},
+  marks: [
+    Plot.line(target.filter(d => d.line === targetLine).flatMap(d => [
+      {yr: d.yr, basis: "Reported", value: d.reported_loss_cost},
+      {yr: d.yr, basis: "Developed to ultimate", value: d.developed_loss_cost}
+    ]), {x: "yr", y: "value", stroke: "basis", marker: true, tip: true})
+  ]
+})
+```
+
+The step in contents cost from 2023 (105 in 2021-22, 117 in 2023-24, with frequency flat) and claim-size
+quantiles rising 3.9-4.4% a year are why every model carries a calendar-year trend to 2025.
+
+### Loss ratios: why the premium basis matters
+
+Written premium is an annual figure on every row, even for part-year rows. Loss ratios on written premium look
+healthier and appear to improve over time. On earned premium the picture is flat, and buildings runs at about
+130%.
+
+```{ojs}
+Plot.plot({
+  marginLeft: 60, height: 300, color: lineColours,
+  x: {label: "Policy year", tickFormat: d => String(d)},
+  y: {label: "Loss ratio", grid: true, tickFormat: "%"},
+  marks: [
+    Plot.line(lossRatio, {x: "yr", y: "loss_ratio", stroke: "line", marker: true, tip: true}),
+    Plot.line(lossRatio, {x: "yr", y: "loss_ratio_on_written_superseded", stroke: "line", strokeDasharray: "4 3", strokeOpacity: 0.6}),
+    Plot.ruleY([1], {stroke: "#999"})
+  ]
+})
+```
+
+*Solid: on earned premium (correct). Dashed: on written premium (misleading).*
+
+### Claim size: a few claims carry the cost
+
+For contents, a typical claim is about 1,200, but flood claims average about 10,000.
+
+```{ojs}
+Inputs.table(severity.map(d => ({peril: d.peril.replace(/_/g, " "), claims: d.n_claims, mean: d.mean, median: d.p50, p90: d.p90, p99: d.p99, largest: d.max})),
+  {format: {claims: fmt, mean: fmt, median: fmt, p90: fmt, p99: fmt, largest: fmt}})
+```
+
+```{ojs}
+md`The largest 1% of contents claims make up **${concentration[0].top_1pct_share.toFixed(1)}%** of the cost, and the largest 20% make up **${concentration[0].top_20pct_share.toFixed(1)}%**. Buildings and motor are more extreme still, which is why both have a separate large-claim model above 50,000.`
+```
+
+### How fast claims are reported
+
+Most perils are almost fully reported within 90 days. Two are not: **buildings subsidence** and **motor bodily
+injury**. They dominate the uncertainty in the 2024 figures, and they're why Gerard used
+Bornhuetter-Ferguson rather than chain ladder for them. Alan's chain-ladder work on monthly triangles reached
+the same conclusion (2024 motor development factor about 1.29).
+
+```{ojs}
+viewof lagHorizon = Inputs.radio(new Map([["30 days", "cost_share_reported_by_30d"], ["90 days", "cost_share_reported_by_90d"], ["365 days", "cost_share_reported_by_365d"]]), {value: "cost_share_reported_by_90d", label: "Share of cost reported within"})
+```
+
+```{ojs}
+Plot.plot({
+  marginLeft: 190, height: 380, color: {legend: true, domain: ["developed", "emerging"], range: ["#4e79a7", "#e15759"]},
+  x: {label: "Share of eventual cost reported", domain: [0, 1], tickFormat: "%", grid: true},
+  y: {label: null},
+  marks: [
+    Plot.dot(reportLag.map(d => ({...d, key: `${d.line}: ${d.peril.replace(/_/g, " ")}`})),
+      {x: lagHorizon, y: "key", fill: "market", r: 5, tip: true, sort: {y: "x"}})
+  ]
+})
+```
+
+## 4. The emerging market (Part 2)
+
+Part 2 moved us to a new market with only two years of history (2023-24). Gerard's six-lens data audit
+(`ev_w0_data_audit_synthesis.md`) and Bridget's emerging-market notebooks asked one question: *what carries
+over from Part 1, and what has to be re-estimated?*
+
+**It isn't a scaled copy of the developed market:**
+
+* **Claims are cheaper but more frequent.** Motor severity is 0.61x developed, buildings excluding fire
+  0.68x, contents 0.79x. Motor frequency is 184 against 137 claims per 1,000 vehicle-years.
+* **Fire is much worse.** It is 45% of emerging buildings cost, 1.86x developed. Total losses are almost five
+  times as frequent.
+* **The 2025 book is mostly new business.** About 77% of 2025 exposure, against 8% in training. By row count it is
+  76% against 14% (table below), because new-business rows in training are often part-year. This one assumption moves three quarters of the book, so it got the most testing.
+* **A younger, less experienced mix.** Drivers aged 17-24 are 28% of 2025 exposure against 20% in training,
+  so a flat 2023-24 level would understate motor by 8-9%.
+* **Different climate and codes.** Hail days are 2.45x and the wildfire index 3.4x developed. Regions,
+  construction codes and occupations are coded differently. Credit band, telematics and mileage are gone.
+  Gender is new.
+
+```{ojs}
+Inputs.table(newBusiness.filter(d => d.loading === "emerging 2023-24").map(d => ({
+  line: d.line,
+  "new business, 2023-24 rows": d.nb_row_share_2023_24,
+  "new business, 2025 rows": d.nb_row_share_2025,
+  "new business vs renewal (A/E)": d.nb_ae_relative_to_renewal
+})), {format: {"new business, 2023-24 rows": d3.format(".0%"), "new business, 2025 rows": d3.format(".0%"), "new business vs renewal (A/E)": d3.format(".2f")}})
+```
+
+**What carried over:** the target definition and cleaning rules, the reporting patterns (the emerging data
+is too thin to estimate its own, and the developed patterns backtest well), and the address and climate
+shapes. **What was re-estimated:** levels by peril, the new-business loading (credibility-weighted towards
+developed), fire, and the hail slopes. **What was dropped:** region factors, which have no analogue between
+markets, plus the leakage fields and duplicate encodings of new business.
+
+## 5. What this meant for the models
+
+* **Fix the data before modelling.** Every model uses recomputed exposure, corrected sum insured, padded IDs
+  and deduplicated claims.
+* **Develop the target.** Train on ultimate cost, not reported cost, or 2024 drags the level down.
+* **Trend to 2025.** Costs rise 4-6% a year depending on the line.
+* **Treat large claims separately** in buildings and motor.
+* **Leave out leakage.** No customer service contacts, renewal decision or premium as rating factors.
+
+The [underwriting calculator](calculator.qmd) shows the result for contents and motor.
+
+## Sources {#sources}
+
+| Who | Where (in the repo) | What |
+|---|---|---|
+| Gerard | `contributors/gerard/workings/contents/replication/docs/MODEL_DOCUMENTATION.md` (section 2) | Full data-issue log with evidence and decisions D-01 to D-39 |
+| Gerard | `contributors/gerard/workings/contents/replication/audit/evidence/` | The aggregate tables behind every chart on this page |
+| Gerard | `.../audit/evidence/emerging/ev_w0_data_audit_synthesis.md` | Emerging-market audit: changes, carry-over, tests |
+| Cian | `notebooks/01a_row_count_check`, `notebooks/01b_corrections`, `docs/DATA_CONTRACT.md` | Row-count checks, data-quality rules R1-R6 with GitHub issues |
+| Bridget | `contributors/bridget/notebooks/EDA - Bridget` (motor), `EDA - Buildings`, `EDA - Contents`, `contributors/bridget/Excel files/*_EDA.xlsx` | Distributions, value counts, boxplots, exposure checks |
+| Bridget | `contributors/bridget/notebooks_emerging_v1/` (`01_Data_Exploration`, `02_EDA_emerging`) and `files_emerging_v1/` | Emerging-market schema comparison, data quality, construction codes |
+| Alan | `workings/Claims Analysis`, `workings/home_insurance_model`, `workings/chainladder` | Claims by loss month, exposure standardisation, leakage check, development triangles |
+
+*Page assembled with AI assistance (Databricks Genie Code) from the team's own work. Figures in the text are
+quoted from the sources above; charts are drawn live from the aggregate tables.*

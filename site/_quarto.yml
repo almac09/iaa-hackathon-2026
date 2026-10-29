@@ -7,6 +7,7 @@ project:
     - glm.js
     - data/model.json
     - data/test_cases.json
+    - data/eda/*.csv
 
 website:
   title: "IAA Hackathon 2026"
@@ -18,6 +19,8 @@ website:
     left:
       - href: index.qmd
         text: Home
+      - href: eda.qmd
+        text: What the data told us
       - href: calculator.qmd
         text: Underwriting calculator
       - href: how-glms-work.qmd

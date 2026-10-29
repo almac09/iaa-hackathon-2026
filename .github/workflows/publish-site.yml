@@ -7,6 +7,7 @@ on:
     paths:
       - site/**
       - contributors/gerard/workings/contents/replication/export/excel/**
+      - contributors/gerard/workings/contents/replication/audit/evidence/**
       - .github/workflows/publish-site.yml
 
 permissions:
@@ -30,6 +31,9 @@ jobs:
 
       - name: Build model JSON
         run: python site/scripts/build_model.py
+
+      - name: Copy aggregate EDA tables (refuses row-level data)
+        run: python site/scripts/build_eda.py
 
       - uses: quarto-dev/quarto-actions/setup@v2
         with:
