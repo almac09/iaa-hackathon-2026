@@ -1,7 +1,7 @@
 # Export for the Excel replica of the Week 2 model
 
 C0, the portable developed model, with the segment levels of the final file. Written by `python/export_excel.py`
-(run `104ccb40` in `audit/run_log.jsonl`, label "A34 export: D-02 note corrected"). Every number is at full
+(run `7db04db6` in `audit/run_log.jsonl`, label "A34 export: buildings trees added"). Every number is at full
 precision; nothing is rounded.
 
 ## The final file
@@ -30,7 +30,8 @@ final = (small + large) x step 1                          buildings, contents, m
 final = (small + large) x step 1 x 1.05 / step 1          motor new business (in that order)
 
 small  (contents, motor)  = exp(intercept + sum of term contributions + trend in 2025) x exposure
-small  (buildings)        = XGBoost: take rows_components.parquet `small_claim`
+small  (buildings)        = exp(ln(exposure) + ln(base rate) + trend in 2025 + one leaf from each of 193 trees)
+                            (see The buildings trees)
 large  (buildings, motor) = exp(intercept + sum of term contributions + trend in 2025 + ln(Pareto adjustment))
                             x exposure
 large  (contents)         = 0 (contents has no large-claim split)
@@ -51,9 +52,12 @@ buildings level factor 1.03338, the credibility k by group).
 |---|---|---|---|
 | `terms.csv` | 2 | 8,100 | yes |
 | `spline_pieces.csv` | 2 | 54 | yes |
+| `buildings_xgboost.json` | trees | 193 trees | yes |
+| `buildings_xgboost_features.csv` | trees | 218 | yes |
+| `buildings_xgboost_nodes.csv` | trees | 2,577 | yes |
 | `input_mappings.csv` | 3 | 162 | yes |
-| `scalars.csv` | 4 | 79 | yes |
-| `reconciliation.csv` | 8 | 42 (37 checks, 5 for information) | yes |
+| `scalars.csv` | 4 | 80 | yes |
+| `reconciliation.csv` | 8 | 46 (40 checks, 6 for information) | yes |
 | `rows_components.parquet` | 5 | 209,063 | no |
 | `rows_inputs_<line>.parquet` | 6 | 52,295 / 66,247 / 90,521 | no |
 | `rows_glm_terms_<line>.parquet` | extra | as above | no |
@@ -79,8 +83,7 @@ One long table: `line, component, term, kind, level, value, band_lower, band_upp
 | `offset` | add ln(exposure) |
 | `scale` | the Pareto adjustment of a large-claim GLM: `value`, and ln of it in `contribution` |
 
-Buildings small claims are XGBoost (193 trees, depth 3) and have no terms; `scalars.csv` holds its base rate,
-trend and settings.
+Buildings small claims are XGBoost (193 trees, depth 3) and have no terms: see The buildings trees.
 
 ## spline_pieces.csv
 
@@ -88,6 +91,75 @@ Each spline as cubic polynomials: `f(x) = a0 + a1 d + a2 d^2 + a3 d^3`, `d = x -
 and `upper` (`lower_included` / `upper_included` say whether each end belongs to the piece). Below the first knot
 and above the last the curve is constant. The pieces match the fitted curves to within 2e-15 on the log scale, and
 the export rebuilds the final file through them as well as through the lookups.
+
+## The buildings trees
+
+`buildings_xgboost.json` is the buildings small-claim model, saved by XGBoost 3.2.0 (`booster.save_model`) from
+the refit that reproduces the as-is file. It holds the tree structure, split points, leaf values, the category
+levels and per-node training totals (hessian sums and gains, each leaf at least `min_child_weight`); no rows. Load
+it with XGBoost 3.2.0; other versions are untested. Its prediction for a row in 2025:
+
+```
+margin = ln(exposure) + ln(350.1811758423766) + 0.04587525922327018 x (2025 - 2022.5232987657048)
+small  = exp(margin + one leaf from each of the 193 trees)
+```
+
+The base rate, slope and origin are in `scalars.csv`. The file also stores a `base_score` (292.2078), which is not
+part of the prediction: XGBoost ignores it when the margin is given as `base_margin`. Adding its log to the margin,
+as XGBoost does when `base_margin` is left out, would make the prediction 292 times too high.
+
+With XGBoost, as `python/xgb_models.py` does (`matrix`, then `predict`), which reproduces `small_claim` bit for bit:
+
+```python
+booster = xgb.Booster(model_file="buildings_xgboost.json")
+# X: the 52 features in the order of buildings_xgboost_features.csv; numeric columns as float with NaN for missing;
+# each categorical as pd.Categorical(values, categories=its levels in code order), the values as text exactly as
+# in the table ("True", not True or 1; branch_id "3", not 3.0), a missing value first replaced by the text
+# "MISSING" and any value that is not a level set to NaN
+pred = booster.predict(xgb.DMatrix(X, base_margin=margin, enable_categorical=True))
+```
+
+Without XGBoost (another engine, or Excel), use the two tables:
+
+- `buildings_xgboost_features.csv`: `position, feature, type, code, level, note`. The 52 features in the model's
+  order, 26 numeric then 26 categorical. A categorical input enters as its level's `code`, matched on the exact
+  text of `level`: booleans are `True` and `False` here (not `true`/`false` as in `terms.csv`, nor 1/0), and
+  integer levels such as `branch_id` have no decimals (`3`, not `3.0`; reading a CSV column that has a blank turns
+  `3` into `3.0`). A missing value is first the text `MISSING`, which has a code where the fit saw it; a value with
+  no code (`(any other level)`) is missing. Every 2025 value has a code. `x_clay_dry` and `x_fz3_rain` are defined
+  in `note`, and `sum_insured` is after D-02.
+- `buildings_xgboost_nodes.csv`: `tree, node, kind, position, feature, threshold_float32, threshold, right_codes,
+  right_levels, missing_goes, left, right, leaf_value`, one row per node. Start each tree at node 0:
+  - `split`: go to `left` if x < `threshold`, otherwise to `right`;
+  - `category split`: go to `right` if the code is in `right_codes` (the levels are in `right_levels`), otherwise
+    to `left`. Match whole codes: in Excel, look for `";"&code&";"` in `";"&right_codes&";"`, because a plain
+    search finds 2 inside 12 and would reprice most rows;
+  - a missing input (a missing number, or a categorical with no code) goes to `missing_goes` instead;
+  - `leaf`: take `leaf_value`; add one leaf per tree.
+
+  A child always comes after its parent, and no tree has more than 15 nodes (depth 3).
+
+XGBoost holds inputs, thresholds and leaves in single precision and adds the leaves in single precision:
+
+- Compare x with `threshold`, not `threshold_float32`. `threshold` is the double that gives XGBoost's branch for
+  every input. With `threshold_float32` (the threshold as XGBoost holds it), an input just below it that rounds up
+  to it in single precision, such as 12.3, would go left, where XGBoost sends it right. On the 2025 rows that would
+  reprice 10,598 of the 52,295 rows, by up to 36% (median 1.2%), mostly through discount, elevation and wind
+  exposure; with `threshold` every row takes XGBoost's branches.
+- `leaf_value` and `threshold_float32` are the single-precision values written out exactly. To reproduce
+  `small_claim` bit for bit, start a single-precision total at the margin rounded to single precision, add each
+  tree's leaf in turn, tree 0 to 192, and take exp in single precision as XGBoost does (C `expf`). Checked on
+  macOS (arm64), where numpy and XGBoost both call the system `expf`; an exp rounded correctly instead differs in
+  the last bit on 333 rows. Adding the leaves in double precision, as Excel does, differs from `small_claim` by up
+  to 7.3e-6 relative.
+
+For quotes: the trees were fitted on the developed market, 2021-24. A quote must go through the same input
+mappings as the 2025 rows (`input_mappings.csv`: the conforming view and the data fixes, D-02 at 10m), and its
+year enters only through the trend: for 2026, slope x (2026 - origin) raises the price by exp(0.04588) = 1.047
+against 2025. Whether to carry the trend forward is a pricing decision. A categorical input with no code is scored
+as missing without any error, which changes the price (a `branch_id` of `3.0` for `3` reprices almost every row),
+so a quote engine should count such inputs and reject or flag them; for the 2025 rows the count is 0
+(`reconciliation.csv`).
 
 ## input_mappings.csv (item 3)
 
@@ -113,7 +185,8 @@ the export rebuilds the final file through them as well as through the lookups.
 ## scalars.csv (item 4)
 
 `line, segment, item, value, applied, note`: the small-claim model and its trend (slope, origin, 2025
-multiplier); the XGBoost base rate and settings; the generalised Pareto fit and adjustment (buildings x1.0254,
+multiplier); the XGBoost base rate and settings, and the `base_score` its file stores but the prediction does not
+use; the generalised Pareto fit and adjustment (buildings x1.0254,
 motor x0.7651); the GLM penalties; the level steps by segment; and what C0 does not apply.
 
 The halfway scales are:
@@ -152,7 +225,7 @@ One row per 2025 emerging test row, in the final file's order:
 | `effective_level` | `final_prediction` / `as_is_file` |
 | `final_from_components` | (small + large) x the steps: the final file to within 1.8e-15 |
 
-Fit the buildings GLM substitute to `small_claim`.
+To replace the buildings trees with a substitute, fit it to `small_claim`.
 
 ## rows_inputs_<line>.parquet (item 6)
 
@@ -165,7 +238,9 @@ Each scored row as the model saw it, after the data fixes and mappings:
   the model does not use);
 - for each GLM term, the level or band it was given (`<component>__<term>__level`).
 
-Contents rows take their period dates from the test file, because the contents model table keeps none.
+Contents rows take their period dates from the test file, because the contents model table keeps none. For the
+same reason the contents file has no `*_raw` columns: its `sum_insured` is after D-02, and the raw value is in the
+test file.
 
 ## rows_glm_terms_<line>.parquet (extra)
 
@@ -185,13 +260,17 @@ comparison-site commission (the developed rate stands in), but no reference poli
 ## reconciliation.csv (item 8)
 
 `check, line, component, term, value, passed, note, type`. Rows of type `information` are not checks and leave
-`passed` blank. All 37 checks pass:
+`passed` blank. All 40 checks pass:
 
 - the refit reproduces the as-is file on every row, bit for bit (0 rows differ on each line);
 - the two level steps reproduce the midpoint and final files bit for bit;
 - the GLMs re-evaluated from the exported tables alone, as a spreadsheet would, match the model to within 6.0e-15,
   through the lookups and through the pieces;
-- the final prediction rebuilt that way matches the final file to within 6.2e-15;
+- the buildings trees reproduce `small_claim` bit for bit, both from `buildings_xgboost.json` reloaded and from
+  the two tree tables scored in single precision; scored in double precision they are within 7.3e-6, against a
+  limit of 1e-4 (float32 rounding over 193 additions can approach it, while a wrong branch moves a row far more);
+- the final prediction rebuilt from the exported tables alone, the buildings trees included (scored in single
+  precision), matches the final file to within 6.2e-15;
 - the components recombine to the final file to within 1.8e-15 (relative); 34,967 rows are not bit-exact, for the
   reason below.
 
@@ -205,12 +284,15 @@ comparison-site commission (the developed rate stands in), but no reference poli
   are why the components match the final file to 1.8e-15 rather than exactly.
 - Excel keeps 15 significant digits. A spreadsheet that follows this README should match the final file to about
   1e-14 relative (up to 3e-14 in a simulation of 15-digit inputs; not tested in Excel itself), against about 6e-15
-  at full double precision.
+  at full double precision. That holds for contents, motor and the buildings large claims, and for buildings small
+  claims taken from `small_claim`. Buildings rows whose small claims are scored from the trees in double
+  precision, as Excel must, match to about 7e-6 instead (see The buildings trees).
 - Open bounds are written `inf` and `-inf`, and `scalars.csv` gives `inf` for a credibility k that gives history no
   weight (not applied in C0 anyway). Excel has no infinity: load the CSVs through Data > From Text/CSV and replace
   them with -1E+307 and 1E+307 before use. Opened directly, `-inf` may read as a formula and show `#NAME?`, and as
   text it compares above every number, so the first band and the first spline piece would never match.
-- Category levels are text: some look like numbers (`0` to `5`, `250`, `500`, `1000`) or booleans (`true`, `false`).
+- Category levels are text: some look like numbers (`0` to `5`, `250`, `500`, `1000`) or booleans (`true`, `false`
+  in `terms.csv` and `input_mappings.csv`; `True`, `False` in `buildings_xgboost_features.csv`).
   Import the `level`, `source_value` and `mapped_value` columns, and the input columns you look up, as text, and
   count the rows that fall back to `(any other level)`: with the 2025 data the count should be 0.
 
@@ -226,7 +308,9 @@ comparison-site commission (the developed rate stands in), but no reference poli
   - `vehicle_age`: motor small claims.
 
   The last two are splines and take their `spline missing` value. `smoke_alarms`, `marital_status`, `roof_type`,
-  `energy_rating`, `days_unoccupied`, `household_size` and `years_at_address` reach only the buildings XGBoost.
+  `energy_rating`, `days_unoccupied`, `household_size` and `years_at_address` are features of the buildings XGBoost
+  only, and no tree splits on `smoke_alarms` or `roof_type`. A missing energy rating also sets the year-built
+  placeholder (D-27), which feeds the buildings large-claim GLM.
   Occupation, `overnight_parking` and `engine_size_cc` reach no model.
 - A missing flood zone counts as zone 3 or above in `x_fz3_rain`, and `x_clay_dry` is 0 when soil is missing.
 

@@ -12,17 +12,19 @@ This runner refits C0 exactly as E4 did, stops if the refit is more than roundin
 1e-14) or if the level steps do not reproduce the midpoint and final files bit for bit, and then writes export/excel/
 (see export/excel/README.md):
   terms.csv, spline_pieces.csv, input_mappings.csv, scalars.csv, reconciliation.csv  aggregate, committed
+  buildings_xgboost.json, buildings_xgboost_features.csv, buildings_xgboost_nodes.csv  the trees, committed
   rows_components.parquet, rows_inputs_<line>.parquet, rows_glm_terms_<line>.parquet,
   reference_office_premium.parquet                                                    row-level, never committed
 The row-level files hold competition data (rules section 5b), so they stay out of git (.gitignore). Last, it
 re-reads the exported files and re-evaluates every GLM from them alone, as the spreadsheet will, by both the spline
-lookups and the cubic pieces, against the model and the final file.
+lookups and the cubic pieces, and the buildings trees from their tables, against the model and the final file.
 
 Usage (from the pack root): python python/export_excel.py [--run-label "<label>"]
 """
 from __future__ import annotations
 
 import datetime as dt
+import json
 import re
 import sys
 import time
@@ -31,6 +33,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import xgboost as xgb
 from scipy.interpolate import BSpline, PPoly
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -40,6 +43,7 @@ import glm_lines  # noqa: E402
 import models  # noqa: E402
 import office_premium  # noqa: E402
 import run_glm_lines as rgl  # noqa: E402
+import xgb_models  # noqa: E402
 from gap_tests import settings  # noqa: E402
 
 RUNNER = "export_excel"
@@ -284,6 +288,130 @@ def evaluate_glm(t: pd.DataFrame, pieces: pd.DataFrame, maps: pd.DataFrame, x: p
     return np.exp(eta) * x.exposure.to_numpy(dtype=float)
 
 
+# ---- the XGBoost trees: export and re-evaluation -----------------------------------------------------------------
+
+def double_cut(t: float) -> float:
+    """XGBoost holds inputs and thresholds in single precision and sends x left when float32(x) < t. The double c
+    with x < c exactly when that holds, for every double x: the smallest double that rounds to t or above."""
+    t32 = np.float32(t)
+    mid = (float(np.nextafter(t32, np.float32(-np.inf))) + float(t32)) / 2  # exact in double precision
+    return mid if np.float32(mid) >= t32 else float(np.nextafter(mid, np.inf))
+
+
+def tree_offset(exposure: np.ndarray, base: float, slope: float, centre: float) -> np.ndarray:
+    """The XGBoost margin before the trees in YEAR, in xgb_models._dmatrix's order of operations."""
+    return np.log(exposure) + np.log(base) + slope * (YEAR - centre)
+
+
+def export_trees(path: Path, s: rgl.XGBSmall, d: pd.DataFrame, small: np.ndarray) -> dict:
+    """Save an XGBoost small-claim model to `path` (booster.save_model) and describe it as tables, from the saved file:
+    its features in the model's order, with each categorical's codes, and every node of every tree. Checks that the
+    file, reloaded, reproduces `small` (the model's prediction for `d` in YEAR) bit for bit."""
+    s.booster.save_model(path)
+    m = json.loads(path.read_text())
+    learner, gb = m["learner"], m["learner"]["gradient_booster"]["model"]
+    names = learner["feature_names"]
+    if names != list(s.numeric) + list(s.cats) or len(gb["trees"]) != s.n_trees:
+        raise RuntimeError(f"{path.name}: the saved features or tree count differ from the model's")
+    enc = gb["cats"]["enc"]  # XGBoost's own copy of the training levels: UTF-8 bytes, with each level's start and end
+    for i, f in enumerate(names):
+        o, v = enc[i]["offsets"], enc[i]["values"]
+        stored = [bytes(v[a:b]).decode() for a, b in zip(o[:-1], o[1:])]
+        if stored != s.cats.get(f, []):
+            raise RuntimeError(f"{path.name}: the levels XGBoost stored for {f} differ from the model's")
+    features = []
+    for i, f in enumerate(names):
+        if f in s.cats:
+            features += [{"position": i, "feature": f, "type": "categorical", "code": c, "level": lv, "note": ""}
+                         for c, lv in enumerate(s.cats[f])]
+            features.append({"position": i, "feature": f, "type": "categorical", "code": np.nan,
+                             "level": "(any other level)", "note": "no code: missing, so each split's default branch"})
+        else:
+            note = CONTINUOUS[f][0] if f in CONTINUOUS else \
+                "after D-02 (divided by 1,000 at 10m or more)" if f == "sum_insured" else ""
+            features.append({"position": i, "feature": f, "type": "numeric", "code": np.nan, "level": "",
+                             "note": note})
+    nodes = []
+    for k, t in enumerate(gb["trees"]):
+        cat = {n: t["categories"][a:a + z] for n, a, z in
+               zip(t["categories_nodes"], t["categories_segments"], t["categories_sizes"])}
+        for n, (left, right) in enumerate(zip(t["left_children"], t["right_children"])):
+            row = {"tree": k, "node": n, "kind": "leaf", "position": np.nan, "feature": "", "threshold_float32": np.nan,
+                   "threshold": np.nan, "right_codes": "", "right_levels": "", "missing_goes": "", "left": np.nan,
+                   "right": np.nan, "leaf_value": np.nan}
+            value = float(np.float32(t["split_conditions"][n]))  # exactly as XGBoost holds it (single precision)
+            if left == -1:
+                row["leaf_value"] = value
+            else:
+                if min(left, right) <= n:  # score_trees walks each tree once in node order
+                    raise RuntimeError(f"{path.name}: tree {k} lists a child before its parent")
+                f = names[t["split_indices"][n]]
+                row.update(position=t["split_indices"][n], feature=f, left=left, right=right,
+                           missing_goes="left" if t["default_left"][n] else "right")
+                if t["split_type"][n] == 1:
+                    row.update(kind="category split", right_codes=";".join(map(str, cat[n])),
+                               right_levels=";".join(s.cats[f][c] for c in cat[n]))
+                else:
+                    row.update(kind="split", threshold_float32=value, threshold=double_cut(value))
+            nodes.append(row)
+    expo = d.exposure.to_numpy()
+    reloaded = xgb_models.predict(xgb.Booster(model_file=str(path)), xgb_models.matrix(d, s.numeric, s.cats), expo,
+                                  s.base, extra=s.slope * (YEAR - s.centre))
+    bad = int((reloaded != small).sum())
+    if bad:
+        raise RuntimeError(f"{path.name}: the reloaded model differs from the fitted one on {bad} rows")
+    return {"features": pd.DataFrame(features).astype({"code": "Int64"}),
+            "nodes": pd.DataFrame(nodes).astype({"position": "Int64", "left": "Int64", "right": "Int64"}),
+            "base_score": float(learner["learner_model_param"]["base_score"].strip("[]"))}
+
+
+def read_trees(nodes_path: Path, features_path: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """The exported tree tables, with every number exactly as written and the levels as text."""
+    nodes = pd.read_csv(nodes_path, float_precision="round_trip", keep_default_na=False, na_values=[""],
+                        dtype={"right_codes": str, "right_levels": str, "feature": str, "missing_goes": str})
+    features = pd.read_csv(features_path, float_precision="round_trip", keep_default_na=False, na_values=[""],
+                           dtype={"level": str, "feature": str})
+    return nodes, features
+
+
+def score_trees(nodes: pd.DataFrame, features: pd.DataFrame, x: pd.DataFrame, offset: np.ndarray,
+                single: bool) -> np.ndarray:
+    """Expected cost from the exported tree tables alone: each row starts at its offset, adds one leaf per tree in
+    tree order and takes exp. `single` does both in single precision, as XGBoost does, and reproduces it bit for bit
+    where numpy's float32 exp matches XGBoost's expf (checked on macOS, where both call the system's); otherwise
+    double precision, as a spreadsheet would. A missing value, or a level with no code, takes each split's default
+    branch."""
+    cols = {}
+    for f, g in features.groupby("position"):
+        name = g.feature.iloc[0]
+        if g.type.iloc[0] == "categorical":
+            codes = g[g.code.notna()]
+            level = x[name].astype("string").fillna("MISSING")  # a missing level is the text MISSING (D-06)
+            cols[f] = level.map(dict(zip(codes["level"], codes.code))).astype(float).to_numpy()
+        else:
+            cols[f] = x[name].astype(float).to_numpy()
+    X = np.column_stack([cols[f] for f in sorted(cols)])
+    total = offset.astype(np.float32) if single else offset.astype(float)
+    for _, t in nodes.sort_values(["tree", "node"]).groupby("tree"):
+        t = t.reset_index(drop=True)  # nodes 0..n-1 in order
+        node = np.zeros(len(X), dtype=int)
+        for n in range(len(t)):  # children follow their parent, so one pass in node order reaches every leaf
+            r = t.iloc[n]
+            at = np.where(node == n)[0]
+            if r.kind == "leaf" or not len(at):
+                continue
+            v = X[at, int(r.position)]
+            if r.kind == "category split":
+                goes_left = ~np.isin(v, [float(c) for c in r.right_codes.split(";")])
+            else:
+                goes_left = v < r.threshold
+            goes_left = np.where(np.isnan(v), r.missing_goes == "left", goes_left)
+            node[at] = np.where(goes_left, int(r.left), int(r.right))
+        leaf = t.leaf_value.to_numpy()[node]
+        total = total + (leaf.astype(np.float32) if single else leaf)
+    return np.exp(total).astype(float)
+
+
 # ---- the run -----------------------------------------------------------------------------------------------------
 
 def exact_scale(a: np.ndarray, b: np.ndarray, candidates: list[float]) -> tuple[float, str, int]:
@@ -415,6 +543,20 @@ def run(cfg: dict, rec: dict) -> None:
         frame_inputs(name, ctx, test, glms, levels).to_parquet(OUT / f"rows_inputs_{name}.parquet", index=False)
         comps.append(c)
         scalars += line_scalars(name, model)
+        tree_files = [OUT / f"{name}_xgboost.json", OUT / f"{name}_xgboost_features.csv",
+                      OUT / f"{name}_xgboost_nodes.csv"]
+        if isinstance(model.small, rgl.XGBSmall):
+            r = export_trees(tree_files[0], model.small, test, small)
+            r["features"].to_csv(tree_files[1], index=False)
+            r["nodes"].to_csv(tree_files[2], index=False)
+            checks.append({"check": f"XGBoost reloaded from {tree_files[0].name} against the model, rows that differ "
+                           "in any bit", "line": name, "component": "small", "term": "", "value": 0, "passed": True})
+            scalars.append({"line": name, "segment": "", "item": "XGBoost base_score stored in the model file",
+                            "value": r["base_score"], "applied": False,
+                            "note": "not used: XGBoost ignores it when the offset is given as base_margin"})
+        else:
+            for p in tree_files:
+                p.unlink(missing_ok=True)
     comp = pd.concat(comps, ignore_index=True).set_index("row_id").reindex(order).reset_index()
     # The level steps as A31 applied them: candidates.py multiplied the as-is file as it read it; write4.py multiplied
     # (or copied) the midpoint file as it read it. Both reproduce the files exactly as written, bit for bit.
@@ -499,7 +641,8 @@ def run(cfg: dict, rec: dict) -> None:
     out.to_csv(OUT / "reconciliation.csv", index=False)
     rec["checks_failed"] = out[(out.type == "check") & ~out.passed.astype(bool)].check.tolist()
     rec["outputs_sha256"] = {p.relative_to(common.PACK_ROOT).as_posix(): common.sha256_file(p)
-                             for p in sorted(OUT.glob("*.csv")) + sorted(OUT.glob("*.parquet"))}
+                             for p in sorted(OUT.glob("*.csv")) + sorted(OUT.glob("*.json"))
+                             + sorted(OUT.glob("*.parquet"))}
     print(out[["type", "check", "line", "component", "term", "value", "passed"]].to_string(index=False))
 
 
@@ -513,7 +656,8 @@ def line_scalars(name: str, model) -> list[dict]:
         add("small-claim GLM L2 penalty", s.alpha)
     else:
         add("small-claim model", "XGBoost with the year trend in the offset (A15), fitted on developed 2021-24",
-            "Excel needs a substitute: fit it to rows_components.parquet small_claim")
+            f"the trees: {name}_xgboost.json, and as tables in {name}_xgboost_nodes.csv and "
+            f"{name}_xgboost_features.csv; or fit a substitute to rows_components.parquet small_claim")
         add("XGBoost base rate (in the offset)", s.base, "small-claim cost per exposure year in the fitting rows")
         add("XGBoost trees", s.n_trees)
         for k, v in s.params.items():
@@ -632,7 +776,35 @@ def evaluate_from_export(final_file: np.ndarray, order: pd.Series) -> list[dict]
     seen_path = OUT / "terms_values_seen.parquet"
     seen = pd.read_parquet(seen_path) if seen_path.exists() else None
     comp = pd.read_parquet(OUT / "rows_components.parquet").set_index("row_id")
-    checks = []
+    checks, trees = [], {}
+    sc = pd.read_csv(OUT / "scalars.csv", dtype=str, keep_default_na=False)
+    get = lambda name, item: float(sc[(sc.line == name) & (sc["item"] == item)].value.iloc[0])  # noqa: E731
+    for name in LINES:
+        nodes_path = OUT / f"{name}_xgboost_nodes.csv"
+        if not nodes_path.exists():
+            continue
+        nodes, features = read_trees(nodes_path, OUT / f"{name}_xgboost_features.csv")
+        x = pd.read_parquet(OUT / f"rows_inputs_{name}.parquet").set_index("row_id")
+        offset = tree_offset(x.exposure.to_numpy(dtype=float), get(name, "XGBoost base rate (in the offset)"),
+                             get(name, "small-claim trend slope (per year, log scale)"),
+                             get(name, "small-claim trend origin (year)"))
+        model = comp.loc[x.index, "small_claim"].to_numpy()
+        single, double = (score_trees(nodes, features, x, offset, s) for s in (True, False))
+        cat = features[features.code.notna()].groupby("feature")["level"].apply(set)
+        no_code = sum(int((~x[f].astype("string").fillna("MISSING").isin(lv)).sum()) for f, lv in cat.items())
+        checks += [{"check": "XGBoost scored from the exported tree tables in single precision, as XGBoost adds "
+                    "them: rows that differ from the model in any bit", "line": name, "component": "small", "term": "",
+                    "value": int((single != model).sum()), "passed": bool((single == model).all())},
+                   {"check": "XGBoost scored from the exported tree tables in double precision, as a spreadsheet "
+                    "would: max relative difference from the model", "line": name, "component": "small", "term": "",
+                    "value": float(np.abs(double / model - 1).max()),
+                    "passed": bool(np.abs(double / model - 1).max() < 1e-4),
+                    "note": "XGBoost adds the leaves in single precision, and that rounding over 193 additions can "
+                            "approach 1e-4; a wrong branch moves a row far more"},
+                   {"check": "XGBoost categorical inputs with no code in the features table (scored as missing)",
+                    "line": name, "component": "small", "term": "", "value": no_code, "passed": True,
+                    "type": "information"}]
+        trees[name] = pd.Series(single, index=x.index)
     for route in ("lookup", "pieces"):
         totals = {}
         for name in LINES:
@@ -647,14 +819,15 @@ def evaluate_from_export(final_file: np.ndarray, order: pd.Series) -> list[dict]
                                "relative difference", "line": name, "component": label, "term": "", "value": gap,
                                "passed": bool(gap < 1e-12)})
                 parts[label] = pd.Series(pred, index=x.index)
-            small = parts.get("small", comp.loc[x.index, "small_claim"])  # buildings: the XGBoost column
+            small = parts["small"] if "small" in parts else trees[name]  # buildings: the exported trees
             totals[name] = small + parts.get("large", 0.0)
         c = comp.loc[order]
         total = pd.concat(totals.values()).reindex(order).to_numpy()
         pred = total * c.level_step1_scale.to_numpy() * c.level_step2_times.to_numpy() / c.level_step2_divide.to_numpy()
         gap = float(np.abs(pred / final_file - 1).max())
         checks.append({"check": f"final prediction rebuilt from the exported tables ({route}; buildings small claims "
-                       "from the XGBoost column), max relative difference", "line": "all", "component": "",
+                       "from the tree tables in single precision), max relative difference", "line": "all",
+                       "component": "",
                        "term": "", "value": gap, "passed": bool(gap < 1e-12)})
     return checks
 

@@ -1,5 +1,5 @@
 line,segment,item,value,applied,note
-buildings,,small-claim model,"XGBoost with the year trend in the offset (A15), fitted on developed 2021-24",True,Excel needs a substitute: fit it to rows_components.parquet small_claim
+buildings,,small-claim model,"XGBoost with the year trend in the offset (A15), fitted on developed 2021-24",True,"the trees: buildings_xgboost.json, and as tables in buildings_xgboost_nodes.csv and buildings_xgboost_features.csv; or fit a substitute to rows_components.parquet small_claim"
 buildings,,XGBoost base rate (in the offset),350.1811758423766,True,small-claim cost per exposure year in the fitting rows
 buildings,,XGBoost trees,193,True,
 buildings,,XGBoost eta,0.05,True,
@@ -21,6 +21,7 @@ buildings,,large claims: adjustment,1.025390161682695,True,
 buildings,,large claims: infinite_mean,False,True,
 buildings,,large-claim GLM L2 penalty,0.001,True,
 buildings,,large-claim trend multiplier 2025,1.1203255482391414,True,"the small-claim slope from the large-claim GLM's origin, which equals the small-claim origin"
+buildings,,XGBoost base_score stored in the model file,292.2078,False,not used: XGBoost ignores it when the offset is given as base_margin
 contents,,small-claim model,"Tweedie GLM (p = 1.5, log link), fitted on developed 2021-24",True,
 contents,,small-claim GLM L2 penalty,0.0001,True,
 contents,,"small-claim trend slope (per year, log scale)",0.041818621051095524,True,

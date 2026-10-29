@@ -1,5 +1,5 @@
-"""Unit tests for the Excel export (export_excel.py): its exact conversions, and a synthetic GLM exported and then
-re-evaluated from its own tables, as the spreadsheet will."""
+"""Unit tests for the Excel export (export_excel.py): its exact conversions, and a synthetic GLM and XGBoost model
+exported and then re-evaluated from their own tables, as the spreadsheet will."""
 import sys
 from pathlib import Path
 
@@ -96,3 +96,48 @@ def test_a_glm_rebuilt_from_its_exported_tables_matches_the_model(label):
     base = d.head(50).assign(cat=glm.levels["cat"][0])
     assert np.allclose(ex.evaluate_glm(terms, pieces, unseen, new, "pieces"),
                        ex.evaluate_glm(terms, pieces, maps, base, "pieces"), rtol=1e-14, atol=0)
+
+
+def test_double_cut_takes_xgboosts_branch_for_every_double():
+    rng = np.random.default_rng(4)
+    cuts = np.concatenate([rng.normal(0, 1, 300), rng.lognormal(4, 3, 300) * rng.choice([-1, 1], 300),
+                           [0.0, 1e-30, -2.5, 45_000.0]]).astype(np.float32)
+    for t in cuts:
+        c = ex.double_cut(float(t))
+        below = float(np.nextafter(t, np.float32(-np.inf)))
+        for x in (c, np.nextafter(c, -np.inf), np.nextafter(c, np.inf), float(t), np.nextafter(float(t), -np.inf),
+                  np.nextafter(float(t), np.inf), below, (below + float(t)) / 2):
+            assert (x < c) == (np.float32(x) < t)  # XGBoost: left when float32(x) < t
+    # A decimal input on a single-precision threshold: XGBoost sends 12.3 right, a plain double comparison left.
+    t = np.float32(12.3)
+    assert 12.3 < float(t) and not np.float32(12.3) < t and not 12.3 < ex.double_cut(float(t))
+
+
+def test_trees_rebuilt_from_their_exported_tables_match_xgboost(tmp_path):
+    d, _ = synthetic(5)
+    d["cat"] = d.cat.replace({"c": "NA"})  # a level pandas would read as missing by default
+    rng = np.random.default_rng(6)
+    mu = 100 * d.exposure * np.exp(1.2 * (d.cat == "b") - 0.9 * (d.cat == "NA") + 0.1 * d.band + 0.3 * d.z)
+    y = np.where(rng.random(len(d)) < 0.3, rng.gamma(2.0, mu / 0.6), 0.0)
+    s = rgl.XGBSmall(["band", "curve", "z"], ["cat"], d, {"max_depth": 3, "eta": 0.3, "min_child_weight": 1.0}, 25,
+                     {"seed": 7, "nthread": 1}, 1).fit(d, y, 1.5)
+    r = ex.export_trees(tmp_path / "model.json", s, d, s.predict(d, ex.YEAR))
+    r["nodes"].to_csv(tmp_path / "nodes.csv", index=False)
+    r["features"].to_csv(tmp_path / "features.csv", index=False)
+    nodes, features = ex.read_trees(tmp_path / "nodes.csv", tmp_path / "features.csv")
+    assert {"split", "category split", "leaf"} <= set(nodes.kind)
+    assert d.curve.isna().any() and d.cat.isna().any()  # missing values take the default branches
+    for c in ("threshold_float32", "threshold", "leaf_value"):  # read back exactly as written
+        assert np.array_equal(nodes[c], r["nodes"][c].astype(float), equal_nan=True)
+    held = pd.concat([nodes.threshold_float32, nodes.leaf_value]).dropna().to_numpy()
+    assert np.array_equal(held.astype(np.float32).astype(float), held)  # exact single-precision values
+    level = {(f, c): v for f, c, v in zip(features.feature, features.code, features["level"]) if pd.notna(c)}
+    assert all(n.right_levels.split(";") == [level[(n.feature, float(c))] for c in n.right_codes.split(";")]
+               for n in nodes[nodes.kind == "category split"].itertuples())
+    split = nodes[nodes.kind == "split"]
+    on_cut = [d.head(20).assign(**{f: c}) for f, c in zip(split.feature, split.threshold)]  # x == threshold goes right
+    score = pd.concat([d, d.head(200).assign(cat="unseen"), *on_cut], ignore_index=True)  # and a level never seen
+    model = s.predict(score, ex.YEAR).astype(float)
+    offset = ex.tree_offset(score.exposure.to_numpy(), s.base, s.slope, s.centre)
+    assert np.array_equal(ex.score_trees(nodes, features, score, offset, single=True), model)
+    assert np.abs(ex.score_trees(nodes, features, score, offset, single=False) / model - 1).max() < 1e-5

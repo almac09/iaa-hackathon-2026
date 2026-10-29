@@ -7,6 +7,7 @@ refit against the as-is file: max relative difference,buildings,,,0.0,True,the r
 "spline pieces against the fitted curve, max absolute difference (log scale)",buildings,large,year_built,6.661338147750939e-16,True,,check
 "spline pieces against the fitted curve, max absolute difference (log scale)",buildings,large,distance_to_river_km,8.881784197001252e-16,True,,check
 "per-row term contributions sum to the model's log prediction, max relative difference",buildings,large,,3.3306690738754696e-15,True,,check
+"XGBoost reloaded from buildings_xgboost.json against the model, rows that differ in any bit",buildings,small,,0,True,,check
 refit against the as-is file: rows that differ in any bit,contents,,,0,True,the refit matches the as-is file bit for bit,check
 refit against the as-is file: max difference in units in the last place,contents,,,0.0,True,the refit matches the as-is file bit for bit,check
 refit against the as-is file: max relative difference,contents,,,0.0,True,the refit matches the as-is file bit for bit,check
@@ -30,14 +31,17 @@ pandas' default CSV parser against the midpoint file as written: rows read diffe
 pandas' default CSV parser against the final file as written: rows read differently,all,,,7032,,why the components match the final file to rounding rather than bit for bit,information
 "components recombine to the final file: (small + large) x step 1 (x 1.05 / step 1 for motor new business), max relative difference",all,,,1.7763568394002505e-15,True,,check
 components recombine to the final file: rows that differ in any bit,all,,,34967,,the A31 steps used the default parser's reading of the files,information
+"XGBoost scored from the exported tree tables in single precision, as XGBoost adds them: rows that differ from the model in any bit",buildings,small,,0,True,,check
+"XGBoost scored from the exported tree tables in double precision, as a spreadsheet would: max relative difference from the model",buildings,small,,7.284294079146214e-06,True,"XGBoost adds the leaves in single precision, and that rounding over 193 additions can approach 1e-4; a wrong branch moves a row far more",check
+XGBoost categorical inputs with no code in the features table (scored as missing),buildings,small,,0,,,information
 "GLM re-evaluated from the exported tables (lookup) against the model, max relative difference",buildings,large,,3.219646771412954e-15,True,,check
 "GLM re-evaluated from the exported tables (lookup) against the model, max relative difference",contents,small,,5.995204332975845e-15,True,,check
 "GLM re-evaluated from the exported tables (lookup) against the model, max relative difference",motor,large,,6.661338147750939e-16,True,,check
 "GLM re-evaluated from the exported tables (lookup) against the model, max relative difference",motor,small,,4.3298697960381105e-15,True,,check
-"final prediction rebuilt from the exported tables (lookup; buildings small claims from the XGBoost column), max relative difference",all,,,6.217248937900877e-15,True,,check
+"final prediction rebuilt from the exported tables (lookup; buildings small claims from the tree tables in single precision), max relative difference",all,,,6.217248937900877e-15,True,,check
 "GLM re-evaluated from the exported tables (pieces) against the model, max relative difference",buildings,large,,3.3306690738754696e-15,True,,check
 "GLM re-evaluated from the exported tables (pieces) against the model, max relative difference",contents,small,,5.995204332975845e-15,True,,check
 "GLM re-evaluated from the exported tables (pieces) against the model, max relative difference",motor,large,,6.661338147750939e-16,True,,check
 "GLM re-evaluated from the exported tables (pieces) against the model, max relative difference",motor,small,,4.440892098500626e-15,True,,check
-"final prediction rebuilt from the exported tables (pieces; buildings small claims from the XGBoost column), max relative difference",all,,,6.217248937900877e-15,True,,check
+"final prediction rebuilt from the exported tables (pieces; buildings small claims from the tree tables in single precision), max relative difference",all,,,6.217248937900877e-15,True,,check
 sha256 of the final file,all,,submission_emerging_level_midpoint_motornb105_20261026.csv,7799b90105d361d7df29d3979193826d760bbf00bd51a97f91ca123a0a65b3bf,,,information
