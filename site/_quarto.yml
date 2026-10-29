@@ -30,11 +30,13 @@ website:
       - section: "Our work"
         contents:
           - href: eda.qmd
-            text: What the data told us
+            text: What the data told us (EDA)
+          - href: data-cleaning.qmd
+            text: Data cleaning & feature engineering
+          - href: our-glm.qmd
+            text: How our GLM works
           - href: underwriting-calculator.qmd
             text: Underwriting calculator
-          - href: how-glms-work.qmd
-            text: How a GLM works
       - href: project-management.qmd
         text: Project management
   page-footer:

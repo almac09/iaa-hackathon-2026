@@ -24,7 +24,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 EVIDENCE = REPO / "contributors/gerard/workings/contents/replication/audit/evidence"
-MAX_ROWS = 200
+MAX_ROWS = 500  # the largest table, contents one-way factor x level, has 394 rows
 ID_COLUMNS = {"row_id", "policy_id", "customer_id", "address_id", "claim_id"}
 
 # output name -> source file under audit/evidence
@@ -39,6 +39,20 @@ TABLES = {
     "target_by_line_year.csv": "glm_lines/ev_11_target_by_line_year.csv",
     "report_lag_by_peril.csv": "emerging/ev_w3_report_lag_patterns.csv",
     "new_business_emerging.csv": "emerging/ev_w4_new_business.csv",
+    # added for the extra EDA charts, the data-cleaning page and the model page (issue #185)
+    "oneway_contents.csv": "python/ev_m1_oneway_tables.csv",
+    "size_band_mix_contents.csv": "python/ev_05_size_band_mix.csv",
+    "claim_persistence_contents.csv": "python/ev_06_transition_matrix.csv",
+    "importance_xgb.csv": "lines/ev_l5_importance.csv",
+    "missing_values_contents.csv": "python/ev_02_contents_missing_values.csv",
+    "exposure_before_after_contents.csv": "python/ev_03_exposure_before_after.csv",
+    "sum_insured_before_after_contents.csv": "python/ev_03_sum_insured_before_after.csv",
+    "claim_reconciliation_contents.csv": "python/ev_03_claim_reconciliation.csv",
+    "join_completeness_contents.csv": "python/ev_03_join_completeness.csv",
+    "motor_id_padding.csv": "python/ev_02_motor_customer_id_padding.csv",
+    "fixes_by_line.csv": "glm_lines/ev_09_fixes.csv",
+    "backtest_2024.csv": "glm_lines/ev_g3_backtest_2024.csv",
+    "large_claim_tail.csv": "glm_lines/ev_g4_large_claim_tail.csv",
 }
 
 

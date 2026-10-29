@@ -1,0 +1,228 @@
+---
+title: "Data cleaning & feature engineering"
+subtitle: "From raw competition tables to the model frame: every fix, every feature, and why"
+toc: true
+toc-depth: 2
+---
+
+The [EDA page](eda.qmd) shows *what* we found in the data. This page shows *what we did about it*. Each fix is
+numbered, has evidence behind it, and is logged in a GitHub issue or decision record, so the path from raw data to
+prediction can be audited.
+
+::: {.callout-note}
+## Only aggregates are shown
+As on the EDA page, every number and chart here comes from summary tables, never from policy or claim rows
+(competition rules, section 5b).
+:::
+
+## The pipeline at a glance
+
+```{mermaid}
+flowchart LR
+  A["Raw tables<br/>policies x3, claims,<br/>customers, addresses,<br/>weather"] --> B["Cleaning rules<br/>R1-R6 / D-01-D-27"]
+  B --> C["Joins<br/>customer, address,<br/>weather-year"]
+  B --> D["Claims clean<br/>dedupe, exclude declined<br/>and out-of-period"]
+  D --> E["Develop to ultimate<br/>chain ladder by peril,<br/>BF for slow perils"]
+  E --> F["Split small / large<br/>at 50,000"]
+  C --> G["Features<br/>bands, splines,<br/>missing levels, log SI"]
+  F --> H["Model frame<br/>one row per policy-year"]
+  G --> H
+  H --> I["GLMs per line<br/>+ trend + offset"]
+```
+
+```{ojs}
+fixes = FileAttachment("data/eda/fixes_by_line.csv").csv({typed: true})
+```
+
+```{ojs}
+expBA = FileAttachment("data/eda/exposure_before_after_contents.csv").csv({typed: true})
+```
+
+```{ojs}
+siBA = FileAttachment("data/eda/sum_insured_before_after_contents.csv").csv({typed: true})
+```
+
+```{ojs}
+padding = FileAttachment("data/eda/motor_id_padding.csv").csv({typed: true})
+```
+
+```{ojs}
+recon = FileAttachment("data/eda/claim_reconciliation_contents.csv").csv({typed: true})
+```
+
+```{ojs}
+joins = FileAttachment("data/eda/join_completeness_contents.csv").csv({typed: true})
+```
+
+```{ojs}
+missing = FileAttachment("data/eda/missing_values_contents.csv").csv({typed: true})
+```
+
+```{ojs}
+model = FileAttachment("data/model.json").json()
+```
+
+```{ojs}
+fmt = d3.format(",")
+```
+
+## 1. Cleaning rules
+
+Cian set up the rules framework early in the project. Each rule has an ID, the evidence, an action, and audit tables
+for every changed cell, exclusion and flag (`notebooks/01b_corrections`). Gerard reproduced the rules in SQL, added
+more from his final review, and numbered the decisions D-01 to D-39 (`audit/DECISIONS.md`).
+
+| Rule | Field | Problem | Fix | Ref |
+|---|---|---|---|---|
+| R1 / D-19 | motor `customer_id` | Leading zeros lost: 10% of motor rows match no customer | Left-pad to 8 characters | #51 |
+| R2 / D-01 | `exposure` (all lines) | Some rows in days (up to 365) or on a 360-day year | Recompute as (end - start + 1) / 365 | #52 |
+| R3 / D-02 | home `sum_insured` | About 0.2% of rows 1,000x too large | Divide by 1,000 at 1m or more (contents), 10m or more (buildings) | #53 |
+| R4 / D-24 | buildings `construction_type` | Mixed case; timber `T` to 2022, `W` from 2023 | Lower-case and trim; merge as `timber` | #54 |
+| R5 / D-19 | claims | 604 duplicates, identical apart from the ID | Keep one copy | #55 |
+| R6 / D-03 | claims | Declined claims, and losses outside any policy period | Exclude from the target | #56 |
+| D-26 | `elevation_m`, region R11 | Recorded in feet (3.28x every other region) | Divide by 3.28084 | #154 |
+| D-27 | `year_built` = 1900 | Placeholder on 19,014 addresses | Typical year built for the energy rating | #155 |
+| D-04 | `customer_service_contacts` | Leaks the outcome (claimants 3.0 vs 0.4) | Excluded from every model | |
+| D-05 | `written_premium` | Annual on every row, and adds nothing beyond the risk factors | Excluded as a feature; earned premium used for loss ratios | |
+
+### What the fixes changed
+
+```{ojs}
+{
+  const tr = expBA.find(d => d.src === "train")
+  const si = siBA.find(d => d.src === "train")
+  const mp = padding.find(d => d.src === "train")
+  return html`<div class="hero-kpis">
+    <div class="kpi-card"><div class="kpi-label">Contents training exposure</div><div class="kpi-value">${Math.round((tr.total_exposure_after / tr.total_exposure_before - 1) * 100)}%</div><div class="kpi-label">${fmt(Math.round(tr.total_exposure_before))} to ${fmt(Math.round(tr.total_exposure_after))} years</div></div>
+    <div class="kpi-card"><div class="kpi-label">Largest exposure on a row</div><div class="kpi-value">${tr.max_before} to ${tr.max_after}</div><div class="kpi-label">${fmt(tr.rows_above_1_before)} rows fixed</div></div>
+    <div class="kpi-card"><div class="kpi-label">Mean contents sum insured</div><div class="kpi-value">${fmt(Math.round(si.mean_after))}</div><div class="kpi-label">was ${fmt(Math.round(si.mean_before))}, ${fmt(si.rows_at_or_above_threshold_before)} rows rescaled</div></div>
+    <div class="kpi-card"><div class="kpi-label">Motor rows with no customer</div><div class="kpi-value">${fmt(mp.n_unmatched_raw)} to ${mp.n_unmatched_after_lpad8}</div><div class="kpi-label">after padding IDs</div></div>
+  </div>`
+}
+```
+
+By line, rows changed by each fix (training and 2025 test files):
+
+```{ojs}
+Inputs.table(fixes.map(d => ({
+  line: d.line, file: d.src, "exposure recomputed": d.n_exposure_changed, "sum insured rescaled": d.n_sum_insured_rescaled,
+  "construction re-cased": d.n_construction_type_recased, "timber merged": d.n_timber_merged
+})), {format: {"exposure recomputed": fmt, "sum insured rescaled": fmt, "construction re-cased": fmt, "timber merged": fmt}})
+```
+
+After the fixes, **every** contents row (training and test) joins to a customer, an address and a weather record:
+
+```{ojs}
+Inputs.table(joins.map(d => ({file: d.src, rows: d.n_rows, "no customer": d.n_no_customer, "no address": d.n_no_address, "no weather": d.n_no_weather})), {format: {rows: fmt}})
+```
+
+## 2. Building the target
+
+The competition asks for the **expected ultimate cost** of each 2025 policy row. The training target has to mean the
+same thing, so each claim goes through four steps.
+
+**Step 1: clean the claims.** For contents, every claim is accounted for, from the raw table to the target total:
+
+```{ojs}
+Inputs.table(recon.filter(d => d.step <= 5).map(d => ({step: d.step, "": d.description, claims: d.n_claims, "net cost": d.net_cost})),
+  {format: {claims: fmt, "net cost": d => fmt(Math.round(d))}})
+```
+
+```{ojs}
+md`The check row confirms the target total on the policy rows is exactly the cleaned claims total
+(${fmt(Math.round(recon.find(d => d.step === 6).net_cost))}). Nothing is lost or double-counted in the join.`
+```
+
+**Step 2: net cost.** Incurred to date (already net of the excess) minus recoveries. Motor recoveries are about 6% of
+incurred; home lines have none.
+
+**Step 3: develop to ultimate.** Claims valued at 31 December 2024 are not all reported or settled yet. Each claim is
+grossed up by the inverse of its peril's reported share at its age:
+
+$$
+\text{ultimate}_k \;=\; \text{net cost}_k \times \frac{1}{F_{\text{peril}}(\text{age}_k)},
+\qquad
+F(l) \;=\; \prod_{m>l}\left(1 - \frac{d_m}{n_m}\right)
+$$
+
+$F$ is a right-truncated product-limit estimate of the cost-weighted reporting pattern. For the two slow perils
+(buildings subsidence and motor bodily injury), the 2024 loss year uses **Bornhuetter-Ferguson** instead, because the
+chain ladder over-reacted in the backtest (×1.18 and ×1.33 of actual) while BF was close (×1.01 and ×1.13).
+Alan's [chain-ladder notebook](https://github.com/almac09/iaa-hackathon-2026/blob/main/workings/chainladder.ipynb)
+cross-checked the development with Mack and bootstrap methods.
+
+**Step 4: split small and large.** Claims above **50,000** go to a separate large-claim model in buildings and motor
+(see [How our GLM works](our-glm.qmd)). Contents is modelled without a split.
+
+## 3. Feature engineering
+
+### Exposure and premium
+
+* **Exposure** is always (end - start + 1) / 365. It enters every model as an **offset**, $\log e_i$, so a half-year
+  policy costs half as much, other things equal.
+* **Earned premium** = written premium × exposure. It is used for loss ratios only, never as a rating factor.
+* **Line from the policy number**: the first letter of `policy_id` (B, C, M) gives the line (Alan, #12).
+
+### How each kind of factor enters the model
+
+| Kind | What it does | Example in our model |
+|---|---|---|
+| **Categorical** | One coefficient per level; the base level is 0 | cover type, tenure, customer segment |
+| **Grouped / capped** | Rare high values pooled | prior claims and missed payments: 3 or more becomes one level |
+| **Band** | A numeric cut into intervals | motor prior claims (0 / 1 / 2+), large-claim NCB bands |
+| **Spline** | A smooth curve for a numeric factor, built from cubic pieces | elevation, distance to river, NCB years, vehicle age |
+| **Missing level** | Its own coefficient where data is missing | contents: missing flood zone ×1.73, unknown distance to river |
+| **Log transform** | An elasticity on a size measure | contents: $0.777 \times \log(\text{sum insured})$ |
+| **Trend** | Calendar-year slope, carried to 2025 | +4.3% a year for contents, +3.7% for motor |
+
+The final rating factors in the model behind the [calculator](underwriting-calculator.qmd):
+
+```{ojs}
+featureRows = Object.entries(model.lines).flatMap(([line, L]) => Object.entries(L.components).flatMap(([comp, C]) =>
+  C.terms.map(t => ({
+    line, component: comp === "small" ? "small claims" : "large claims",
+    factor: L.inputs[t.input]?.label ?? t.term,
+    kind: t.kind === "log_si" ? "log transform" : t.kind,
+    levels: t.kind === "categorical" ? Object.keys(t.levels).length : t.kind === "band" ? t.bands.length : t.kind === "spline" ? `${t.pieces.length - 2} cubic pieces` : "1 coefficient",
+    "unknown allowed": t.kind === "spline" ? (L.inputs[t.input]?.allow_missing ? "yes" : "no") : t.kind === "categorical" ? ("MISSING" in t.levels ? "yes" : "no") : t.kind === "band" ? (t.missing ? "yes" : "no") : "no"
+  }))
+))
+```
+
+```{ojs}
+viewof featLine = Inputs.radio(["contents", "motor"], {label: "Line", value: "contents"})
+```
+
+```{ojs}
+Inputs.table(featureRows.filter(d => d.line === featLine), {columns: ["component", "factor", "kind", "levels", "unknown allowed"], rows: 25})
+```
+
+### What we deliberately left out
+
+* **Leakage:** customer service contacts, renewal decision, written premium.
+* **Not available in the emerging market (D-31):** region, occupation, credit band, exact ages, annual mileage and
+  telematics. The model uses the age bands both markets share.
+* **Governance:** previous insurer, branch, campaign code and marketing-only fields were reviewed for proxy and
+  fairness risk (Bridget's issue #38 on ethics and proxy variables, and Alan's GLM governance notes).
+
+## 4. Missing values
+
+```{ojs}
+Inputs.table(missing.map(d => ({table: d.src, field: d.column_name, missing: d.n_missing, rows: d.n_rows, share: d.n_missing / d.n_rows})),
+  {format: {missing: fmt, rows: fmt, share: d3.format(".1%")}})
+```
+
+The rule (D-06): **missing is information, not noise.** In the developed market a missing flood zone has a relativity of
+1.71, so it gets its own level rather than an imputed value. Smoothed numeric factors get a missing indicator in place of
+the curve. In the emerging market about 12% of each field is missing. Gerard tested filling the gaps against keeping
+them as their own level, scored out of time in both directions. Filling didn't pass, so the missing levels stayed.
+
+## Sources
+
+| Who | Where | What |
+|---|---|---|
+| Cian | `notebooks/01a_row_count_check`, `notebooks/01b_corrections`, `docs/DATA_CONTRACT.md`; issues #46-#58 | Row counts, DQ rules R1-R6 with audit tables, data contract |
+| Gerard | `contributors/gerard/.../sql/01-13`, `docs/MODEL_DOCUMENTATION.md` sections 2-3, `audit/DECISIONS.md` | SQL pipeline, 20 data issues, target development, decisions D-01 to D-39 |
+| Gerard | `.../export/excel/input_mappings.csv` | Every input mapping and data fix used by the final model |
+| Bridget | `contributors/bridget/notebooks_v4/01_Data_Prep_and_Claims`, `Excel files_v4/Features_v2.xlsx` | Data prep, claims development, feature list |
+| Alan | `workings/home_insurance_model`, `workings/chainladder`; issues #12-#17 | Exposure standardisation, earned premium, line from policy ID, claims aggregation, development |

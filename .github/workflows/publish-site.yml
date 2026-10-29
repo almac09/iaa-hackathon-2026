@@ -35,6 +35,9 @@ jobs:
       - name: Build model JSON
         run: python site/scripts/build_model.py
 
+      - name: Check the calculator engine against an independent Python scorer
+        run: python site/scripts/check_engine.py
+
       - name: Copy aggregate EDA tables (refuses row-level data)
         run: python site/scripts/build_eda.py
 

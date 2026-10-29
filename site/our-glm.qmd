@@ -1,0 +1,352 @@
+---
+title: "How our GLM works"
+subtitle: "Model C0: the structure, the maths, and every coefficient behind the calculator"
+toc: true
+toc-depth: 2
+---
+
+```{ojs}
+import {scorePolicy, splineValue} from "./glm.js"
+```
+
+```{ojs}
+model = FileAttachment("data/model.json").json()
+```
+
+```{ojs}
+testCases = FileAttachment("data/test_cases.json").json()
+```
+
+```{ojs}
+backtest = FileAttachment("data/eda/backtest_2024.csv").csv({typed: true})
+```
+
+```{ojs}
+tail = FileAttachment("data/eda/large_claim_tail.csv").csv({typed: true})
+```
+
+```{ojs}
+C = model.lines.contents.components.small
+```
+
+```{ojs}
+Ms = model.lines.motor.components.small
+```
+
+```{ojs}
+Ml = model.lines.motor.components.large
+```
+
+```{ojs}
+logSI = C.terms.find(t => t.kind === "log_si").coefficient
+```
+
+The team's final model is Gerard's **C0**: the "portable" model, which carries from the developed market (Part 1) to
+the emerging market (Part 2). It is a set of **Tweedie generalised linear models (GLMs)**, one or two per line. This
+page shows how a single prediction is built, the maths behind each step, and lets you explore every rating factor
+exactly as the [underwriting calculator](underwriting-calculator.qmd) uses it.
+
+## 1. The idea in one line
+
+A GLM starts from a **base cost** and multiplies it up or down by one **relativity** per rating factor:
+
+$$
+\text{expected cost} \;=\; \text{base} \times r_{\text{age}} \times r_{\text{flood zone}} \times r_{\text{excess}} \times \cdots \times \text{exposure}
+$$
+
+A relativity above 1 makes the policy dearer and below 1 cheaper. Because every factor has its own visible
+multiplier, an actuary can explain any premium line by line. That's the main reason we chose GLMs over a black box
+for the final model.
+
+## 2. Model structure
+
+| Line | Small claims | Large claims (above 50,000) | After the model |
+|---|---|---|---|
+| **Home contents** | Tweedie GLM, 17 factors + log sum insured | none: no split | level step ×0.866 |
+| **Motor** | Tweedie GLM, 14 factors | Tweedie GLM, 3 factors, scaled to a Pareto tail | renewals ×0.861; new business ×1.05 |
+| **Buildings** | XGBoost (trees, depth 3) | Tweedie GLM, scaled to a Pareto tail | ×0.957 |
+
+*Buildings small claims use gradient-boosted trees, so they aren't in the calculator yet.*
+
+How one motor prediction is put together:
+
+```{mermaid}
+flowchart LR
+  X["Policy<br/>rating factors"] --> S["Small-claim GLM<br/>exp(intercept + factors<br/>+ trend + log exposure)"]
+  X --> L["Large-claim GLM<br/>exp(intercept + 3 factors<br/>+ trend + log exposure)"]
+  L --> P["x Pareto adjustment"]
+  S --> A["As-is cost<br/>small + large"]
+  P --> A
+  A --> V["Level step<br/>by segment"]
+  V --> F["2025 prediction"]
+```
+
+## 3. The maths
+
+### The distribution: Tweedie
+
+Most policies have no claim in a year, and a few have a large one. The **Tweedie** distribution with power
+$1 < p < 2$ handles both: it is a compound Poisson-gamma, with a point mass at zero and a continuous right tail. We use
+$p = 1.5$, the same power the competition scores with:
+
+$$
+Y_i \sim \text{Tweedie}(\mu_i,\ \phi,\ p = 1.5), \qquad \operatorname{Var}(Y_i) = \phi\,\mu_i^{\,1.5}
+$$
+
+### The linear predictor, with log link and exposure offset
+
+$$
+\log \mu_i \;=\; \underbrace{\beta_0}_{\text{intercept}}
+\;+\; \sum_{j} f_j(x_{ij})
+\;+\; \underbrace{\gamma\,(2025 - \bar t)}_{\text{trend to 2025}}
+\;+\; \underbrace{\log e_i}_{\text{offset}}
+$$
+
+The log link turns sums into products, which is why every factor becomes a multiplicative relativity $r_j = e^{f_j}$.
+The offset fixes the coefficient on $\log e_i$ at 1, so cost is proportional to time on cover.
+
+```{ojs}
+md`For contents, the trend slope is γ = ${C.trend_slope.toFixed(4)} a year (+${((Math.exp(C.trend_slope) - 1) * 100).toFixed(1)}% a year), from a fitting-year
+centre of t̄ = ${C.trend_origin.toFixed(2)}, so the 2025 trend multiplier is **×${C.trend_multiplier_2025.toFixed(4)}**. For motor it is
+**×${Ms.trend_multiplier_2025.toFixed(4)}** (+${((Math.exp(Ms.trend_slope) - 1) * 100).toFixed(1)}% a year).`
+```
+
+### Four kinds of rating term
+
+Each $f_j$ is one of these:
+
+| Kind | $f_j(x)$ | Used for |
+|---|---|---|
+| **Categorical** | $\beta_{j,\ell(x)}$, with the base level $\beta_{j,\text{base}} = 0$ | cover type, flood zone, segment, age band |
+| **Band** | $\beta_{j,k}$ for $c_{k-1} < x \le c_k$ | motor prior claims; NCB and years licensed in the large-claim GLM |
+| **Spline** | $a_0 + a_1 d + a_2 d^2 + a_3 d^3$, $d = x - x_0$, cubic pieces joined smoothly, flat beyond the end knots | elevation, distance to river, NCB years, vehicle age |
+| **Log size** | $\beta \log(\text{sum insured})$ | contents sum insured |
+
+When a spline input is **missing**, the curve is switched off and a separate coefficient is used:
+$f_j = \beta_j^{\text{miss}}$. It is a level of its own, not an average.
+
+```{ojs}
+md`The sum-insured term is an **elasticity**: β = ${logSI.toFixed(3)}, so doubling the sum insured multiplies
+contents cost by 2<sup>${logSI.toFixed(3)}</sup> = ${Math.pow(2, logSI).toFixed(2)}, a rise of ${Math.round((Math.pow(2, logSI) - 1) * 100)}%, not 100%.
+Bigger homes don't claim proportionally more.`
+```
+
+### Large claims: GLM plus a Pareto tail
+
+Above the threshold $u = 50{,}000$, claims are too few and too wild for a GLM alone. The large-claim GLM sets the
+*shape* (who is likely to have one), and a **generalised Pareto distribution (GPD)** fitted to the excesses sets
+the *level*:
+
+$$
+P(X - u > y \mid X > u) = \left(1 + \frac{\xi\,y}{\sigma}\right)^{-1/\xi},
+\qquad
+\mathbb{E}[X - u \mid X > u] = \frac{\sigma}{1 - \xi}\quad(\xi < 1)
+$$
+
+The Pareto adjustment $A$ rescales the GLM so the large-claim cost matches the fitted tail rather than the few
+observed claims:
+
+$$
+A \;=\; \frac{\sigma / (1 - \xi)}{\overline{(x - u)}_{\,x > u}}, \qquad
+\mu^{\text{large}}_i = A \cdot \exp\!\big(\eta^{\text{large}}_i\big)
+$$
+
+```{ojs}
+Inputs.table(tail.map(d => ({
+  line: d.line, "large claims": d.n_large, "shape ξ": d.shape, "scale σ": d.scale,
+  "fitted mean excess σ/(1-ξ)": d.mean_excess_fitted, "observed mean excess": d.mean_excess_empirical, "adjustment A": d.adjustment
+})), {format: {"shape ξ": x => x.toFixed(3), "scale σ": x => Math.round(x).toLocaleString(), "fitted mean excess σ/(1-ξ)": x => Math.round(x).toLocaleString(),
+  "observed mean excess": x => Math.round(x).toLocaleString(), "adjustment A": x => x.toFixed(4)}})
+```
+
+For motor, the observed excesses include the single 11.89m bodily-injury claim. On its own it adds about 20,000 to
+the observed mean excess over 591 claims (11.84m / 591). The fitted Pareto mean is lower, and $A = 0.765$ scales the
+GLM down to match the fitted tail rather than that one claim.
+
+### From model to prediction
+
+$$
+\hat P_i \;=\; \big(\mu^{\text{small}}_i + \mu^{\text{large}}_i\big) \times s_{\text{segment}}
+$$
+
+```{ojs}
+md`The level step *s* moves each segment halfway (geometrically) from the developed-market level towards the emerging
+market's own 2023-24 experience: contents ×${model.lines.contents.segments.ren[0].value.toFixed(4)}, motor renewals
+×${model.lines.motor.segments.ren[0].value.toFixed(4)}. Motor new business is set to ×1.05 of the as-is cost, because
+new business claims more and is 77% of the 2025 book.`
+```
+
+### How it is scored: Tweedie deviance and $D^2$
+
+The competition (and every backtest on this site) scores with the Tweedie unit deviance at $p = 1.5$:
+
+$$
+d(y, \mu) = 2\left(\frac{y^{2-p}}{(1-p)(2-p)} - \frac{y\,\mu^{1-p}}{1-p} + \frac{\mu^{2-p}}{2-p}\right),
+\qquad
+D^2 = 1 - \frac{\sum_i d(y_i, \hat\mu_i)}{\sum_i d(y_i, \bar y)}
+$$
+
+$D^2$ is the share of deviance explained relative to predicting the average for everyone: 0 means no better than
+the average, and 1 is perfect. With so many zero-claim policies, values of 0.08-0.16 are good.
+
+## 4. Explore every coefficient
+
+These are the fitted values, read live from the model file the calculator uses (`site/data/model.json`, built from
+Gerard's export).
+
+```{ojs}
+viewof exLine = Inputs.radio(["contents", "motor"], {label: "Line", value: "contents", format: x => x === "contents" ? "Home contents" : "Motor"})
+```
+
+```{ojs}
+viewof exComp = Inputs.radio(Object.keys(model.lines[exLine].components), {label: "Model", value: "small", format: x => x === "small" ? "Small claims" : "Large claims"})
+```
+
+```{ojs}
+exTerms = model.lines[exLine].components[exComp].terms
+```
+
+```{ojs}
+exInputs = model.lines[exLine].inputs
+```
+
+```{ojs}
+viewof exTerm = Inputs.select(exTerms.map(t => t.term), {label: "Factor", format: t => {
+  const term = exTerms.find(x => x.term === t); return term.kind === "log_si" ? "Sum insured" : (exInputs[term.input]?.label ?? t)
+}})
+```
+
+```{ojs}
+exT = exTerms.find(t => t.term === exTerm)
+```
+
+```{ojs}
+levelLabel = (input, v) => {
+  const o = exInputs[input]?.options?.find(o => o.value === v); const l = o ? o.label : v
+  return l === "true" ? "Yes" : l === "false" ? "No" : l
+}
+```
+
+```{ojs}
+{
+  const t = exT
+  if (t.kind === "categorical" || t.kind === "band") {
+    const rows = t.kind === "categorical"
+      ? (exInputs[t.input]?.options ?? Object.keys(t.levels).map(v => ({value: v}))).map(o => ({level: levelLabel(t.input, o.value), rel: Math.exp(t.levels[o.value] ?? 0), base: o.value === t.base}))
+      : [...t.bands.map(b => ({level: `${b.lower ?? "-∞"} < x ≤ ${b.upper ?? "∞"}`, rel: Math.exp(b.contribution), base: b.contribution === 0})),
+         ...(t.missing ? [{level: "missing", rel: Math.exp(t.missing), base: false}] : [])]
+    return Plot.plot({
+      width: 860, height: Math.max(200, 34 * rows.length + 60), marginLeft: 170,
+      x: {label: "Relativity (1 = base level)", grid: true, type: "log", tickFormat: "~f"},
+      y: {label: null, domain: rows.map(d => d.level)},
+      marks: [
+        Plot.ruleX([1], {stroke: "#64748b"}),
+        Plot.barX(rows, {y: "level", x1: 1, x2: "rel", fill: d => d.rel >= 1 ? "#e15759" : "#16a34a", fillOpacity: 0.8, inset: 4}),
+        Plot.text(rows, {y: "level", x: "rel", text: d => `×${d.rel.toFixed(3)}${d.base ? " (base)" : ""}`, dx: 6, textAnchor: "start"})
+      ]
+    })
+  }
+  const inp = exInputs[t.input]
+  const lo = t.kind === "log_si" ? 5000 : t.grid_min, hi = t.kind === "log_si" ? 150000 : t.grid_max
+  const step = Math.max(inp?.step ?? 1, (hi - lo) / 300)
+  const ref = t.kind === "log_si" ? 30000 : null
+  const f = x => t.kind === "log_si" ? Math.exp(t.coefficient * (Math.log(x) - Math.log(ref))) : Math.exp(splineValue(t, x))
+  const pts = d3.range(lo, hi + step / 2, step).map(x => ({x, y: f(x)}))
+  return Plot.plot({
+    width: 860, height: 340, marginLeft: 60,
+    x: {label: t.kind === "log_si" ? "Sum insured (relativity 1 at 30,000)" : inp.label, grid: true},
+    y: {label: "Relativity", grid: true},
+    marks: [
+      Plot.line(pts, {x: "x", y: "y", stroke: "#1d4ed8", strokeWidth: 3, tip: true}),
+      t.kind === "spline" && inp.allow_missing ? Plot.ruleY([Math.exp(t.missing)], {stroke: "#e15759", strokeDasharray: "5 4"}) : null,
+      t.kind === "spline" && inp.allow_missing ? Plot.text(["unknown"], {x: hi, y: Math.exp(t.missing), dy: -7, textAnchor: "end", fill: "#e15759"}) : null
+    ]
+  })
+}
+```
+
+```{ojs}
+md`*${exT.kind === "spline" ? `A spline with ${exT.pieces.length - 2} cubic pieces between knots, flat beyond the ends.` : exT.kind === "band" ? "A banded numeric factor: one coefficient per interval." : exT.kind === "log_si" ? "A log term: the relativity grows as a power of the sum insured." : "A categorical factor: one coefficient per level, base level = 1."} The y-axis is on a log scale where it is a bar chart, so equal distances above and below 1 are equal percentage effects.*`
+```
+
+## 5. Worked example
+
+The "typical family semi" contents policy from the calculator, priced step by step. Every number is computed live by
+the same engine as the calculator.
+
+```{ojs}
+exCase = testCases.contents.find(d => d.id === "c_typical")
+```
+
+```{ojs}
+exRes = scorePolicy(model, "contents", {...exCase.policy, exposure: 1})
+```
+
+```{ojs}
+exComp0 = exRes.components.small
+```
+
+```{ojs}
+Inputs.table([
+  {step: "Intercept (base)", value: "", "log contribution": exComp0.intercept, relativity: Math.exp(exComp0.intercept)},
+  ...exComp0.terms.map(t => ({step: t.kind === "log_si" ? "Sum insured" : (model.lines.contents.inputs[t.input]?.label ?? t.term), value: levelLabel2(t), "log contribution": t.contribution, relativity: t.relativity})),
+  {step: "Trend to 2025", value: "", "log contribution": Math.log(exComp0.trend_multiplier), relativity: exComp0.trend_multiplier},
+  {step: "log exposure (1 year)", value: "", "log contribution": 0, relativity: 1}
+], {format: {"log contribution": x => x.toFixed(4), relativity: x => x.toFixed(4)}, rows: 30})
+```
+
+```{ojs}
+levelLabel2 = t => {
+  const inp = model.lines.contents.inputs[t.input]
+  const o = inp?.options?.find(o => o.value === t.level); const l = o ? o.label : t.level
+  return l === "true" ? "Yes" : l === "false" ? "No" : l
+}
+```
+
+```{ojs}
+tex.block`\eta = ${exComp0.eta.toFixed(4)}, \quad \mu = e^{\eta} = ${exComp0.cost.toFixed(2)}, \quad \hat P = ${exComp0.cost.toFixed(2)} \times ${exRes.steps[0].value.toFixed(4)} = \mathbf{${exRes.final.toFixed(2)}}`
+```
+
+## 6. Does it work? Validation
+
+Gerard's rule for every modelling choice: **fit on 2021-23, score on 2024**, developed to ultimate, and keep a change
+only if it helps out of time. The chart shows the 2024 $D^2$ of the chosen model against variants that each switch
+one piece off.
+
+```{ojs}
+Plot.plot({
+  width: 900, height: 420, marginLeft: 230,
+  color: {legend: true, domain: ["buildings", "contents", "motor"], range: ["#4e79a7", "#f28e2b", "#59a14f"]},
+  x: {label: "2024 out-of-time D² (higher is better)", grid: true, domain: [0.07, 0.12]},
+  y: {label: null, domain: backtest.map(d => `${d.line}: ${d.variant}`)},
+  marks: [
+    Plot.dot(backtest, {y: d => `${d.line}: ${d.variant}`, x: "d2_vs_developed", fill: "line", r: d => d.variant === "chosen" ? 8 : 5, tip: true,
+      stroke: d => d.variant === "chosen" ? "#111" : null}),
+    Plot.ruleX(backtest.filter(d => d.variant === "chosen"), {x: "d2_vs_developed", stroke: "line", strokeDasharray: "3 3", strokeOpacity: 0.6})
+  ]
+})
+```
+
+* **Trend matters for the level:** without it, 2024 predictions fall 5-13% short (predicted / actual 0.87-0.95).
+* **The large-claim split helps** buildings and motor.
+* **A neural correction (CANN)** was tested on every line and not adopted: the gain wasn't significant over two years.
+
+| Leaderboard | Public $D^2$ |
+|---|---|
+| Part 1 (developed market), Gerard's final candidate | **0.12805** |
+| Part 2 (emerging market), C0 with the level steps | **0.15805** |
+
+Alan's separate comparison in `workings/home_insurance_model` found the same: explainable Tweedie GLMs beat XGBoost on
+the 2024 holdout on every line, so nothing was lost by choosing a model the board can read.
+
+## 7. Governance
+
+* **No leakage:** customer service contacts, renewal decision and written premium are never used.
+* **Portable factors only:** region, occupation, credit band, exact ages, mileage and telematics are dropped, because
+  the emerging market doesn't have them (D-31).
+* **Explainable by design:** every prediction decomposes into the table above. The calculator shows it for any policy.
+* **Reproducible:** the calculator's engine is tested against an independent Python scorer on every build
+  (4,010 policies, worst difference about 4 in 10^15).
+
+*Sources: Gerard's `export/excel` (terms, splines, scalars), `docs/MODEL_DOCUMENTATION.md` and `audit/evidence`;
+Alan's `workings/home_insurance_model`.*

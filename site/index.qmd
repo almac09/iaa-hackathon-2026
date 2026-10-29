@@ -26,18 +26,23 @@ html`<div class="home-hero">
 <div class="page-cards">
   <a class="page-card" href="eda.html">
     <i class="bi bi-search"></i>
-    <span class="card-title">What the data told us</span>
+    <span class="card-title">What the data told us (EDA)</span>
     <span class="card-text">The team's exploratory analysis in one story: data issues, claims experience, the emerging market.</span>
+  </a>
+  <a class="page-card" href="data-cleaning.html">
+    <i class="bi bi-funnel"></i>
+    <span class="card-title">Data cleaning &amp; feature engineering</span>
+    <span class="card-text">Every fix and feature from raw tables to the model frame, with the evidence for each.</span>
   </a>
   <a class="page-card" href="underwriting-calculator.html">
     <i class="bi bi-calculator"></i>
     <span class="card-title">Underwriting calculator</span>
     <span class="card-text">Price a single policy with our model and watch each rating factor move the premium.</span>
   </a>
-  <a class="page-card" href="how-glms-work.html">
-    <i class="bi bi-lightbulb"></i>
-    <span class="card-title">How a GLM works</span>
-    <span class="card-text">A plain-English guide to the kind of model behind the calculator.</span>
+  <a class="page-card" href="our-glm.html">
+    <i class="bi bi-diagram-3"></i>
+    <span class="card-title">How our GLM works</span>
+    <span class="card-text">Model C0's structure, the maths, every coefficient, and how it was validated.</span>
   </a>
   <a class="page-card" href="project-management.html">
     <i class="bi bi-kanban"></i>
