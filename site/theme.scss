@@ -1,0 +1,175 @@
+/* Site theme (light). AI-assisted (Databricks Genie Code), issue #178.
+   Layered on Bootswatch Cosmo; theme-dark.scss adds the dark variant. */
+
+/*-- scss:defaults --*/
+$web-font-path: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" !default;
+$font-family-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif !default;
+
+$brand-navy:   #0b2545 !default;
+$brand-blue:   #1d4ed8 !default;
+$brand-teal:   #0d9488 !default;
+$brand-amber:  #f59e0b !default;
+
+$primary:   $brand-blue !default;
+$secondary: #64748b !default;
+$success:   #16a34a !default;
+$info:      $brand-teal !default;
+$warning:   $brand-amber !default;
+
+$body-bg:    #f7f9fc !default;
+$body-color: #1e293b !default;
+$link-color: $brand-blue !default;
+$headings-font-weight: 700 !default;
+$border-radius: 0.6rem !default;
+
+// Quarto: title banner and sidebar
+$title-banner-bg:    $brand-navy !default;   // Quarto needs a colour here; the gradient is applied below
+$banner-gradient:    linear-gradient(120deg, $brand-navy 0%, $brand-blue 60%, $brand-teal 100%) !default;
+$title-banner-color: #ffffff !default;
+$sidebar-bg:         #ffffff !default;
+$sidebar-fg:         #334155 !default;
+$sidebar-hl:         $brand-blue !default;
+$sidebar-glass-bg:   rgba(255, 255, 255, 0.85) !default;
+
+$kpi-bg:     #ffffff !default;
+$kpi-border: rgba(15, 23, 42, 0.08) !default;
+$card-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.06) !default;
+
+/*-- scss:rules --*/
+
+// Title banner: gradient, bold title, softer subtitle
+.quarto-title-banner {
+  background: $banner-gradient !important;
+  padding: 2.4rem 0 2rem;
+  .title { font-weight: 800; letter-spacing: -0.02em; }
+  .subtitle { opacity: 0.85; font-weight: 400; }
+}
+
+h2 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-top: 2.2rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 3px solid rgba($brand-blue, 0.15);
+}
+
+// Sidebar
+#quarto-sidebar {
+  border-right: 1px solid $kpi-border;
+  .sidebar-title { font-weight: 800; letter-spacing: -0.01em; }
+  .sidebar-item-text { font-weight: 500; }
+  .sidebar-link {
+    border-radius: 0.45rem;
+    padding: 0.2rem 0.55rem;
+    transition: background 0.15s ease;
+    &:hover { background: rgba($brand-blue, 0.07); }
+  }
+  .sidebar-link.active {
+    background: rgba($brand-blue, 0.12);
+    font-weight: 700;
+  }
+  .sidebar-section .sidebar-item-text { text-transform: none; }
+}
+
+// KPI cards (calculator and project pages)
+.hero-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0 1.75rem;
+}
+.kpi-card {
+  position: relative;
+  overflow: hidden;
+  background: $kpi-bg;
+  border: 1px solid $kpi-border;
+  border-radius: 0.9rem;
+  padding: 1.05rem 1.15rem 1rem;
+  box-shadow: $card-shadow;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  &::before {
+    content: "";
+    position: absolute; inset: 0 0 auto 0; height: 4px;
+    background: linear-gradient(90deg, $brand-blue, $brand-teal);
+  }
+  &:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12); }
+}
+.kpi-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: $secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.kpi-value {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-top: 0.2rem;
+  font-variant-numeric: tabular-nums;
+  small { font-size: 0.95rem; font-weight: 600; color: $secondary; }
+}
+
+// Home page hero and page cards
+.home-hero {
+  border-radius: 1.2rem;
+  padding: 2.4rem 2.2rem;
+  margin: 0.5rem 0 2rem;
+  color: #fff;
+  background:
+    radial-gradient(circle at 85% 20%, rgba($brand-teal, 0.55), transparent 45%),
+    radial-gradient(circle at 10% 90%, rgba($brand-amber, 0.35), transparent 40%),
+    linear-gradient(120deg, $brand-navy, $brand-blue);
+  box-shadow: $card-shadow;
+  h1, .hero-title { color: #fff; font-size: 2.4rem; font-weight: 800; letter-spacing: -0.03em; margin: 0 0 0.4rem; border: 0; }
+  p { font-size: 1.1rem; opacity: 0.92; max-width: 46rem; margin: 0; }
+  .hero-stats { display: flex; flex-wrap: wrap; gap: 1.6rem; margin-top: 1.4rem; }
+  .hero-stat b { display: block; font-size: 1.6rem; font-weight: 800; }
+  .hero-stat span { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.8; }
+}
+.page-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0 2rem;
+}
+a.page-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: $kpi-bg;
+  border: 1px solid $kpi-border;
+  border-radius: 1rem;
+  padding: 1.2rem 1.25rem;
+  box-shadow: $card-shadow;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  &:hover { transform: translateY(-3px); border-color: rgba($brand-blue, 0.4); box-shadow: 0 14px 36px rgba(15, 23, 42, 0.14); }
+  .bi { font-size: 1.6rem; color: $brand-blue; }
+  .card-title { display: block; font-weight: 700; font-size: 1.05rem; margin: 0.5rem 0 0.25rem; }
+  .card-text { font-size: 0.9rem; color: $secondary; }
+}
+
+// Controls
+.controls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 0.6rem 1.2rem;
+  background: $kpi-bg;
+  border: 1px solid $kpi-border;
+  border-radius: 0.9rem;
+  padding: 1rem 1.1rem;
+  box-shadow: $card-shadow;
+  margin-bottom: 1.25rem;
+}
+.unknown-wrap { display: flex; flex-direction: column; gap: 0.15rem; }
+
+// Callouts, tables and charts
+.callout { border-radius: 0.75rem; box-shadow: $card-shadow; }
+table.table { font-variant-numeric: tabular-nums; }
+svg[class^="plot"], figure[class^="plot"] { font-family: $font-family-sans-serif; font-size: 12px; }
+
+.observablehq--inspect { display: none; }
+
+// Gentle fade-in on page load
+main.content { animation: fadeUp 0.35s ease-out both; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }

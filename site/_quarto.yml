@@ -43,9 +43,13 @@ website:
 
 format:
   html:
-    theme: cosmo
-    css: styles.css
+    theme:
+      light: [cosmo, theme.scss]
+      dark: [cosmo, theme.scss, theme-dark.scss]
+    title-block-banner: true
     toc: false
+    smooth-scroll: true
+    fig-align: center
 
 execute:
   echo: false
