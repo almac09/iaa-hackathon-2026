@@ -32,6 +32,12 @@
   margin-bottom: 1.25rem;
 }
 
+.unknown-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
 .observablehq--inspect {
   display: none;
 }

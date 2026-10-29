@@ -52,6 +52,19 @@
         "f_urban": "rural", "f_prop_type": "detached", "policyholder_age_band": "65+",
         "elevation_m": 3, "distance_to_river_km": 0.3, "sum_insured": 120000
       }
+    },
+    {
+      "id": "c_unknown_river",
+      "name": "Distance to river unknown",
+      "description": "The typical family semi, but with no distance to river on record. The model prices unknown as its own level, dearer than any known distance.",
+      "policy": {
+        "exposure": 1, "new_business": false,
+        "f_flood_zone": "2", "f_tenure": "owner", "f_segment": "midlife_mainstream",
+        "f_prior_claims": "0", "f_missed_pay": "0", "f_vol_xs": "250", "f_security": "locks",
+        "f_hvi": "1", "f_ad_cover": "false", "f_bike": "true", "f_wfh": "true", "f_lodgers": "false",
+        "f_urban": "suburban", "f_prop_type": "semi_detached", "policyholder_age_band": "35-49",
+        "elevation_m": 40, "distance_to_river_km": null, "sum_insured": 45000
+      }
     }
   ],
   "motor": [
@@ -101,6 +114,18 @@
         "channel": "comparison_site", "vehicle_use": "social", "payment_method": "monthly", "driver_age_band": "17-24",
         "prior_claims_5y": 0, "missed_payments_12m": 0, "ncb_years": 0, "years_licensed": 1,
         "vehicle_age": 10, "vehicle_value_group": 5, "voluntary_excess": 0
+      }
+    },
+    {
+      "id": "m_unknown_age",
+      "name": "Vehicle age unknown",
+      "description": "The experienced commuter, but with no vehicle age on record. Shows how the model prices a missing vehicle age.",
+      "policy": {
+        "exposure": 1, "new_business": false,
+        "marketing_segment": "midlife_mainstream", "cover_type": "comprehensive", "urban_density": "suburban",
+        "channel": "direct", "vehicle_use": "commuting", "payment_method": "annual", "driver_age_band": "35-49",
+        "prior_claims_5y": 0, "missed_payments_12m": 0, "ncb_years": 9, "years_licensed": 20,
+        "vehicle_age": null, "vehicle_value_group": 11, "voluntary_excess": 250
       }
     }
   ]

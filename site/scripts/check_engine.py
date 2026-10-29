@@ -55,10 +55,14 @@ def py_component(trs_by_term, p):
         elif kinds == {"categorical"}:
             lv = {r["level"]: float(r["contribution"]) for r in trs}
             eta += lv.get(str(p[term]), 0.0)
+        elif kinds == {"band"} and p.get(term) is None:
+            eta += next((float(r["contribution"]) for r in trs if r["level"] == "MISSING"), 0.0)
         elif kinds == {"band"}:
             x = float(p[term])
             eta += next(float(r["contribution"]) for r in trs if r["level"] != "MISSING"
                         and float(r["band_lower"]) < x <= float(r["band_upper"]))
+        elif "spline value" in kinds and p.get(term) is None:
+            eta += float(next(r for r in trs if r["kind"] == "spline missing")["contribution"])
         elif "spline value" in kinds:
             grid = {round(float(r["value"]), 6): float(r["contribution"]) for r in trs if r["kind"] == "spline value"}
             eta += grid[round(float(p[term]), 6)]
@@ -101,6 +105,8 @@ def random_policies(model, line, n, rng):
         for k, inp in L["inputs"].items():
             if inp["type"] == "select":
                 p[k] = rng.choice(inp["options"])["value"]
+            elif inp.get("allow_missing") and rng.random() < 0.15:
+                p[k] = None  # "Unknown" in the calculator
             else:
                 steps = int(round((inp["max"] - inp["min"]) / inp["step"]))
                 p[k] = round(inp["min"] + rng.randint(0, steps) * inp["step"], 6)

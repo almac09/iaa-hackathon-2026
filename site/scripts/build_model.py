@@ -181,6 +181,12 @@ def build(src: Path) -> dict:
                                            missing=miss[0] if miss else 0.0,
                                            grid_min=min(grid), grid_max=max(grid)))
                     _add_number(L, term, dict(min=min(grid), max=max(grid), step=round(step, 6)))
+                    # Offer "Unknown" only where the fit learned a missing level. A missing
+                    # coefficient of exactly 0 means the fit saw no missing rows, so pricing
+                    # "unknown" there would just switch the curve off (e.g. years licensed:
+                    # x0.03-0.07). Issue #181 follow-up from Cian's test.
+                    if miss and miss[0] != 0.0:
+                        L["inputs"][term]["allow_missing"] = True
                 elif kinds == {"continuous"}:
                     r = trs[0]
                     if term == "log_si":

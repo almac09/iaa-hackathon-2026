@@ -1,5 +1,5 @@
 ---
-title: "Project update"
+title: "Project management"
 subtitle: "How we ran the work: every task as a GitHub issue, opened, worked and closed in the open"
 page-layout: full
 ---

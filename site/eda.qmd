@@ -296,7 +296,7 @@ markets, plus the leakage fields and duplicate encodings of new business.
 * **Treat large claims separately** in buildings and motor.
 * **Leave out leakage.** No customer service contacts, renewal decision or premium as rating factors.
 
-The [underwriting calculator](calculator.qmd) shows the result for contents and motor.
+The [underwriting calculator](underwriting-calculator.qmd) shows the result for contents and motor.
 
 ## Sources {#sources}
 

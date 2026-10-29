@@ -8,9 +8,11 @@ Hello world! This is the IAA Hackathon 2026 team's project site, published from
 
 ## What's here
 
-* **[Underwriting calculator](calculator.qmd)**: price a single policy with the team's Week 2 model and see
+* **[What the data told us](eda.qmd)**: the team's exploratory data analysis, in one place.
+* **[Underwriting calculator](underwriting-calculator.qmd)**: price a single policy with the team's Week 2 model and see
   how each rating factor moves the premium. Switch between example policies, or change any factor yourself.
 * **[How a GLM works](how-glms-work.qmd)**: a plain-English guide to the kind of model behind the calculator.
+* **[Project management](project-management.qmd)**: how we ran the work, with a timeline of every GitHub issue.
 
 ## The challenge
 

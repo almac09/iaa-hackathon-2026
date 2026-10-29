@@ -48,11 +48,33 @@ function optionLabel(inp, value) {
 ```
 
 ```{ojs}
+// A slider with an "Unknown" tick box. Its value is null when Unknown is ticked,
+// which the engine prices with the model's own missing-value level.
+function rangeWithUnknown(inp, value) {
+  const unknown = value === null || value === undefined
+  const mid = Math.round(((inp.min + inp.max) / 2) / inp.step) * inp.step
+  const range = Inputs.range([inp.min, inp.max], {label: inp.label, value: unknown ? mid : value, step: inp.step})
+  const box = Inputs.toggle({label: "Unknown", value: unknown})
+  const el = html`<div class="unknown-wrap">${range}${box}</div>`
+  const sync = () => {
+    el.value = box.value ? null : range.value
+    range.querySelectorAll("input").forEach(i => i.disabled = box.value)
+  }
+  range.addEventListener("input", sync)
+  box.addEventListener("input", sync)
+  sync()
+  return el
+}
+```
+
+```{ojs}
 viewof factors = Inputs.form(
   Object.fromEntries(Object.entries(inputs).map(([key, inp]) => [key,
     inp.type === "select"
       ? Inputs.select(inp.options.map(o => o.value), {label: inp.label, value: String(currentCase.policy[key] ?? inp.default), format: v => optionLabel(inp, v)})
-      : Inputs.range([inp.min, inp.max], {label: inp.label, value: currentCase.policy[key] ?? inp.min, step: inp.step})
+      : inp.allow_missing
+        ? rangeWithUnknown(inp, currentCase.policy[key])
+        : Inputs.range([inp.min, inp.max], {label: inp.label, value: currentCase.policy[key] ?? inp.min, step: inp.step})
   ])),
   {template: parts => html`<div class="controls-grid">${Object.values(parts)}</div>`}
 )
@@ -188,9 +210,23 @@ Plot.plot({
   y: {label: "Relativity", grid: true},
   marks: [
     Plot.line(splineX, {x: "x", y: "y"}),
-    Plot.dot([{x: policy[chosenSpline], y: Math.exp(splineValue(splineTerm, policy[chosenSpline]))}], {x: "x", y: "y", r: 5, fill: "crimson"})
+    inputs[chosenSpline].allow_missing
+      ? Plot.ruleY([Math.exp(splineTerm.missing)], {stroke: policy[chosenSpline] === null ? "crimson" : "#999", strokeDasharray: "5 4", strokeWidth: policy[chosenSpline] === null ? 2.5 : 1})
+      : null,
+    inputs[chosenSpline].allow_missing
+      ? Plot.text(["Unknown"], {x: splineTerm.grid_max, y: Math.exp(splineTerm.missing), textAnchor: "end", dy: -7, fill: policy[chosenSpline] === null ? "crimson" : "#666"})
+      : null,
+    policy[chosenSpline] === null
+      ? null
+      : Plot.dot([{x: policy[chosenSpline], y: Math.exp(splineValue(splineTerm, policy[chosenSpline]))}], {x: "x", y: "y", r: 5, fill: "crimson"})
   ]
 })
+```
+
+```{ojs}
+inputs[chosenSpline].allow_missing
+  ? md`The dashed line is what the model charges when this factor is **unknown**. It's a level of its own, not an average: unknown sits at ${(Math.exp(splineTerm.missing) / d3.max(splineX, d => d.y)).toFixed(2)}x to ${(Math.exp(splineTerm.missing) / d3.min(splineX, d => d.y)).toFixed(2)}x of the known values.`
+  : md``
 ```
 
 ## How to read this page
