@@ -579,9 +579,13 @@ def mappings(ctx: emerging.Context, cfg: dict) -> list[dict]:
     v = cfg["sql_variables"]
     add("data fix D-01", "exposure", "period dates", "(period_end - period_start + 1) / "
         f"{v['exposure_basis_days']}", "the raw exposure column is not used")
-    add("data fix D-02", "sum_insured (contents)", f">= {v['si_threshold']}", f"divided by {v['si_divisor']}",
-        "no 2025 contents row reaches the threshold")
-    add("data fix D-02", "sum_insured (buildings)", f">= {v['bld_si_threshold']}", f"divided by {v['si_divisor']}")
+    for name, key in (("contents", "si_threshold"), ("buildings", "bld_si_threshold")):
+        si = pd.read_parquet(EMG / f"test_{name}.parquet", columns=["sum_insured"]).sum_insured
+        hit = si[si >= v[key]]
+        found = (f"{len(hit):,} of the {len(si):,} 2025 rows qualify, from {hit.min():,.0f} to {hit.max():,.0f}"
+                 if len(hit) else f"none of the {len(si):,} 2025 rows qualifies")
+        add("data fix D-02", f"sum_insured ({name})", f">= {v[key]}", f"divided by {v['si_divisor']}",
+            f"applies to the raw value in the test file: {found}")
     n_r11 = ctx.emg_con.execute("SELECT count(*) FROM addresses WHERE region = 'R11'").fetchone()[0]
     add("data fix D-26", "elevation_m", "region R11", "divided by 3.28084, rounded to 2 dp",
         f"{n_r11} emerging addresses are in R11")

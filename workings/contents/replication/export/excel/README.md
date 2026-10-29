@@ -1,7 +1,7 @@
 # Export for the Excel replica of the Week 2 model
 
 C0, the portable developed model, with the segment levels of the final file. Written by `python/export_excel.py`
-(run `f3548525` in `audit/run_log.jsonl`, label "A34 export for the Excel replica"). Every number is at full
+(run `104ccb40` in `audit/run_log.jsonl`, label "A34 export: D-02 note corrected"). Every number is at full
 precision; nothing is rounded.
 
 ## The final file
@@ -74,7 +74,7 @@ One long table: `line, component, term, kind, level, value, band_lower, band_upp
 | `band` | a numeric cut into bands: the band with `band_lower < x <= band_upper`, or the `MISSING` row if x is missing |
 | `spline value` | look up x in `value` and add `contribution`. Each lookup runs from the smallest to the largest value in that line's emerging rows, at the column's recorded precision: elevation in steps of 0.1, distance to river 0.01, year built and the motor counts 1, voluntary excess 10, sum insured 1,000. Every 2025 value is on its grid. For any other value use `spline_pieces.csv` |
 | `spline missing` | if x is missing, add this **instead of** the curve. Compare it with the curve's values, not with 0: a missing value switches the curve off |
-| `continuous` | `contribution` x the value, on the raw scale. `log_si` = ln(max(sum insured, 1)) with sum insured after D-02 (contents); `x_clay_dry` and `x_fz3_rain` (buildings) are defined in `note` |
+| `continuous` | `contribution` x the value, on the raw scale. `log_si` = ln(max(sum insured, 1)) with sum insured after D-02 (contents; see `input_mappings.csv`); `x_clay_dry` and `x_fz3_rain` (buildings) are defined in `note` |
 | `trend` | three rows: the slope per year, its origin (the exposure-weighted mean fitting year), and the log contribution in 2025, whose `value` is 2025 - origin and whose `note` gives the multiplier. A large-claim GLM has no year term of its own: it takes the small-claim slope from its own origin, which equals the small-claim origin (same fitting rows) |
 | `offset` | add ln(exposure) |
 | `scale` | the Pareto adjustment of a large-claim GLM: `value`, and ln of it in `contribution` |
@@ -100,9 +100,11 @@ the export rebuilds the final file through them as well as through the lookups.
 - `age band`: the emerging bands are used as given; the developed rows were cut the same way;
 - `dropped factor`: region, occupation, credit band, exact ages, mileage and telematics, which the portable model
   leaves out (D-31);
-- `data fix D-01` to `D-27`: exposure from the dates; sum insured divided by 1,000 at or above 1m (contents; no 2025
-  row qualifies) or 10m (buildings); R11 elevation (no emerging address is in R11); the year-built placeholder by
-  energy rating, from the emerging addresses;
+- `data fix D-01` to `D-27`: exposure from the dates; sum insured divided by 1,000 at or above 1m for contents
+  (135 of the 66,247 2025 rows, raw 9.2m to 98.1m) or 10m for buildings (104 of 52,295, raw 60m to 568m); R11
+  elevation (no emerging address is in R11); the year-built placeholder by energy rating, from the emerging
+  addresses. Apply D-02 to the raw test-file value before anything else: a contents row left undivided prices
+  about 215 times too high (1,000 to the power of the `log_si` coefficient, 0.777);
 - `contents feature`: the SQL behind each contents `f_` input;
 - `missing values`: the rules below;
 - `categorical level`: every value in the 2025 rows and the model level it scores as. Only contents prior claims

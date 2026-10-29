@@ -134,8 +134,8 @@ dropped factor,,,region,,not used,"absent from the emerging market or not carrie
 dropped factor,,,telematics_opt_in,,not used,"absent from the emerging market or not carried over (PORTABLE_DROP; occupation: no evidence it adds value, D-31)"
 dropped factor,,,telematics_score,,not used,"absent from the emerging market or not carried over (PORTABLE_DROP; occupation: no evidence it adds value, D-31)"
 data fix D-01,,,exposure,period dates,(period_end - period_start + 1) / 365,the raw exposure column is not used
-data fix D-02,,,sum_insured (contents),>= 1000000,divided by 1000,no 2025 contents row reaches the threshold
-data fix D-02,,,sum_insured (buildings),>= 10000000,divided by 1000,
+data fix D-02,,,sum_insured (contents),>= 1000000,divided by 1000,"applies to the raw value in the test file: 135 of the 66,247 2025 rows qualify, from 9,200,000 to 98,100,000"
+data fix D-02,,,sum_insured (buildings),>= 10000000,divided by 1000,"applies to the raw value in the test file: 104 of the 52,295 2025 rows qualify, from 60,000,000 to 568,000,000"
 data fix D-26,,,elevation_m,region R11,"divided by 3.28084, rounded to 2 dp",0 emerging addresses are in R11
 data fix D-27,,,year_built,1900 with energy rating A,2008,"emerging addresses' mean year built for the rating, rounded (sql/03 addresses_clean)"
 data fix D-27,,,year_built,1900 with energy rating B,1993,"emerging addresses' mean year built for the rating, rounded (sql/03 addresses_clean)"
