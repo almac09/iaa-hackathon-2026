@@ -3,55 +3,93 @@ title: "Underwriting calculator"
 page-layout: full
 ---
 
+Pick a product and an example policy, then change any rating factor. The premium and its build-up update as
+you go. The figures are the model's **expected claim cost for 2025** (a risk premium, before expenses and
+profit), in competition currency units (CU).
+
 ```{ojs}
 import {scorePolicy, splineValue} from "./glm.js"
-const model = await FileAttachment("data/model.json").json()
-const testCases = await FileAttachment("data/test_cases.json").json()
-const line = view(Inputs.radio(["contents", "motor"], {label: "Product line", value: "contents", format: x => x === "contents" ? "Home contents" : "Motor"}))
-const caseList = testCases[line]
-const caseId = view(Inputs.select(caseList.map(d => d.id), {label: "Example policy", value: caseList[0].id, format: id => caseList.find(d => d.id === id).name}))
-const currentCase = caseList.find(d => d.id === caseId)
-const lineModel = model.lines[line]
-const inputs = lineModel.inputs
+```
+
+```{ojs}
+model = FileAttachment("data/model.json").json()
+```
+
+```{ojs}
+testCases = FileAttachment("data/test_cases.json").json()
+```
+
+```{ojs}
+viewof line = Inputs.radio(["contents", "motor"], {label: "Product line", value: "contents", format: x => x === "contents" ? "Home contents" : "Motor"})
+```
+
+```{ojs}
+caseList = testCases[line]
+```
+
+```{ojs}
+viewof caseId = Inputs.select(caseList.map(d => d.id), {label: "Example policy", format: id => caseList.find(d => d.id === id).name})
+```
+
+```{ojs}
+currentCase = caseList.find(d => d.id === caseId)
+```
+
+```{ojs}
+inputs = model.lines[line].inputs
+```
+
+```{ojs}
 function optionLabel(inp, value) {
   const row = inp.options.find(o => o.value === String(value))
-  return row ? row.label : value
+  const lab = row ? row.label : String(value)
+  return lab === "true" ? "Yes" : lab === "false" ? "No" : lab
 }
-const inputKeys = Object.keys(inputs)
-const policyForm = view(Inputs.form(inputKeys.map(key => {
-  const inp = inputs[key]
-  const value = currentCase.policy[key]
-  return inp.type === "select"
-    ? Inputs.select(inp.options.map(o => o.value), {label: inp.label, value, format: v => optionLabel(inp, v)})
-    : Inputs.range([inp.min, inp.max], {label: inp.label, value, step: inp.step})
-}), {template: (parts) => html`<div class='controls-grid'>${parts}</div>`}))
-const policy = Object.fromEntries(inputKeys.map((key, i) => [key, policyForm[i]]))
-policy.new_business = view(Inputs.toggle({label: "New business", value: Boolean(currentCase.policy.new_business)}))
-policy.exposure = view(Inputs.range([0.1, 1], {label: "Exposure (years)", value: Number(currentCase.policy.exposure ?? 1), step: 1/365}))
-const result = scorePolicy(model, line, policy)
-const segmentText = result.segment === "nb" ? "New business" : "Renewal"
-const waterfall = []
-for (const [name, comp] of Object.entries(result.components)) {
-  waterfall.push({component: name, step: "Intercept", delta: comp.intercept, running: comp.intercept})
-  let running = comp.intercept
-  for (const t of comp.terms) {
-    running += t.contribution
-    waterfall.push({component: name, step: inputs[t.input]?.label ?? t.term, delta: t.contribution, running})
+```
+
+```{ojs}
+viewof factors = Inputs.form(
+  Object.fromEntries(Object.entries(inputs).map(([key, inp]) => [key,
+    inp.type === "select"
+      ? Inputs.select(inp.options.map(o => o.value), {label: inp.label, value: String(currentCase.policy[key] ?? inp.default), format: v => optionLabel(inp, v)})
+      : Inputs.range([inp.min, inp.max], {label: inp.label, value: currentCase.policy[key] ?? inp.min, step: inp.step})
+  ])),
+  {template: parts => html`<div class="controls-grid">${Object.values(parts)}</div>`}
+)
+```
+
+```{ojs}
+viewof newBusiness = Inputs.toggle({label: "New business", value: Boolean(currentCase.policy.new_business)})
+```
+
+```{ojs}
+policy = ({...factors, new_business: newBusiness, exposure: 1})
+```
+
+```{ojs}
+result = scorePolicy(model, line, policy)
+```
+
+```{ojs}
+original = scorePolicy(model, line, {...currentCase.policy, exposure: 1})
+```
+
+```{ojs}
+segmentText = result.segment === "nb" ? "New business" : "Renewal"
+```
+
+```{ojs}
+waterfall = {
+  const rows = []
+  for (const [name, comp] of Object.entries(result.components)) {
+    for (const t of comp.terms) {
+      rows.push({component: name, step: `${name}: ${inputs[t.input]?.label ?? t.term}`, delta: t.contribution})
+    }
+    rows.push({component: name, step: `${name}: 2025 trend`, delta: Math.log(comp.trend_multiplier)})
+    if (Math.abs(Math.log(comp.scale)) > 1e-15) rows.push({component: name, step: `${name}: Pareto adjustment`, delta: Math.log(comp.scale)})
   }
-  running += Math.log(comp.exposure)
-  waterfall.push({component: name, step: "Exposure", delta: Math.log(comp.exposure), running})
-  running += Math.log(comp.trend_multiplier)
-  waterfall.push({component: name, step: "2025 trend", delta: Math.log(comp.trend_multiplier), running})
-  if (Math.abs(Math.log(comp.scale)) > 1e-15) {
-    running += Math.log(comp.scale)
-    waterfall.push({component: name, step: "Pareto adjustment", delta: Math.log(comp.scale), running})
-  }
+  return rows
 }
-const splineTerms = Object.values(lineModel.components).flatMap(c => c.terms.filter(t => t.kind === "spline"))
-const chosenSpline = view(Inputs.select(splineTerms.map(t => t.term), {label: "Show spline curve", value: splineTerms[0]?.term, format: x => inputs[x]?.label ?? x}))
-const splineTerm = splineTerms.find(t => t.term === chosenSpline)
-const splineX = d3.range(splineTerm.grid_min, splineTerm.grid_max + 0.5 * (inputs[chosenSpline].step ?? 1), inputs[chosenSpline].step ?? 1)
-  .map(x => ({x, y: Math.exp(splineValue(splineTerm, x))}))
 ```
 
 ::: {.callout-note}
@@ -63,6 +101,7 @@ html`<div class='hero-kpis'>
   <div class='kpi-card'><div class='kpi-label'>Segment</div><div class='kpi-value'>${segmentText}</div></div>
   <div class='kpi-card'><div class='kpi-label'>As-is cost</div><div class='kpi-value'>${result.as_is.toFixed(2)}</div></div>
   <div class='kpi-card'><div class='kpi-label'>Final premium</div><div class='kpi-value'>${result.final.toFixed(2)}</div></div>
+  <div class='kpi-card'><div class='kpi-label'>Change vs example</div><div class='kpi-value'>${(result.final - original.final >= 0 ? "+" : "") + (result.final - original.final).toFixed(2)}</div></div>
 </div>`
 ```
 
@@ -89,8 +128,8 @@ Inputs.table(Object.entries(result.components).map(([name, comp]) => ({
 Plot.plot({
   width: 960,
   height: 180 + 18 * waterfall.length,
-  marginLeft: 180,
-  x: {label: "Log contribution", grid: true},
+  marginLeft: 230,
+  x: {label: "Effect on premium (log scale; 0 = no effect, right = dearer)", grid: true},
   y: {label: null},
   color: {legend: true},
   marks: [
@@ -119,6 +158,28 @@ Inputs.table(result.steps.map(s => ({step: s.label, value: s.value, running_prem
 ```
 
 ## Spline factor view
+
+Some numeric factors follow a smooth curve rather than fixed bands. Pick one to see its curve; the red dot is
+the current policy.
+
+```{ojs}
+splineTerms = Object.values(model.lines[line].components).flatMap(c => c.terms.filter(t => t.kind === "spline"))
+```
+
+```{ojs}
+viewof chosenSpline = Inputs.select(splineTerms.map(t => t.term), {label: "Factor", format: x => inputs[x]?.label ?? x})
+```
+
+```{ojs}
+splineTerm = splineTerms.find(t => t.term === chosenSpline)
+```
+
+```{ojs}
+splineX = {
+  const step = Math.max(inputs[chosenSpline].step, (splineTerm.grid_max - splineTerm.grid_min) / 400)
+  return d3.range(splineTerm.grid_min, splineTerm.grid_max + step / 2, step).map(x => ({x, y: Math.exp(splineValue(splineTerm, x))}))
+}
+```
 
 ```{ojs}
 Plot.plot({
