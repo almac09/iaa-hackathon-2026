@@ -16,21 +16,29 @@ website:
   repo-url: https://github.com/almac09/iaa-hackathon-2026
   repo-actions: [issue]
   page-navigation: true
-  navbar:
-    left:
-      - href: index.qmd
-        text: Home
-      - href: eda.qmd
-        text: What the data told us
-      - href: calculator.qmd
-        text: Underwriting calculator
-      - href: how-glms-work.qmd
-        text: How a GLM works
-      - href: project.qmd
-        text: Project update
-    right:
+  sidebar:
+    style: docked
+    search: true
+    title: "IAA Hackathon 2026"
+    tools:
       - icon: github
         href: https://github.com/almac09/iaa-hackathon-2026
+        text: GitHub repository
+    contents:
+      - href: index.qmd
+        text: Home
+      - section: "Our work"
+        contents:
+          - href: eda.qmd
+            text: What the data told us
+          - href: calculator.qmd
+            text: Underwriting calculator
+          - href: how-glms-work.qmd
+            text: How a GLM works
+      - section: "Project"
+        contents:
+          - href: project.qmd
+            text: Project update
   page-footer:
     left: "IAA Hackathon 2026 team. Built with Quarto; AI-assisted (Databricks Genie Code)."
     right: "Example policies are made up. No competition data is published here."
