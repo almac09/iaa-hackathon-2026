@@ -8,6 +8,7 @@ project:
     - data/model.json
     - data/test_cases.json
     - data/eda/*.csv
+    - data/pm/*.json
 
 website:
   title: "IAA Hackathon 2026"
@@ -25,6 +26,8 @@ website:
         text: Underwriting calculator
       - href: how-glms-work.qmd
         text: How a GLM works
+      - href: project.qmd
+        text: Project update
     right:
       - icon: github
         href: https://github.com/almac09/iaa-hackathon-2026

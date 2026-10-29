@@ -1,0 +1,228 @@
+---
+title: "Project update"
+subtitle: "How we ran the work: every task as a GitHub issue, opened, worked and closed in the open"
+page-layout: full
+---
+
+```{ojs}
+pm = FileAttachment("data/pm/issues.json").json()
+```
+
+```{ojs}
+now = new Date(pm.generated_at)
+```
+
+```{ojs}
+workstreamOrder = ["data", "analysis", "feature-engineering", "modelling", "submission", "process", "setup"]
+```
+
+```{ojs}
+issues = pm.issues.map(d => ({
+  ...d,
+  created: new Date(d.created_at),
+  closed: d.closed_at ? new Date(d.closed_at) : null,
+  isClosed: d.state === "closed",
+  ai: d.labels.includes("ai-assisted"),
+  workstream: workstreamOrder.find(w => d.labels.includes(w)) ?? "other",
+  daysOpen: ((d.closed_at ? new Date(d.closed_at) : new Date(pm.generated_at)) - new Date(d.created_at)) / 864e5
+}))
+```
+
+```{ojs}
+people = ({domain: ["Alan", "Bridget", "Cian", "Gerard"], range: ["#4e79a7", "#e15759", "#59a14f", "#f28e2b"], legend: true})
+```
+
+```{ojs}
+kpi = {
+  const closed = issues.filter(d => d.isClosed)
+  const start = d3.min(issues, d => d.created)
+  return {
+    total: issues.length,
+    closed: closed.length,
+    open: issues.length - closed.length,
+    rate: closed.length / issues.length,
+    people: new Set(issues.map(d => d.owner)).size,
+    days: Math.ceil((now - start) / 864e5),
+    start,
+    aiShare: issues.filter(d => d.ai).length / issues.length,
+    medianDays: d3.median(closed, d => d.daysOpen),
+    last7: closed.filter(d => now - d.closed < 7 * 864e5).length
+  }
+}
+```
+
+```{ojs}
+html`<div class="hero-kpis">
+  <div class="kpi-card"><div class="kpi-label">Issues raised</div><div class="kpi-value">${kpi.total}</div></div>
+  <div class="kpi-card"><div class="kpi-label">Closed</div><div class="kpi-value">${kpi.closed} <small>(${Math.round(kpi.rate * 100)}%)</small></div></div>
+  <div class="kpi-card"><div class="kpi-label">Median days to close</div><div class="kpi-value">${kpi.medianDays.toFixed(1)}</div></div>
+  <div class="kpi-card"><div class="kpi-label">AI-assisted</div><div class="kpi-value">${Math.round(kpi.aiShare * 100)}%</div></div>
+  <div class="kpi-card"><div class="kpi-label">Team / days</div><div class="kpi-value">${kpi.people} / ${kpi.days}</div></div>
+</div>`
+```
+
+## Executive summary
+
+```{ojs}
+byOwner = d3.rollups(issues, v => ({raised: v.length, closed: v.filter(d => d.isClosed).length}), d => d.owner)
+  .map(([owner, v]) => ({owner, ...v})).sort((a, b) => b.closed - a.closed)
+```
+
+```{ojs}
+md`In **${kpi.days} days** since ${kpi.start.toLocaleDateString("en-GB", {day: "numeric", month: "long"})}, the team of
+**${kpi.people}** raised **${kpi.total} issues** and closed **${kpi.closed}** (${Math.round(kpi.rate * 100)}%), ${kpi.last7} of them in
+the last seven days. Every piece of work, from data fixes to model tests to this website, was raised as a GitHub issue,
+worked, and closed with a note saying where it was done. That gives the judges a complete, time-stamped audit trail.
+**${Math.round(kpi.aiShare * 100)}%** of issues are labelled *ai-assisted*, so the use of AI is recorded task by task.
+
+Issues closed, by person: ${byOwner.map(d => `**${d.owner}** ${d.closed} of ${d.raised}`).join(" · ")}.`
+```
+
+*Data: the GitHub issues of [the repository](https://github.com/almac09/iaa-hackathon-2026/issues), refreshed on every
+site build and daily.*
+
+## Issues raised and closed over time
+
+The gap between the two lines is the open work. A steep closed line means a delivery push.
+
+```{ojs}
+burnup = {
+  const days = d3.timeDay.range(d3.timeDay.floor(kpi.start), d3.timeDay.offset(d3.timeDay.floor(now), 1))
+  return days.flatMap(day => {
+    const end = d3.timeDay.offset(day, 1)
+    return [
+      {day, series: "Raised", n: issues.filter(d => d.created < end).length},
+      {day, series: "Closed", n: issues.filter(d => d.closed && d.closed < end).length}
+    ]
+  })
+}
+```
+
+```{ojs}
+Plot.plot({
+  width: 1000, height: 340, marginLeft: 50,
+  color: {domain: ["Raised", "Closed"], range: ["#9c9c9c", "#2ca02c"], legend: true},
+  x: {label: null, type: "utc"},
+  y: {label: "Cumulative issues", grid: true},
+  marks: [
+    Plot.areaY(burnup.filter(d => d.series === "Closed"), {x: "day", y: "n", fill: "#2ca02c", fillOpacity: 0.15, curve: "step-after"}),
+    Plot.line(burnup, {x: "day", y: "n", stroke: "series", strokeWidth: 2.5, curve: "step-after", tip: true}),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+## Gantt chart: every issue from opened to closed
+
+Each bar is one issue, from the day it was raised to the day it was closed. Faded bars are still open and run to today.
+Hover for the title.
+
+```{ojs}
+viewof ganttOwner = Inputs.select(["Everyone", "Alan", "Bridget", "Cian", "Gerard"], {label: "Person"})
+```
+
+```{ojs}
+viewof ganttWorkstream = Inputs.select(["All workstreams", ...workstreamOrder, "other"], {label: "Workstream"})
+```
+
+```{ojs}
+ganttRows = issues
+  .filter(d => ganttOwner === "Everyone" || d.owner === ganttOwner)
+  .filter(d => ganttWorkstream === "All workstreams" || d.workstream === ganttWorkstream)
+  .map(d => ({...d, end: d.closed ?? now, label: `#${d.number} ${d.title.replace(/^\[AI-Assisted\]\s*/i, "").slice(0, 48)}`}))
+```
+
+```{ojs}
+Plot.plot({
+  width: 1000, height: Math.max(220, 40 + 11 * ganttRows.length), marginLeft: 330,
+  color: people,
+  x: {label: null, type: "utc", grid: true, domain: [d3.timeDay.floor(kpi.start), now]},
+  y: {label: null, domain: ganttRows.map(d => d.label), tickSize: 0},
+  style: {fontSize: "9px"},
+  marks: [
+    Plot.barX(ganttRows, {
+      x1: "created", x2: d => new Date(Math.max(+d.end, +d.created + 3 * 36e5)), y: "label", fill: "owner",
+      fillOpacity: d => d.isClosed ? 0.95 : 0.35, inset: 0.5,
+      title: d => `#${d.number} ${d.title}\n${d.owner} · ${d.workstream}\n${d.isClosed ? `closed after ${d.daysOpen.toFixed(1)} days` : "open"}`
+    }),
+    Plot.ruleX([now], {stroke: "#333", strokeDasharray: "3 3"})
+  ]
+})
+```
+
+## Who completed what
+
+```{ojs}
+Plot.plot({
+  width: 1000, height: 300, marginLeft: 70,
+  color: {legend: true, domain: [...workstreamOrder, "other"], scheme: "tableau10"},
+  x: {label: "Issues closed", grid: true},
+  y: {label: null, domain: byOwner.map(d => d.owner)},
+  marks: [
+    Plot.barX(issues.filter(d => d.isClosed), Plot.groupY({x: "count"}, {y: "owner", fill: "workstream", tip: true})),
+    Plot.ruleX([0])
+  ]
+})
+```
+
+### Activity by day
+
+Issues closed each day by each person: the rhythm of the project.
+
+```{ojs}
+Plot.plot({
+  width: 1000, height: 220, marginLeft: 70, padding: 0.08,
+  color: {scheme: "greens", legend: true, label: "Issues closed"},
+  x: {label: null, type: "band", tickFormat: d => d3.utcFormat("%a %d")(new Date(d))},
+  y: {label: null},
+  marks: [
+    Plot.cell(issues.filter(d => d.isClosed), Plot.group({fill: "count"}, {
+      x: d => d3.utcDay.floor(d.closed).toISOString(), y: "owner", tip: true, inset: 1
+    }))
+  ]
+})
+```
+
+### Workstream status
+
+```{ojs}
+Plot.plot({
+  width: 1000, height: 280, marginLeft: 140,
+  color: {domain: ["closed", "open"], range: ["#2ca02c", "#d3d3d3"], legend: true},
+  x: {label: "Issues", grid: true},
+  y: {label: null, domain: [...workstreamOrder, "other"]},
+  marks: [
+    Plot.barX(issues, Plot.groupY({x: "count"}, {y: "workstream", fill: "state", tip: true})),
+    Plot.ruleX([0])
+  ]
+})
+```
+
+## Recently closed
+
+```{ojs}
+Inputs.table(issues.filter(d => d.isClosed).sort((a, b) => b.closed - a.closed).slice(0, 15).map(d => ({
+  issue: d.number, title: d.title, owner: d.owner, workstream: d.workstream, closed: d.closed, days: d.daysOpen
+})), {
+  format: {
+    issue: n => html`<a href="https://github.com/${pm.repo}/issues/${n}" target="_blank">#${n}</a>`,
+    closed: d => d3.utcFormat("%d %b %H:%M")(d),
+    days: x => x.toFixed(1)
+  },
+  width: {title: 420}
+})
+```
+
+## How we worked
+
+* **One task, one issue.** Each issue has a short AI interaction log, the tasks, and a closing comment saying where the work
+  was done (notebook cell, file or commit).
+* **Labels by workstream** (data, analysis, feature engineering, modelling, submission, process, setup), plus
+  *ai-assisted* for transparency.
+* **Parent and sub-issues** for larger pieces of work, such as model explainability and this website.
+* **Per-person branches, consolidated to `main`** under `contributors/`, with nobody else's branch rewritten.
+
+```{ojs}
+md`*Last refreshed ${d3.utcFormat("%d %B %Y, %H:%M UTC")(now)}. Owner = the issue's first assignee, or its author if
+nobody is assigned.*`
+```
