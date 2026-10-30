@@ -26,8 +26,10 @@ charged once expenses, commission, tax, reinsurance and profit are added).
 4. **Change any rating factor** further down to see the risk and office premiums move.
 5. The table at the bottom prices all 20 reference policies side by side.
 
-Home buildings policies are shown with their values but are **not priced** here yet: the buildings small-claim model
-is a gradient boosting model (XGBoost), which this page can't run.
+**Limitation, home buildings:** Gerard's buildings model has two parts. The **large-claim part is a GLM** and is
+calculated here. The **small-claim part is XGBoost** (gradient boosting), which this page can't run, so for buildings
+the full risk premium and the office premium are shown as **not possible (XGBoost)**. The GLM large-claim part is
+shown on its own so you can still see how the buildings rating factors move it.
 :::
 
 ```{ojs}
@@ -69,27 +71,35 @@ rates = refData.expenses.rates_emerging
 ```
 
 ```{ojs}
-priced = currentCase.priced && model.lines[line] !== undefined
+// priced = the calculator has a model for the line (buildings: large-claim GLM only)
+priced = model.lines[line] !== undefined
 ```
 
 ```{ojs}
 html`<p><strong>${currentCase.name}</strong>: ${currentCase.description}</p>
 <p>Product line: <strong>${lineNames[line]}</strong> &nbsp;|&nbsp; New business: <strong>${currentCase.policy.new_business ? "Yes" : "No"}</strong> (both set by the reference policy)</p>
-${priced ? "" : html`<div class="callout callout-style-default callout-warning"><div class="callout-body"><p><strong>Not priced:</strong> home buildings can't be priced in the browser (its small-claim model is XGBoost). The policy's values are listed below.</p></div></div>`}`
+${currentCase.partial ? html`<div class="callout callout-style-default callout-warning"><div class="callout-body"><p><strong>Limitation:</strong> the buildings small-claim model is XGBoost, so the full risk premium and the office premium are <strong>not possible</strong> here. Only the <strong>large-claim GLM part</strong> is calculated.</p></div></div>` : ""}`
 ```
 
 ## Risk premium to office premium
 
 ```{ojs}
-officeNow = result ? officePremium(result.final, line, currentCase.channel, rates) : null
+// only a complete risk premium gets an office premium (not buildings: its XGBoost part is missing)
+officeNow = result && !result.incomplete ? officePremium(result.final, line, currentCase.channel, rates) : null
 ```
 
 ```{ojs}
 function calcPanel(l) {
   const active = l === line
   const o = active ? officeNow : null
-  const v = x => o ? x.toFixed(2) : "0.00"
+  const partial = active && result && result.incomplete
+  const NP = "not possible (XGBoost)"
+  const v = x => o ? x.toFixed(2) : (partial ? NP : "0.00")
+  const glmRows = partial ? Object.entries(result.components).map(([name, comp]) =>
+      [`${name === "large" ? "Large-claim part (GLM)" : name} (annual)`, comp.cost * result.final / result.as_is, false, true])
+      .concat(Object.keys(result.missing_components).map(name => [`${name === "small" ? "Small-claim part (XGBoost)" : name}`, null, false, false])) : []
   const rowsSpec = [
+    ...glmRows,
     ["Risk premium (annual)", o ? o.risk_premium : 0, true],
     [PROPERTY_LINES.includes(l) ? `+ Cat reinsurance (${(rates.cat_reinsurance * 100).toFixed(0)}% of risk)` : "+ Cat reinsurance (property only)", o ? o.cat_reinsurance : 0],
     [`+ Fixed expense per policy`, o ? o.fixed_expense : 0],
@@ -99,14 +109,15 @@ function calcPanel(l) {
     [`+ Profit margin (${(rates.target_profit_margin * 100).toFixed(0)}%)`, o ? o.profit_margin : 0],
     ["= Office premium (annual)", o ? o.office_premium : 0, true],
   ]
-  const status = !active ? "Not used for this policy" : (o ? `In use: ${currentCase.row_id}` : "In use: not priced (XGBoost model)")
+  const status = !active ? "Not used for this policy" : (o ? `In use: ${currentCase.row_id}` : `In use: ${currentCase.row_id} (GLM part only, XGBoost part missing)`)
   return html`<div class="calc-panel" style="flex:1; min-width:260px; border:2px solid ${active ? "#1d4ed8" : "#cbd5e1"}; border-radius:10px; padding:12px 14px; ${active ? "" : "opacity:0.45; filter:grayscale(1); background:#f1f5f9;"}">
     <div style="font-weight:700; font-size:1.1rem;">${lineNames[l]} calculator</div>
     <div style="font-size:0.85rem; margin-bottom:8px; color:${active ? "#1d4ed8" : "#64748b"};">${status}</div>
     <table style="width:100%; font-size:0.9rem;">
-      ${rowsSpec.map(([label, x, bold]) => html`<tr style="${bold ? "font-weight:700; border-top:1px solid #cbd5e1;" : ""}"><td>${label}</td><td style="text-align:right;">${active && !o && bold ? "n/a" : v(x)}</td></tr>`)}
+      ${rowsSpec.map(([label, x, bold, shown]) => html`<tr style="${bold ? "font-weight:700; border-top:1px solid #cbd5e1;" : ""}"><td>${label}</td><td style="text-align:right;">${shown ? x.toFixed(2) : v(x)}</td></tr>`)}
     </table>
     ${active && o ? html`<div style="font-size:0.85rem; margin-top:8px;">For the policy's period (${currentCase.policy.exposure.toFixed(3)} yrs): risk ${(o.risk_premium * currentCase.policy.exposure).toFixed(2)}. Written premium in the file: ${currentCase.written_premium.toFixed(2)} (annual).</div>` : ""}
+    ${partial ? html`<div style="font-size:0.85rem; margin-top:8px;">Limitation: the buildings small-claim model is XGBoost, so the risk and office premiums can't be completed here. The GLM large-claim part includes its 2025 trend, Pareto adjustment and level step. Written premium in the file: ${currentCase.written_premium.toFixed(2)} (annual).</div>` : ""}
   </div>`
 }
 ```
@@ -228,8 +239,8 @@ waterfall = {
 ```{ojs}
 result ? html`<div class='hero-kpis'>
   <div class='kpi-card'><div class='kpi-label'>Segment</div><div class='kpi-value'>${segmentText}</div></div>
-  <div class='kpi-card'><div class='kpi-label'>Annual premium</div><div class='kpi-value'>${result.final.toFixed(2)}</div></div>
-  <div class='kpi-card'><div class='kpi-label'>For the period (${currentCase.policy.exposure.toFixed(3)} yrs)</div><div class='kpi-value'>${(result.final * currentCase.policy.exposure).toFixed(2)}</div></div>
+  <div class='kpi-card'><div class='kpi-label'>${result.incomplete ? "GLM part only (annual)" : "Annual risk premium"}</div><div class='kpi-value'>${result.final.toFixed(2)}</div></div>
+  <div class='kpi-card'><div class='kpi-label'>${result.incomplete ? "Office premium" : `For the period (${currentCase.policy.exposure.toFixed(3)} yrs)`}</div><div class='kpi-value'>${result.incomplete ? "not possible (XGBoost)" : (result.final * currentCase.policy.exposure).toFixed(2)}</div></div>
   <div class='kpi-card'><div class='kpi-label'>Change vs policy</div><div class='kpi-value'>${(result.final - original.final >= 0 ? "+" : "") + (result.final - original.final).toFixed(2)}</div></div>
 </div>` : html``
 ```
@@ -340,15 +351,17 @@ this page), next to the written premium in the file. Pick one in the
 ```{ojs}
 Inputs.table(
   allCases.map(c => {
-    const ok = c.priced && model.lines[c.line] !== undefined
-    const annual = ok ? scorePolicy(model, c.line, {...c.policy, exposure: 1}).final : null
+    const r = model.lines[c.line] !== undefined ? scorePolicy(model, c.line, {...c.policy, exposure: 1}) : null
+    const annual = r && !r.incomplete ? r.final : null
+    const glmPart = r && r.incomplete ? r.final : null
     const o = annual === null ? null : officePremium(annual, c.line, c.channel, rates)
     return {idx: c.idx, row_id: c.row_id, line: lineNames[c.line], channel: c.channel, new_business: c.policy.new_business ? "Yes" : "No",
             period: c.period, exposure: c.policy.exposure.toFixed(3),
-            risk_premium_annual: annual === null ? "not priced" : annual.toFixed(2),
-            office_premium_annual: o === null ? "not priced" : o.office_premium.toFixed(2),
+            risk_premium_annual: annual === null ? "not possible (XGBoost)" : annual.toFixed(2),
+            office_premium_annual: o === null ? "not possible (XGBoost)" : o.office_premium.toFixed(2),
+            glm_large_part_annual: glmPart === null ? "" : glmPart.toFixed(2),
             written_premium: c.written_premium.toFixed(2),
-            risk_premium_for_period: annual === null ? "not priced" : (annual * c.policy.exposure).toFixed(2)}
+            risk_premium_for_period: annual === null ? "not possible (XGBoost)" : (annual * c.policy.exposure).toFixed(2)}
   }),
   {rows: 20, layout: "auto", select: false}
 )

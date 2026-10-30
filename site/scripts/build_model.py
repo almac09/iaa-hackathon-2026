@@ -7,7 +7,9 @@ Source: contributors/gerard/workings/contents/replication/export/excel/
 coefficients are read; no competition rows are used or published.
 
 Scope: contents (one Tweedie GLM) and motor (small-claim GLM + large-claim GLM).
-Buildings is left out because its small-claim model is XGBoost.
+Buildings: only its large-claim GLM is built. Its small-claim model is XGBoost,
+which the calculator can't run, so buildings is marked incomplete and no full
+risk or office premium is quoted for it.
 
 Usage:  python site/scripts/build_model.py [--src DIR] [--out FILE]
 """
@@ -25,7 +27,18 @@ REPO = Path(__file__).resolve().parents[2]
 DEFAULT_SRC = REPO / "contributors/gerard/workings/contents/replication/export/excel"
 DEFAULT_OUT = REPO / "site/data/model.json"
 SOURCE_COMMIT = "a56b2016297ecd76d7da964164342ca3dd4593b1"
-LINES = ["contents", "motor"]
+LINES = ["contents", "motor", "buildings"]
+# Components a line has in the real model but the calculator can't score
+MISSING_COMPONENTS = {"buildings": {"small": "small-claim model is XGBoost (gradient boosting), not a GLM"}}
+# Interaction terms (sql/11, A28): coefficient x a value derived from raw inputs
+DERIVED = {
+    "x_clay_dry": dict(formula="clay_dry", inputs=["soil_type", "dry_summer_index"],
+                       note="coalesce((soil_type = 'clay') x dry_summer_index, 0)"),
+    "x_fz3_rain": dict(formula="fz3_rain", inputs=["flood_zone", "rainfall_mm"],
+                       note="coalesce((coalesce(flood_zone, 99) >= 3) x rainfall_mm / 1000, 0)"),
+}
+# Band inputs where Unknown is a real level the calculator should offer
+BAND_ALLOW_MISSING = {("buildings", "flood_zone")}
 
 # Friendly labels and help text for the calculator. Anything not listed falls
 # back to the raw term name.
@@ -62,6 +75,12 @@ LABELS = {
     "vehicle_age": ("Vehicle age (yrs)", "Age of the car."),
     "vehicle_value_group": ("Vehicle value group", "1 = cheapest cars, 20 = most expensive."),
     "voluntary_excess": ("Voluntary excess", "Extra excess the customer chose to take."),
+    "soil_type": ("Soil type", "Ground the building stands on (clay shrinks in dry summers)."),
+    "construction_type": ("Construction type", "What the building is made of."),
+    "flood_zone": ("Flood zone", "1 = lowest flood risk, 5 = highest."),
+    "year_built": ("Year built", "Year the building was built."),
+    "dry_summer_index": ("Dry summer index (2025)", "Weather at the address: 0 = wet summer, 1 = very dry."),
+    "rainfall_mm": ("Rainfall (mm, 2025)", "Annual rainfall at the address."),
 }
 
 # Display labels for model levels (value -> label). Values are the model levels.
@@ -78,6 +97,9 @@ NUMERIC_RANGES = {
     "sum_insured": dict(min=5000, max=150000, step=100),  # 100 so reference policies (e.g. 22,100) load exactly
     "prior_claims_5y": dict(min=0, max=5, step=1),
     "missed_payments_12m": dict(min=0, max=3, step=1),
+    "flood_zone": dict(min=1, max=5, step=1),
+    "dry_summer_index": dict(min=0, max=1, step=0.001),
+    "rainfall_mm": dict(min=500, max=3000, step=1),
 }
 
 
@@ -168,6 +190,8 @@ def build(src: Path) -> dict:
                                               upper=fnum(r["band_upper"]), contribution=float(r["contribution"])))
                     C["terms"].append(dict(term=term, kind="band", input=term, bands=bands, missing=missing))
                     _add_number(L, term)
+                    if (line, term) in BAND_ALLOW_MISSING:
+                        L["inputs"][term]["allow_missing"] = True
                 elif "spline value" in kinds:
                     grid = [float(r["value"]) for r in trs if r["kind"] == "spline value"]
                     miss = [float(r["contribution"]) for r in trs if r["kind"] == "spline missing"]
@@ -194,6 +218,13 @@ def build(src: Path) -> dict:
                                                coefficient=float(r["contribution"]),
                                                note="ln(max(sum insured, 1)); sum insured / 1,000 at or above 1m (D-02)"))
                         _add_number(L, "sum_insured")
+                    elif term in DERIVED:
+                        d = DERIVED[term]
+                        C["terms"].append(dict(term=term, kind="derived", input=term, formula=d["formula"],
+                                               inputs=d["inputs"], coefficient=float(r["contribution"]), note=d["note"]))
+                        for k in d["inputs"]:
+                            if k not in L["inputs"] and k in NUMERIC_RANGES:
+                                _add_number(L, k)
                     else:
                         raise ValueError(f"unsupported continuous term {line}/{comp}/{term}")
                 elif kinds == {"spline missing"}:
@@ -214,6 +245,9 @@ def build(src: Path) -> dict:
                         steps.append(dict(op="times", value=float(r["value"]), label="Level step 2: x1.05"))
                         steps.append(dict(op="divide", value=s1, label="Level step 2: divide by halfway scale"))
             L["segments"][seg] = steps
+        L["missing_components"] = MISSING_COMPONENTS.get(line, {})
+        if line == "buildings" and "sum_insured" in L["inputs"]:
+            L["inputs"]["sum_insured"]["help"] = "Rebuild value of the building covered (CU)."
         model["lines"][line] = L
     return model
 

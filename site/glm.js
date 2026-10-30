@@ -58,6 +58,21 @@ export function termContribution(term, policy) {
       if (si >= 1e6) si = si / 1000; // data fix D-02 (contents)
       return { level: String(x), contribution: term.coefficient * Math.log(Math.max(si, 1)) };
     }
+    case "derived": {
+      // buildings interactions (sql/11, A28); a missing weather value gives 0 (coalesce)
+      let v = 0;
+      if (term.formula === "clay_dry") {
+        const d = policy.dry_summer_index;
+        v = policy.soil_type === "clay" && !isMissing(d) ? Number(d) : 0;
+      } else if (term.formula === "fz3_rain") {
+        const fz = policy.flood_zone, rain = policy.rainfall_mm;
+        const high = isMissing(fz) || Number(fz) >= 3; // a missing flood zone counts as 3 or above
+        v = high && !isMissing(rain) ? Number(rain) / 1000 : 0;
+      } else {
+        throw new Error(`unknown derived formula ${term.formula}`);
+      }
+      return { level: v.toFixed(4), contribution: term.coefficient * v };
+    }
     default:
       throw new Error(`unknown term kind ${term.kind}`);
   }
@@ -99,7 +114,10 @@ export function scorePolicy(model, line, policy) {
     final = s.op === "times" ? final * s.value : final / s.value;
     steps.push({ ...s, running: final });
   }
-  return { line, segment, components, as_is: asIs, steps, final };
+  // incomplete: a component of the real model (buildings small claims, XGBoost) is not in the calculator,
+  // so `final` is only the part that could be scored
+  const missing = L.missing_components || {};
+  return { line, segment, components, as_is: asIs, steps, final, incomplete: Object.keys(missing).length > 0, missing_components: missing };
 }
 
 // Office premium from the annual risk premium, mirroring Gerard's

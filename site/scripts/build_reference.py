@@ -10,8 +10,9 @@ keeps its own row_id. Missing rating factors are joined in:
 Contents factors are derived as in Gerard's sql/08 (input_mappings.csv):
 lvl(x) = coalesce(CAST(x AS VARCHAR), 'MISSING'), counts capped at 3 and 3 = OTHER.
 Exposure = (period_end - period_start + 1) / 365 (D-01).
-Buildings rows carry their raw values for display only: the buildings small-claim
-model is XGBoost, so the browser can't price them.
+Buildings rows get their large-claim GLM inputs (weather joined on address and
+policy year, construction codes and D-02/D-27 fixes as Gerard's pipeline); the
+small-claim model is XGBoost, so no full buildings risk or office premium is quoted.
 
 Usage:  python site/scripts/build_reference.py [--model site/data/model.json] [--out FILE]
 Exits 1 if any value is not a model level, outside a slider range or off its step.
@@ -46,10 +47,15 @@ DISPLAY = {
                  "prior_claims_5y", "missed_payments_12m", "marketing_segment", "flood_zone", "urban_density",
                  "property_type", "elevation_m", "distance_to_river_km"],
     "buildings": ["policyholder_age_band", "sum_insured", "construction_type", "occupancy", "year_built",
-                  "property_type", "flood_zone", "distance_to_river_km", "elevation_m", "soil_type", "urban_density",
+                  "property_type", "flood_zone", "distance_to_river_km", "elevation_m", "soil_type",
+                  "dry_summer_index", "rainfall_mm", "urban_density",
                   "accidental_damage_cover", "voluntary_excess", "prior_claims_5y", "missed_payments_12m",
                   "marketing_segment", "channel", "payment_method"],
 }
+
+
+CONSTRUCTION = {"BRK": "brick", "STN": "stone", "WOD": "timber", "MIX": "non_standard"}  # conforming view
+YEAR_BUILT_1900 = {"A": 2008, "B": 1993, "C": 1972, "D": 1951, "E": 1929, "F": 1902, "G": 1880, None: 1961}  # D-27
 
 
 def isna(v) -> bool:
@@ -92,8 +98,11 @@ def load() -> pd.DataFrame:
     ref.insert(0, "idx", range(len(ref)))
     addr = pd.read_parquet(EM / "addresses.parquet")
     cust = pd.read_parquet(EM / "customers.parquet")
+    weather = pd.read_parquet(EM / "weather.parquet", columns=["address_id", "year", "dry_summer_index", "rainfall_mm"])
+    ref["year"] = pd.to_datetime(ref["period_start"]).dt.year  # sql/11: weather on address and policy year
     full = (ref.merge(addr, on="address_id", how="left", suffixes=("", "_addr"), validate="m:1", indicator="_a")
-               .merge(cust, on="customer_id", how="left", suffixes=("", "_cust"), validate="m:1", indicator="_c"))
+               .merge(cust, on="customer_id", how="left", suffixes=("", "_cust"), validate="m:1", indicator="_c")
+               .merge(weather, on=["address_id", "year"], how="left", validate="m:1"))
     bad = full[(full["_a"] != "both") | (full["_c"] != "both")]
     if len(bad):
         raise SystemExit(f"unmatched address/customer for rows {bad['row_id'].tolist()}")
@@ -123,6 +132,19 @@ def policy_inputs(r, line: str) -> dict:
                  ncb_years=num(r["ncb_years"]), years_licensed=num(r["years_licensed"]),
                  vehicle_age=num(r["vehicle_age"]), vehicle_value_group=num(r["vehicle_value_group"]),
                  voluntary_excess=num(r["voluntary_excess"]))
+    elif line == "buildings":
+        # large-claim GLM inputs only (the small-claim XGBoost isn't in the calculator)
+        si = num(r["sum_insured"])
+        if si is not None and si >= 1e7:
+            si = si / 1000  # D-02 (buildings)
+        yb = num(r["year_built"])
+        if yb == 1900:  # D-27: placeholder year -> emerging mean year built for the energy rating
+            yb = YEAR_BUILT_1900.get(None if isna(r["energy_rating"]) else str(r["energy_rating"]), YEAR_BUILT_1900[None])
+        ct = None if isna(r["construction_type"]) else CONSTRUCTION.get(str(r["construction_type"]).upper(), str(r["construction_type"]))
+        p.update(soil_type=lvl(r["soil_type"]), construction_type=lvl(ct), flood_zone=num(r["flood_zone"]),
+                 sum_insured=si, elevation_m=num(r["elevation_m"], 1), year_built=yb,
+                 distance_to_river_km=num(r["distance_to_river_km"], 2),
+                 dry_summer_index=num(r["dry_summer_index"], 3), rainfall_mm=num(r["rainfall_mm"]))
     return p
 
 
@@ -169,7 +191,9 @@ def build(model: dict) -> tuple[dict, list[str]]:
         errs += validate(model, line, name, p)
         out["policies"].append({
             "id": f"ref_{idx:02d}", "idx": idx, "row_id": r["row_id"], "line": line, "name": name,
-            "priced": line in model["lines"],
+            # priced = a full risk premium can be quoted; partial = only some components (buildings: GLM large part)
+            "priced": line in model["lines"] and not model["lines"][line].get("missing_components"),
+            "partial": line in model["lines"] and bool(model["lines"][line].get("missing_components")),
             "channel": str(r["channel"]), "written_premium": float(r["written_premium"]),
             "period": f"{r['period_start']} to {r['period_end']}",
             "description": f"{line.capitalize()}, {'new business' if r['new_business'] else 'renewal'}, "

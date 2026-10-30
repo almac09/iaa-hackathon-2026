@@ -37,7 +37,7 @@ def load_terms():
         rows = list(csv.DictReader(f))
     T = defaultdict(lambda: defaultdict(list))
     for r in rows:
-        if r["line"] in ("contents", "motor"):
+        if r["line"] in ("contents", "motor", "buildings"):  # buildings: large-claim GLM only
             T[(r["line"], r["component"])][r["term"]].append(r)
     return T
 
@@ -66,6 +66,13 @@ def py_component(trs_by_term, p):
         elif "spline value" in kinds:
             grid = {round(float(r["value"]), 6): float(r["contribution"]) for r in trs if r["kind"] == "spline value"}
             eta += grid[round(float(p[term]), 6)]
+        elif term == "x_clay_dry":  # sql/11: coalesce((soil_type = 'clay') x dry_summer_index, 0)
+            d = p.get("dry_summer_index")
+            eta += float(trs[0]["contribution"]) * (float(d) if p.get("soil_type") == "clay" and d is not None else 0.0)
+        elif term == "x_fz3_rain":  # sql/11: coalesce((coalesce(flood_zone, 99) >= 3) x rainfall_mm / 1000, 0)
+            fz, rain = p.get("flood_zone"), p.get("rainfall_mm")
+            high = fz is None or float(fz) >= 3
+            eta += float(trs[0]["contribution"]) * (float(rain) / 1000 if high and rain is not None else 0.0)
         elif term == "log_si":
             si = float(p["sum_insured"])
             si = si / 1000 if si >= 1e6 else si
@@ -155,12 +162,13 @@ def main():
     if ref_path.exists():
         refj = json.loads(ref_path.read_text())
         ref, rates = refj["policies"], refj["expenses"]["rates_emerging"]
-        policies += [(c["line"], c["policy"]) for c in ref if c["priced"]]
+        policies += [(c["line"], c["policy"]) for c in ref if c["line"] in model["lines"]]
         office_jobs = [(c["line"], c["channel"], c["policy"]) for c in ref if c["priced"]]
         print(f"reference policies: {sum(c['priced'] for c in ref)} priced of {len(ref)}")
     n_cases = len(policies)
-    for line in ("contents", "motor"):
-        policies += [(line, p) for p in random_policies(model, line, a.n, rng)]
+    for line in ("contents", "motor", "buildings"):
+        if line in model["lines"]:
+            policies += [(line, p) for p in random_policies(model, line, a.n, rng)]
     splines, expect = [], []
     for (line, comp), by_term in T.items():
         for term, trs in by_term.items():
