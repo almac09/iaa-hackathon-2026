@@ -109,7 +109,7 @@ function calcPanel(l) {
   const v = x => o ? x.toFixed(2) : (partial ? NP : "0.00")
   const glmRows = partial ? Object.entries(result.components).map(([name, comp]) =>
       [`${name === "large" ? "Large-claim part (GLM)" : name} (annual)`, comp.cost * result.final / result.as_is, false, true])
-      .concat(Object.keys(result.missing_components).map(name => [`${name === "small" ? "Small-claim part (XGBoost)" : name}`, null, false, false])) : []
+      .concat(Object.keys(result.missing_components).map(name => [`${name === "small" ? "Small-claim part (XGBoost): not possible, default of zero used" : name}`, 0, false, true])) : []
   const rowsSpec = [
     ...glmRows,
     ["Risk premium (annual)", o ? o.risk_premium : 0, true],
