@@ -102,6 +102,29 @@ export function scorePolicy(model, line, policy) {
   return { line, segment, components, as_is: asIs, steps, final };
 }
 
+// Office premium from the annual risk premium, mirroring Gerard's
+// python/office_premium.py build_up() (audit A31), per policy-year:
+//   office = (risk x (1 + cat reinsurance, property lines only) + fixed expense)
+//            / (1 - variable expense - commission for the channel - premium tax - profit margin)
+// `rates` maps expense item -> value for the market (emerging); a missing
+// comparison-site commission must already be filled (build_reference.py does it).
+export const PROPERTY_LINES = ["buildings", "contents"];
+export function officePremium(riskAnnual, line, channel, rates) {
+  const commission = rates[`commission_${channel}`];
+  if (commission === undefined || commission === null) throw new Error(`no commission rate for channel ${channel}`);
+  const cat = PROPERTY_LINES.includes(line) ? rates.cat_reinsurance * riskAnnual : 0;
+  const loading = rates.variable_expense + commission + rates.premium_tax + rates.target_profit_margin;
+  if (loading >= 1) throw new Error("premium-proportional loadings reach 100% of premium");
+  const fixed = rates.fixed_expense_per_policy;
+  const office = (riskAnnual + cat + fixed) / (1 - loading);
+  return {
+    risk_premium: riskAnnual, cat_reinsurance: cat, fixed_expense: fixed,
+    variable_expense: office * rates.variable_expense, commission: office * commission,
+    premium_tax: office * rates.premium_tax, profit_margin: office * rates.target_profit_margin,
+    commission_rate: commission, loading, office_premium: office,
+  };
+}
+
 // Default policy for a line: every select at its base level, numbers at the
 // middle of their range.
 export function defaultPolicy(model, line) {

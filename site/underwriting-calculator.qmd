@@ -3,26 +3,35 @@ title: "Underwriting calculator"
 page-layout: full
 ---
 
-The figures are the model's **expected claim cost for 2025** (a risk premium, before expenses and profit), in
-competition currency units (CU), for the **20 reference policies** in the Part 2 data (7 motor, 6 home contents,
-7 home buildings).
+::: {.callout-note}
+## The brief: reference policies (emerging folder)
+
+> *"Twenty 2025 emerging-market policies taken from the test files (same columns, plus line). For each one, show in
+> your written report how you build the office premium from your predicted risk premium using the expenses
+> assumptions. This is assessed by the judging panel and does not affect the Kaggle score."*
+
+This page does that build-up live for each of the 20 policies: the **risk premium** (the model's expected claim cost
+for 2025, per policy-year, in competition currency units, CU) and the **office premium** (what the customer is
+charged once expenses, commission, tax, reinsurance and profit are added).
+:::
 
 ::: {.callout-tip}
 ## How to use the calculator
 
-1. **Pick a reference policy** in the menu below (numbered 0 to 19, with its row ID). That sets the product line,
-   the new business flag and every rating factor to the policy's own values.
-2. **Read the premium** in the cards: the annual premium, and the premium for the policy's actual period of cover.
-3. **Change any rating factor** to see how the premium moves. "Change vs policy" shows the effect of your edits.
-4. **Scroll down** for the build-up: each factor's relativity, the 2025 trend and the level steps.
+1. **Pick a reference policy** in the menu below (numbered 0 to 19, with its row ID).
+2. The row ID picks the calculator: **M = motor, C = home contents, B = home buildings**. All three calculators are
+   shown side by side; the one in use is highlighted and the other two are greyed out at zero.
+3. Each calculator shows the build-up from **risk premium to office premium**, line by line, using the emerging-market
+   expense assumptions in the table below.
+4. **Change any rating factor** further down to see the risk and office premiums move.
 5. The table at the bottom prices all 20 reference policies side by side.
 
-Home buildings policies are shown with their values but are **not priced** here: the buildings small-claim model is
-a gradient boosting model (XGBoost), which can't run in the browser.
+Home buildings policies are shown with their values but are **not priced** here yet: the buildings small-claim model
+is a gradient boosting model (XGBoost), which this page can't run.
 :::
 
 ```{ojs}
-import {scorePolicy, splineValue} from "./glm.js"
+import {scorePolicy, splineValue, officePremium, PROPERTY_LINES} from "./glm.js"
 ```
 
 ```{ojs}
@@ -51,7 +60,12 @@ currentCase = allCases.find(d => d.id === caseId)
 ```
 
 ```{ojs}
-line = currentCase.line
+// The row ID's first letter picks the calculator (build_reference.py checks it agrees with the file's `line`)
+line = ({M: "motor", C: "contents", B: "buildings"})[currentCase.row_id[0]]
+```
+
+```{ojs}
+rates = refData.expenses.rates_emerging
 ```
 
 ```{ojs}
@@ -63,6 +77,59 @@ html`<p><strong>${currentCase.name}</strong>: ${currentCase.description}</p>
 <p>Product line: <strong>${lineNames[line]}</strong> &nbsp;|&nbsp; New business: <strong>${currentCase.policy.new_business ? "Yes" : "No"}</strong> (both set by the reference policy)</p>
 ${priced ? "" : html`<div class="callout callout-style-default callout-warning"><div class="callout-body"><p><strong>Not priced:</strong> home buildings can't be priced in the browser (its small-claim model is XGBoost). The policy's values are listed below.</p></div></div>`}`
 ```
+
+## Risk premium to office premium
+
+```{ojs}
+officeNow = result ? officePremium(result.final, line, currentCase.channel, rates) : null
+```
+
+```{ojs}
+function calcPanel(l) {
+  const active = l === line
+  const o = active ? officeNow : null
+  const v = x => o ? x.toFixed(2) : "0.00"
+  const rowsSpec = [
+    ["Risk premium (annual)", o ? o.risk_premium : 0, true],
+    [PROPERTY_LINES.includes(l) ? `+ Cat reinsurance (${(rates.cat_reinsurance * 100).toFixed(0)}% of risk)` : "+ Cat reinsurance (property only)", o ? o.cat_reinsurance : 0],
+    [`+ Fixed expense per policy`, o ? o.fixed_expense : 0],
+    [`+ Variable expense (${(rates.variable_expense * 100).toFixed(0)}%)`, o ? o.variable_expense : 0],
+    [`+ Commission (${active ? currentCase.channel.replace("_", " ") : "channel"}${o ? `, ${(o.commission_rate * 100).toFixed(0)}%` : ""})`, o ? o.commission : 0],
+    [`+ Premium tax (${(rates.premium_tax * 100).toFixed(0)}%)`, o ? o.premium_tax : 0],
+    [`+ Profit margin (${(rates.target_profit_margin * 100).toFixed(0)}%)`, o ? o.profit_margin : 0],
+    ["= Office premium (annual)", o ? o.office_premium : 0, true],
+  ]
+  const status = !active ? "Not used for this policy" : (o ? `In use: ${currentCase.row_id}` : "In use: not priced (XGBoost model)")
+  return html`<div class="calc-panel" style="flex:1; min-width:260px; border:2px solid ${active ? "#1d4ed8" : "#cbd5e1"}; border-radius:10px; padding:12px 14px; ${active ? "" : "opacity:0.45; filter:grayscale(1); background:#f1f5f9;"}">
+    <div style="font-weight:700; font-size:1.1rem;">${lineNames[l]} calculator</div>
+    <div style="font-size:0.85rem; margin-bottom:8px; color:${active ? "#1d4ed8" : "#64748b"};">${status}</div>
+    <table style="width:100%; font-size:0.9rem;">
+      ${rowsSpec.map(([label, x, bold]) => html`<tr style="${bold ? "font-weight:700; border-top:1px solid #cbd5e1;" : ""}"><td>${label}</td><td style="text-align:right;">${active && !o && bold ? "n/a" : v(x)}</td></tr>`)}
+    </table>
+    ${active && o ? html`<div style="font-size:0.85rem; margin-top:8px;">For the policy's period (${currentCase.policy.exposure.toFixed(3)} yrs): risk ${(o.risk_premium * currentCase.policy.exposure).toFixed(2)}. Written premium in the file: ${currentCase.written_premium.toFixed(2)} (annual).</div>` : ""}
+  </div>`
+}
+```
+
+```{ojs}
+html`<div style="display:flex; gap:14px; flex-wrap:wrap; margin:8px 0 16px;">${["motor", "contents", "buildings"].map(calcPanel)}</div>`
+```
+
+```{ojs}
+officeNow ? md`**How it's built:** office premium = (risk premium ${PROPERTY_LINES.includes(line) ? "x (1 + cat reinsurance)" : ""} + fixed expense) / (1 - variable expense - commission - premium tax - profit margin) = (${officeNow.risk_premium.toFixed(2)}${PROPERTY_LINES.includes(line) ? ` + ${officeNow.cat_reinsurance.toFixed(2)}` : ""} + ${officeNow.fixed_expense.toFixed(2)}) / (1 - ${officeNow.loading.toFixed(2)}) = **${officeNow.office_premium.toFixed(2)}**. The same formula as Gerard's \`office_premium.py\`; every figure is per policy-year.` : md``
+```
+
+<details open><summary>Expense assumptions (expenses.parquet)</summary>
+
+```{ojs}
+Inputs.table(refData.expenses.table.map(d => ({item: d.item.replace(/_/g, " "), emerging: d.emerging === null ? "none given" : d.emerging, developed: d.developed === null ? "none given" : d.developed, unit: d.unit})), {layout: "auto", select: false})
+```
+
+The emerging market is used. It gives no comparison-site commission, so the developed market's 10% stands in
+(Gerard's assumption, for the team to confirm); none of the 20 reference policies sells through a comparison site.
+Cat reinsurance applies to the property lines (home contents and buildings) only.
+
+</details>
 
 <details><summary>This policy's values (from the reference file, with address and customer details joined in)</summary>
 
@@ -266,7 +333,8 @@ splineTerm && inputs[chosenSpline].allow_missing
 
 ## All 20 reference policies
 
-Every reference policy with the model's 2025 premium as given (before any changes on this page). Pick one in the
+Every reference policy with the model's 2025 risk premium and office premium as given (before any changes on
+this page), next to the written premium in the file. Pick one in the
 **Reference policy** menu at the top to load it into the calculator.
 
 ```{ojs}
@@ -274,10 +342,13 @@ Inputs.table(
   allCases.map(c => {
     const ok = c.priced && model.lines[c.line] !== undefined
     const annual = ok ? scorePolicy(model, c.line, {...c.policy, exposure: 1}).final : null
-    return {idx: c.idx, row_id: c.row_id, line: lineNames[c.line], new_business: c.policy.new_business ? "Yes" : "No",
+    const o = annual === null ? null : officePremium(annual, c.line, c.channel, rates)
+    return {idx: c.idx, row_id: c.row_id, line: lineNames[c.line], channel: c.channel, new_business: c.policy.new_business ? "Yes" : "No",
             period: c.period, exposure: c.policy.exposure.toFixed(3),
-            annual_premium: annual === null ? "not priced" : annual.toFixed(2),
-            premium_for_period: annual === null ? "not priced" : (annual * c.policy.exposure).toFixed(2)}
+            risk_premium_annual: annual === null ? "not priced" : annual.toFixed(2),
+            office_premium_annual: o === null ? "not priced" : o.office_premium.toFixed(2),
+            written_premium: c.written_premium.toFixed(2),
+            risk_premium_for_period: annual === null ? "not priced" : (annual * c.policy.exposure).toFixed(2)}
   }),
   {rows: 20, layout: "auto", select: false}
 )

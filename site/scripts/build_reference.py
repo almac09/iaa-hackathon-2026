@@ -28,6 +28,14 @@ import pandas as pd
 
 REPO = Path(__file__).resolve().parents[2]
 EM = REPO / "iaa-ai-assisted-hackathon-2026-part-2/emerging"
+# Gerard's office premium module (audit A31): the same expense rates, incl. the comparison-site fallback
+sys.path.insert(0, str(REPO / "contributors/gerard/workings/contents/replication/python"))
+import office_premium as op  # noqa: E402
+
+BRIEF = ("reference_policies (emerging folder): Twenty 2025 emerging-market policies taken from the test files "
+         "(same columns, plus line). For each one, show in your written report how you build the office premium from "
+         "your predicted risk premium using the expenses assumptions. This is assessed by the judging panel and does "
+         "not affect the Kaggle score.")
 
 DISPLAY = {
     "motor": ["driver_age_band", "years_licensed", "ncb_years", "vehicle_value_group", "vehicle_age", "make_model",
@@ -139,18 +147,30 @@ def validate(model: dict, line: str, name: str, p: dict) -> list[str]:
 
 def build(model: dict) -> tuple[dict, list[str]]:
     full = load()
+    exp_raw = pd.read_parquet(EM / "expenses.parquet")
+    rates = {k: float(v) for k, v in op.rates(exp_raw, "emerging").items()}
     out = {"_note": "The reference policies from the Part 2 dataset (emerging/reference_policies.parquet), idx 0..n-1 in "
                     "file order. Built by site/scripts/build_reference.py. Buildings rows are shown, not priced.",
+           "brief": BRIEF,
+           "expenses": {"rates_emerging": rates,
+                        "comparison_site_fallback": op.COMPARISON_SITE_FALLBACK,
+                        "table": [{"item": r.item, "developed": None if isna(r.developed) else float(r.developed),
+                                   "emerging": None if isna(r.emerging) else float(r.emerging), "unit": r.unit}
+                                  for r in exp_raw.itertuples()]},
            "policies": []}
     errs = []
     for _, r in full.iterrows():
         line, idx = r["line"], int(r["idx"])
+        prefix = {"M": "motor", "C": "contents", "B": "buildings"}[str(r["row_id"])[0]]
+        if prefix != line:
+            errs.append(f"{r['row_id']}: row_id prefix says {prefix} but line is {line}")
         name = f"{idx}. {r['row_id']}"
         p = policy_inputs(r, line)
         errs += validate(model, line, name, p)
         out["policies"].append({
             "id": f"ref_{idx:02d}", "idx": idx, "row_id": r["row_id"], "line": line, "name": name,
             "priced": line in model["lines"],
+            "channel": str(r["channel"]), "written_premium": float(r["written_premium"]),
             "period": f"{r['period_start']} to {r['period_end']}",
             "description": f"{line.capitalize()}, {'new business' if r['new_business'] else 'renewal'}, "
                            f"{r['period_start']} to {r['period_end']} (exposure {p['exposure']:.3f}).",

@@ -116,7 +116,7 @@ def random_policies(model, line, n, rng):
 
 NODE = r"""
 import { readFileSync } from "node:fs";
-import { scorePolicy, splineValue } from "%s";
+import { scorePolicy, splineValue, officePremium } from "%s";
 const model = JSON.parse(readFileSync(process.argv[1], "utf8"));
 const jobs = JSON.parse(readFileSync(0, "utf8"));
 const scores = jobs.policies.map(([line, p]) => {
@@ -127,7 +127,11 @@ const splines = jobs.splines.map(([line, comp, term, x]) => {
   const t = model.lines[line].components[comp].terms.find((t) => t.term === term);
   return splineValue(t, x);
 });
-process.stdout.write(JSON.stringify({ scores, splines }));
+const office = (jobs.office || []).map(([line, channel, p]) => {
+  const annual = scorePolicy(model, line, { ...p, exposure: 1 }).final;
+  return officePremium(annual, line, channel, jobs.rates);
+});
+process.stdout.write(JSON.stringify({ scores, splines, office }));
 """
 
 
@@ -147,9 +151,12 @@ def main():
 
     policies = [(line, c["policy"]) for line in ("contents", "motor") for c in cases[line]]
     ref_path = a.ref  # built by build_reference.py
+    ref, rates, office_jobs = [], {}, []
     if ref_path.exists():
-        ref = json.loads(ref_path.read_text())["policies"]
+        refj = json.loads(ref_path.read_text())
+        ref, rates = refj["policies"], refj["expenses"]["rates_emerging"]
         policies += [(c["line"], c["policy"]) for c in ref if c["priced"]]
+        office_jobs = [(c["line"], c["channel"], c["policy"]) for c in ref if c["priced"]]
         print(f"reference policies: {sum(c['priced'] for c in ref)} priced of {len(ref)}")
     n_cases = len(policies)
     for line in ("contents", "motor"):
@@ -164,7 +171,7 @@ def main():
 
     js = NODE % (REPO / "site/glm.js").as_uri()
     res = subprocess.run(["node", "--input-type=module", "-e", js, str(a.model)],
-                         input=json.dumps({"policies": policies, "splines": splines}),
+                         input=json.dumps({"policies": policies, "splines": splines, "office": office_jobs, "rates": rates}),
                          capture_output=True, text=True)
     if res.returncode:
         print(res.stderr)
@@ -196,7 +203,24 @@ def main():
                     + float(by["log_si"][0]["contribution"]) * math.log(30000)) * 0.8657493863699818
     _, _, py = py_policy(T, scalars, "contents", base)
     print(f"hand-worked base contents: hand {hand:.6f}  Python {py:.6f}")
-    ok = fails == 0 and sw < TOL and rel(py, hand) < TOL
+
+    # office premium: JS officePremium (on the JS annual risk) against Gerard's python/office_premium.build_up
+    # (on the Python risk for the period, which it annualises itself)
+    office_fail = 0
+    if office_jobs:
+        sys.path.insert(0, str(REPO / "contributors/gerard/workings/contents/replication/python"))
+        import numpy as np
+        import office_premium as op
+        risk = [py_policy(T, scalars, l, p)[2] for l, _, p in office_jobs]
+        g = op.build_up(np.array(risk), np.array([p["exposure"] for _, _, p in office_jobs]),
+                        np.array([l for l, _, _ in office_jobs]), np.array([c for _, c, _ in office_jobs]), rates)
+        for (l, c, p), js_o, (_, row) in zip(office_jobs, out["office"], g.iterrows()):
+            d = max(rel(js_o["office_premium"], row.office_premium), rel(js_o["risk_premium"], row.risk_premium_annual))
+            office_fail += d > TOL
+            print(f"office {l:8s} {c:15s} risk {row.risk_premium_annual:10.4f}  JS office {js_o['office_premium']:10.4f}  "
+                  f"Gerard {row.office_premium:10.4f}")
+        print(f"office premiums checked: {len(office_jobs)}, failures {office_fail}")
+    ok = fails == 0 and sw < TOL and rel(py, hand) < TOL and office_fail == 0
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)
 
