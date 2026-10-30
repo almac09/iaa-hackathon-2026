@@ -244,6 +244,24 @@ inputs[chosenSpline].allow_missing
   : md``
 ```
 
+## All example policies
+
+Every example policy for this line, with its 2025 premium before any changes. Pick one in the
+**Example policy** menu at the top to load it into the calculator.
+
+```{ojs}
+Inputs.table(
+  caseList.map((c, i) => Object.assign(
+    {row: i, policy: c.name, premium: scorePolicy(model, line, {...c.policy, exposure: 1}).final, new_business: c.policy.new_business ? "Yes" : "No"},
+    Object.fromEntries(Object.entries(inputs).map(([key, inp]) => [inp.label,
+      inp.type === "select"
+        ? optionLabel(inp, c.policy[key] ?? inp.default)
+        : (c.policy[key] === null || c.policy[key] === undefined ? "Unknown" : c.policy[key])]))
+  )),
+  {rows: 15, layout: "auto", select: false, format: {premium: x => x.toFixed(2)}}
+)
+```
+
 ## How to read this page
 
 * Start with one of the 13 example policies for the line. Its values load into the rating factors.
