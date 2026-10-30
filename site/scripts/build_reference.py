@@ -187,7 +187,7 @@ def build(model: dict) -> tuple[dict, list[str]]:
             prefix = {"M": "motor", "C": "contents", "B": "buildings"}.get(str(r[col])[0])
             if prefix != line:
                 errs.append(f"{r[col]}: {col} prefix says {prefix} but line is {line}")
-        name = f"{idx}. {r['row_id']}"
+        name = f"Row {idx + 1}: row_ID={r['row_id']}, policy_ID={r['policy_id']}"  # rows 1-20 in file order
         p = policy_inputs(r, line)
         errs += validate(model, line, name, p)
         out["policies"].append({

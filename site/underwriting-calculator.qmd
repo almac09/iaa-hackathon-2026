@@ -18,8 +18,9 @@ charged once expenses, commission, tax, reinsurance and profit are added).
 ::: {.callout-tip}
 ## How to use the calculator
 
-1. **Pick a reference policy** in the menu below. Each entry shows its number (0 to 19), its type letter in brackets
-   (**[M]** motor, **[C]** contents, **[B]** buildings), its row ID and its policy ID.
+1. **Pick a reference policy** in the menu below: **Row 1 to Row 20**, in file order, each shown as
+   `row_ID=..., policy_ID=...` and a short description. The first letter of both IDs is the type:
+   **M** motor, **C** contents, **B** buildings.
 2. The row ID picks the calculator: **M = motor, C = home contents, B = home buildings**. All three calculators are
    shown side by side; the one in use is highlighted and the other two are greyed out at zero.
 3. Each calculator shows the build-up from **risk premium to office premium**, line by line, using the emerging-market
@@ -55,7 +56,7 @@ allCases = refData.policies
 ```
 
 ```{ojs}
-viewof caseId = Inputs.select(allCases.map(d => d.id), {label: "Reference policy", format: id => {const c = allCases.find(d => d.id === id); return `${c.idx}. [${c.type}] ${lineNames[c.line]} | row ${c.row_id} | policy ${c.policy_id}`}})
+viewof caseId = Inputs.select(allCases.map(d => d.id), {label: "Reference policy", format: id => {const c = allCases.find(d => d.id === id); return `Row ${c.idx + 1}: row_ID=${c.row_id}, policy_ID=${c.policy_id} - ${c.description}`}})
 ```
 
 ```{ojs}
@@ -64,7 +65,7 @@ html`<div style="display:flex; gap:10px; flex-wrap:wrap; margin:6px 0 10px;">${[
   const cs = allCases.filter(d => d.type === t)
   const on = currentCase.type === t
   return html`<div style="border:1px solid ${on ? "#1d4ed8" : "#cbd5e1"}; border-radius:8px; padding:6px 10px; font-size:0.85rem; ${on ? "background:#eff6ff;" : ""}">
-    <strong>${t} = ${lineNames[{M: "motor", C: "contents", B: "buildings"}[t]]}</strong>: ${cs.length} policies (idx ${cs[0].idx}-${cs[cs.length - 1].idx})</div>`
+    <strong>${t} = ${lineNames[{M: "motor", C: "contents", B: "buildings"}[t]]}</strong>: ${cs.length} policies (rows ${cs[0].idx + 1}-${cs[cs.length - 1].idx + 1})</div>`
 })}</div>`
 ```
 
@@ -87,7 +88,7 @@ priced = model.lines[line] !== undefined
 ```
 
 ```{ojs}
-html`<p><strong>${currentCase.idx}. [${currentCase.type}]</strong> row ID <strong>${currentCase.row_id}</strong>, policy ID <strong>${currentCase.policy_id}</strong>: ${currentCase.description}</p>
+html`<p><strong>Row ${currentCase.idx + 1}: row_ID=${currentCase.row_id}, policy_ID=${currentCase.policy_id}</strong> - ${currentCase.description}</p>
 <p>Product line: <strong>${lineNames[line]}</strong> &nbsp;|&nbsp; New business: <strong>${currentCase.policy.new_business ? "Yes" : "No"}</strong> (both set by the reference policy)</p>
 ${currentCase.partial ? html`<div class="callout callout-style-default callout-warning"><div class="callout-body"><p><strong>Limitation:</strong> the buildings small-claim model is XGBoost, so the full risk premium and the office premium are <strong>not possible</strong> here. Only the <strong>large-claim GLM part</strong> is calculated.</p></div></div>` : ""}`
 ```
@@ -157,7 +158,7 @@ Cat reinsurance applies to the property lines (home contents and buildings) only
 
 ```{ojs}
 Inputs.table(
-  [{field: "type (B / C / M)", value: currentCase.type}, {field: "row id", value: currentCase.row_id},
+  [{field: "row", value: `Row ${currentCase.idx + 1} of ${allCases.length}`}, {field: "type (B / C / M)", value: currentCase.type}, {field: "row id", value: currentCase.row_id},
    {field: "policy id", value: currentCase.policy_id}, {field: "period of cover", value: currentCase.period},
    {field: "exposure (years)", value: currentCase.policy.exposure.toFixed(3)},
    {field: "new business", value: currentCase.policy.new_business ? "Yes" : "No"}]
@@ -367,7 +368,7 @@ Inputs.table(
     const annual = r && !r.incomplete ? r.final : null
     const glmPart = r && r.incomplete ? r.final : null
     const o = annual === null ? null : officePremium(annual, c.line, c.channel, rates)
-    return {idx: c.idx, type: c.type, row_id: c.row_id, policy_id: c.policy_id, line: lineNames[c.line], channel: c.channel, new_business: c.policy.new_business ? "Yes" : "No",
+    return {row: c.idx + 1, type: c.type, row_id: c.row_id, policy_id: c.policy_id, line: lineNames[c.line], channel: c.channel, new_business: c.policy.new_business ? "Yes" : "No",
             period: c.period, exposure: c.policy.exposure.toFixed(3),
             risk_premium_annual: annual === null ? "not possible (XGBoost)" : annual.toFixed(2),
             office_premium_annual: o === null ? "not possible (XGBoost)" : o.office_premium.toFixed(2),
