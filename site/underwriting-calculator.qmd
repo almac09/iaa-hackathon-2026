@@ -3,8 +3,9 @@ title: "Underwriting calculator"
 page-layout: full
 ---
 
-Pick a product and an example policy, then change any rating factor. The premium and its build-up update as
-you go. The figures are the model's **expected claim cost for 2025** (a risk premium, before expenses and
+Pick a product and one of the **13 example policies**. Choosing a policy fills every rating factor below with
+that policy's values, so you can price it as is and then change any factor. The premium and its build-up
+update as you go. The figures are the model's **expected claim cost for 2025** (a risk premium, before expenses and
 profit), in competition currency units (CU).
 
 ```{ojs}
@@ -34,6 +35,26 @@ viewof caseId = Inputs.select(caseList.map(d => d.id), {label: "Example policy",
 ```{ojs}
 currentCase = caseList.find(d => d.id === caseId)
 ```
+
+```{ojs}
+html`<p><strong>${currentCase.name}</strong>: ${currentCase.description}</p>`
+```
+
+<details><summary>Values loaded from this example policy</summary>
+
+```{ojs}
+Inputs.table(
+  Object.entries(inputs).map(([key, inp]) => ({
+    factor: inp.label,
+    value: inp.type === "select"
+      ? optionLabel(inp, currentCase.policy[key] ?? inp.default)
+      : (currentCase.policy[key] === null || currentCase.policy[key] === undefined ? "Unknown" : String(currentCase.policy[key]))
+  })).concat([{factor: "New business", value: currentCase.policy.new_business ? "Yes" : "No"}]),
+  {rows: 25, layout: "auto", select: false}
+)
+```
+
+</details>
 
 ```{ojs}
 inputs = model.lines[line].inputs
@@ -125,12 +146,6 @@ html`<div class='hero-kpis'>
   <div class='kpi-card'><div class='kpi-label'>Final premium</div><div class='kpi-value'>${result.final.toFixed(2)}</div></div>
   <div class='kpi-card'><div class='kpi-label'>Change vs example</div><div class='kpi-value'>${(result.final - original.final >= 0 ? "+" : "") + (result.final - original.final).toFixed(2)}</div></div>
 </div>`
-```
-
-## Current example
-
-```{ojs}
-html`<p><strong>${currentCase.name}</strong>: ${currentCase.description}</p>`
 ```
 
 ## Premium build-up
@@ -231,7 +246,7 @@ inputs[chosenSpline].allow_missing
 
 ## How to read this page
 
-* Start with an example policy.
+* Start with one of the 13 example policies for the line. Its values load into the rating factors.
 * Change one factor at a time to see how the premium moves.
 * The table above shows the **relativity** for each factor: values above 1 raise the premium, values below 1 lower it.
 * For motor, the final price is the sum of a **small-claim GLM** and a **large-claim GLM**, followed by Gerard's segment-level adjustments.
