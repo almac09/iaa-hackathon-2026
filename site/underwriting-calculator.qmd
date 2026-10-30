@@ -3,11 +3,23 @@ title: "Underwriting calculator"
 page-layout: full
 ---
 
-Pick one of the **example policies** (13 home contents, 13 motor). Choosing a policy sets the product line and
-new business flag and fills every rating factor below with that policy's values, so you can price it as is and
-then change any factor. The premium and its build-up
-update as you go. The figures are the model's **expected claim cost for 2025** (a risk premium, before expenses and
-profit), in competition currency units (CU).
+The figures are the model's **expected claim cost for 2025** (a risk premium, before expenses and profit), in
+competition currency units (CU), for the **20 reference policies** in the Part 2 data (7 motor, 6 home contents,
+7 home buildings).
+
+::: {.callout-tip}
+## How to use the calculator
+
+1. **Pick a reference policy** in the menu below (numbered 0 to 19, with its row ID). That sets the product line,
+   the new business flag and every rating factor to the policy's own values.
+2. **Read the premium** in the cards: the annual premium, and the premium for the policy's actual period of cover.
+3. **Change any rating factor** to see how the premium moves. "Change vs policy" shows the effect of your edits.
+4. **Scroll down** for the build-up: each factor's relativity, the 2025 trend and the level steps.
+5. The table at the bottom prices all 20 reference policies side by side.
+
+Home buildings policies are shown with their values but are **not priced** here: the buildings small-claim model is
+a gradient boosting model (XGBoost), which can't run in the browser.
+:::
 
 ```{ojs}
 import {scorePolicy, splineValue} from "./glm.js"
@@ -18,20 +30,20 @@ model = FileAttachment("data/model.json").json()
 ```
 
 ```{ojs}
-testCases = FileAttachment("data/test_cases.json").json()
+refData = FileAttachment("data/reference_policies.json").json()
 ```
 
 ```{ojs}
-lineNames = ({contents: "Home contents", motor: "Motor"})
+lineNames = ({contents: "Home contents", motor: "Motor", buildings: "Home buildings"})
 ```
 
 ```{ojs}
-// One list of every example policy; each policy carries its own product line
-allCases = ["contents", "motor"].flatMap(l => testCases[l].map(c => ({...c, line: l})))
+// The 20 reference policies in file order (idx 0..19); each carries its own product line
+allCases = refData.policies
 ```
 
 ```{ojs}
-viewof caseId = Inputs.select(allCases.map(d => d.id), {label: "Example policy", format: id => {const c = allCases.find(d => d.id === id); return `${lineNames[c.line]} ${c.name}`}})
+viewof caseId = Inputs.select(allCases.map(d => d.id), {label: "Reference policy", format: id => {const c = allCases.find(d => d.id === id); return `${c.name} (${lineNames[c.line]})`}})
 ```
 
 ```{ojs}
@@ -43,24 +55,23 @@ line = currentCase.line
 ```
 
 ```{ojs}
-caseList = allCases.filter(d => d.line === line)
+priced = currentCase.priced && model.lines[line] !== undefined
 ```
 
 ```{ojs}
 html`<p><strong>${currentCase.name}</strong>: ${currentCase.description}</p>
-<p>Product line: <strong>${lineNames[line]}</strong> &nbsp;|&nbsp; New business: <strong>${currentCase.policy.new_business ? "Yes" : "No"}</strong> (both set by the example policy)</p>`
+<p>Product line: <strong>${lineNames[line]}</strong> &nbsp;|&nbsp; New business: <strong>${currentCase.policy.new_business ? "Yes" : "No"}</strong> (both set by the reference policy)</p>
+${priced ? "" : html`<div class="callout callout-style-default callout-warning"><div class="callout-body"><p><strong>Not priced:</strong> home buildings can't be priced in the browser (its small-claim model is XGBoost). The policy's values are listed below.</p></div></div>`}`
 ```
 
-<details><summary>Values loaded from this example policy</summary>
+<details><summary>This policy's values (from the reference file, with address and customer details joined in)</summary>
 
 ```{ojs}
 Inputs.table(
-  Object.entries(inputs).map(([key, inp]) => ({
-    factor: inp.label,
-    value: inp.type === "select"
-      ? optionLabel(inp, currentCase.policy[key] ?? inp.default)
-      : (currentCase.policy[key] === null || currentCase.policy[key] === undefined ? "Unknown" : String(currentCase.policy[key]))
-  })).concat([{factor: "New business", value: currentCase.policy.new_business ? "Yes" : "No"}]),
+  [{field: "row id", value: currentCase.row_id}, {field: "period of cover", value: currentCase.period},
+   {field: "exposure (years)", value: currentCase.policy.exposure.toFixed(3)},
+   {field: "new business", value: currentCase.policy.new_business ? "Yes" : "No"}]
+    .concat(Object.entries(currentCase.display).map(([field, value]) => ({field, value: String(value)}))),
   {rows: 25, layout: "auto", select: false}
 )
 ```
@@ -68,7 +79,7 @@ Inputs.table(
 </details>
 
 ```{ojs}
-inputs = model.lines[line].inputs
+inputs = priced ? model.lines[line].inputs : ({})
 ```
 
 ```{ojs}
@@ -121,20 +132,21 @@ policy = ({...factors, new_business: newBusiness, exposure: 1})
 ```
 
 ```{ojs}
-result = scorePolicy(model, line, policy)
+result = priced ? scorePolicy(model, line, policy) : null
 ```
 
 ```{ojs}
-original = scorePolicy(model, line, {...currentCase.policy, exposure: 1})
+original = priced ? scorePolicy(model, line, {...currentCase.policy, exposure: 1}) : null
 ```
 
 ```{ojs}
-segmentText = result.segment === "nb" ? "New business" : "Renewal"
+segmentText = result ? (result.segment === "nb" ? "New business" : "Renewal") : ""
 ```
 
 ```{ojs}
 waterfall = {
   const rows = []
+  if (!result) return rows
   for (const [name, comp] of Object.entries(result.components)) {
     for (const t of comp.terms) {
       rows.push({component: name, step: `${name}: ${inputs[t.input]?.label ?? t.term}`, delta: t.contribution})
@@ -146,23 +158,19 @@ waterfall = {
 }
 ```
 
-::: {.callout-note}
-These are **synthetic example policies** for demonstration only. No competition rows are published here.
-:::
-
 ```{ojs}
-html`<div class='hero-kpis'>
+result ? html`<div class='hero-kpis'>
   <div class='kpi-card'><div class='kpi-label'>Segment</div><div class='kpi-value'>${segmentText}</div></div>
-  <div class='kpi-card'><div class='kpi-label'>As-is cost</div><div class='kpi-value'>${result.as_is.toFixed(2)}</div></div>
-  <div class='kpi-card'><div class='kpi-label'>Final premium</div><div class='kpi-value'>${result.final.toFixed(2)}</div></div>
-  <div class='kpi-card'><div class='kpi-label'>Change vs example</div><div class='kpi-value'>${(result.final - original.final >= 0 ? "+" : "") + (result.final - original.final).toFixed(2)}</div></div>
-</div>`
+  <div class='kpi-card'><div class='kpi-label'>Annual premium</div><div class='kpi-value'>${result.final.toFixed(2)}</div></div>
+  <div class='kpi-card'><div class='kpi-label'>For the period (${currentCase.policy.exposure.toFixed(3)} yrs)</div><div class='kpi-value'>${(result.final * currentCase.policy.exposure).toFixed(2)}</div></div>
+  <div class='kpi-card'><div class='kpi-label'>Change vs policy</div><div class='kpi-value'>${(result.final - original.final >= 0 ? "+" : "") + (result.final - original.final).toFixed(2)}</div></div>
+</div>` : html``
 ```
 
 ## Premium build-up
 
 ```{ojs}
-Inputs.table(Object.entries(result.components).map(([name, comp]) => ({
+!result ? md`` : Inputs.table(Object.entries(result.components).map(([name, comp]) => ({
   component: name,
   base_rate: comp.base,
   trend: comp.trend_multiplier,
@@ -173,7 +181,7 @@ Inputs.table(Object.entries(result.components).map(([name, comp]) => ({
 ```
 
 ```{ojs}
-Plot.plot({
+!result ? md`` : Plot.plot({
   width: 960,
   height: 180 + 18 * waterfall.length,
   marginLeft: 230,
@@ -190,7 +198,7 @@ Plot.plot({
 ## Factor-by-factor explanation
 
 ```{ojs}
-Inputs.table(Object.entries(result.components).flatMap(([component, comp]) => comp.terms.map(t => ({
+!result ? md`` : Inputs.table(Object.entries(result.components).flatMap(([component, comp]) => comp.terms.map(t => ({
   component,
   factor: inputs[t.input]?.label ?? t.term,
   selected_value: t.level,
@@ -202,7 +210,7 @@ Inputs.table(Object.entries(result.components).flatMap(([component, comp]) => co
 ## Level steps after the model
 
 ```{ojs}
-Inputs.table(result.steps.map(s => ({step: s.label, value: s.value, running_premium: s.running})), {format: {value: x => x.toFixed(6), running_premium: x => x.toFixed(2)}})
+!result ? md`` : Inputs.table(result.steps.map(s => ({step: s.label, value: s.value, running_premium: s.running})), {format: {value: x => x.toFixed(6), running_premium: x => x.toFixed(2)}})
 ```
 
 ## Spline factor view
@@ -211,7 +219,7 @@ Some numeric factors follow a smooth curve rather than fixed bands. Pick one to 
 the current policy.
 
 ```{ojs}
-splineTerms = Object.values(model.lines[line].components).flatMap(c => c.terms.filter(t => t.kind === "spline"))
+splineTerms = priced ? Object.values(model.lines[line].components).flatMap(c => c.terms.filter(t => t.kind === "spline")) : []
 ```
 
 ```{ojs}
@@ -224,13 +232,14 @@ splineTerm = splineTerms.find(t => t.term === chosenSpline)
 
 ```{ojs}
 splineX = {
+  if (!splineTerm) return []
   const step = Math.max(inputs[chosenSpline].step, (splineTerm.grid_max - splineTerm.grid_min) / 400)
   return d3.range(splineTerm.grid_min, splineTerm.grid_max + step / 2, step).map(x => ({x, y: Math.exp(splineValue(splineTerm, x))}))
 }
 ```
 
 ```{ojs}
-Plot.plot({
+!splineTerm ? md`` : Plot.plot({
   width: 800,
   x: {label: inputs[chosenSpline].label},
   y: {label: "Relativity", grid: true},
@@ -250,32 +259,33 @@ Plot.plot({
 ```
 
 ```{ojs}
-inputs[chosenSpline].allow_missing
+splineTerm && inputs[chosenSpline].allow_missing
   ? md`The dashed line is what the model charges when this factor is **unknown**. It's a level of its own, not an average: unknown sits at ${(Math.exp(splineTerm.missing) / d3.max(splineX, d => d.y)).toFixed(2)}x to ${(Math.exp(splineTerm.missing) / d3.min(splineX, d => d.y)).toFixed(2)}x of the known values.`
   : md``
 ```
 
-## All example policies
+## All 20 reference policies
 
-Every example policy for this line, with its 2025 premium before any changes. Pick one in the
-**Example policy** menu at the top to load it into the calculator.
+Every reference policy with the model's 2025 premium as given (before any changes on this page). Pick one in the
+**Reference policy** menu at the top to load it into the calculator.
 
 ```{ojs}
 Inputs.table(
-  caseList.map((c, i) => Object.assign(
-    {row: i, policy: c.name, premium: scorePolicy(model, line, {...c.policy, exposure: 1}).final, new_business: c.policy.new_business ? "Yes" : "No"},
-    Object.fromEntries(Object.entries(inputs).map(([key, inp]) => [inp.label,
-      inp.type === "select"
-        ? optionLabel(inp, c.policy[key] ?? inp.default)
-        : (c.policy[key] === null || c.policy[key] === undefined ? "Unknown" : c.policy[key])]))
-  )),
-  {rows: 15, layout: "auto", select: false, format: {premium: x => x.toFixed(2)}}
+  allCases.map(c => {
+    const ok = c.priced && model.lines[c.line] !== undefined
+    const annual = ok ? scorePolicy(model, c.line, {...c.policy, exposure: 1}).final : null
+    return {idx: c.idx, row_id: c.row_id, line: lineNames[c.line], new_business: c.policy.new_business ? "Yes" : "No",
+            period: c.period, exposure: c.policy.exposure.toFixed(3),
+            annual_premium: annual === null ? "not priced" : annual.toFixed(2),
+            premium_for_period: annual === null ? "not priced" : (annual * c.policy.exposure).toFixed(2)}
+  }),
+  {rows: 20, layout: "auto", select: false}
 )
 ```
 
 ## How to read this page
 
-* Start with one of the 13 example policies for the line. Its values load into the rating factors.
+* Start with one of the 20 reference policies. Its values load into the rating factors.
 * Change one factor at a time to see how the premium moves.
 * The table above shows the **relativity** for each factor: values above 1 raise the premium, values below 1 lower it.
 * For motor, the final price is the sum of a **small-claim GLM** and a **large-claim GLM**, followed by Gerard's segment-level adjustments.

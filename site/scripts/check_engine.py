@@ -139,12 +139,18 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", type=Path, default=REPO / "site/data/model.json")
     ap.add_argument("--n", type=int, default=2000)
+    ap.add_argument("--ref", type=Path, default=REPO / "site/data/reference_policies.json")
     a = ap.parse_args()
     model = json.loads(a.model.read_text())
     cases = json.loads((REPO / "site/data/test_cases.json").read_text())
     T, scalars, rng = load_terms(), load_scalars(), random.Random(20261029)
 
     policies = [(line, c["policy"]) for line in ("contents", "motor") for c in cases[line]]
+    ref_path = a.ref  # built by build_reference.py
+    if ref_path.exists():
+        ref = json.loads(ref_path.read_text())["policies"]
+        policies += [(c["line"], c["policy"]) for c in ref if c["priced"]]
+        print(f"reference policies: {sum(c['priced'] for c in ref)} priced of {len(ref)}")
     n_cases = len(policies)
     for line in ("contents", "motor"):
         policies += [(line, p) for p in random_policies(model, line, a.n, rng)]

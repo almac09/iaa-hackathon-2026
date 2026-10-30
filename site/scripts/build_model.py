@@ -75,7 +75,7 @@ LEVEL_LABELS = {
 
 # Numeric inputs that are not splines need an explicit slider range.
 NUMERIC_RANGES = {
-    "sum_insured": dict(min=5000, max=150000, step=1000),
+    "sum_insured": dict(min=5000, max=150000, step=100),  # 100 so reference policies (e.g. 22,100) load exactly
     "prior_claims_5y": dict(min=0, max=5, step=1),
     "missed_payments_12m": dict(min=0, max=3, step=1),
 }

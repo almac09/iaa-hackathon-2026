@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - site/**
+      - iaa-ai-assisted-hackathon-2026-part-2/emerging/**
       - contributors/gerard/workings/contents/replication/export/excel/**
       - contributors/gerard/workings/contents/replication/audit/evidence/**
       - .github/workflows/publish-site.yml
@@ -34,6 +35,11 @@ jobs:
 
       - name: Build model JSON
         run: python site/scripts/build_model.py
+
+      - name: Build the reference policies for the calculator (fails on any value the model can't take)
+        run: |
+          pip install pandas pyarrow
+          python site/scripts/build_reference.py
 
       - name: Check the calculator engine against an independent Python scorer
         run: python site/scripts/check_engine.py
