@@ -183,14 +183,16 @@ def build(model: dict) -> tuple[dict, list[str]]:
     errs = []
     for _, r in full.iterrows():
         line, idx = r["line"], int(r["idx"])
-        prefix = {"M": "motor", "C": "contents", "B": "buildings"}[str(r["row_id"])[0]]
-        if prefix != line:
-            errs.append(f"{r['row_id']}: row_id prefix says {prefix} but line is {line}")
+        for col in ("row_id", "policy_id"):
+            prefix = {"M": "motor", "C": "contents", "B": "buildings"}.get(str(r[col])[0])
+            if prefix != line:
+                errs.append(f"{r[col]}: {col} prefix says {prefix} but line is {line}")
         name = f"{idx}. {r['row_id']}"
         p = policy_inputs(r, line)
         errs += validate(model, line, name, p)
         out["policies"].append({
-            "id": f"ref_{idx:02d}", "idx": idx, "row_id": r["row_id"], "line": line, "name": name,
+            "id": f"ref_{idx:02d}", "idx": idx, "row_id": r["row_id"], "policy_id": str(r["policy_id"]),
+            "type": str(r["row_id"])[0], "line": line, "name": name,
             # priced = a full risk premium can be quoted; partial = only some components (buildings: GLM large part)
             "priced": line in model["lines"] and not model["lines"][line].get("missing_components"),
             "partial": line in model["lines"] and bool(model["lines"][line].get("missing_components")),
