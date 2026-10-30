@@ -3,8 +3,9 @@ title: "Underwriting calculator"
 page-layout: full
 ---
 
-Pick a product and one of the **13 example policies**. Choosing a policy fills every rating factor below with
-that policy's values, so you can price it as is and then change any factor. The premium and its build-up
+Pick one of the **example policies** (13 home contents, 13 motor). Choosing a policy sets the product line and
+new business flag and fills every rating factor below with that policy's values, so you can price it as is and
+then change any factor. The premium and its build-up
 update as you go. The figures are the model's **expected claim cost for 2025** (a risk premium, before expenses and
 profit), in competition currency units (CU).
 
@@ -21,23 +22,33 @@ testCases = FileAttachment("data/test_cases.json").json()
 ```
 
 ```{ojs}
-viewof line = Inputs.radio(["contents", "motor"], {label: "Product line", value: "contents", format: x => x === "contents" ? "Home contents" : "Motor"})
+lineNames = ({contents: "Home contents", motor: "Motor"})
 ```
 
 ```{ojs}
-caseList = testCases[line]
+// One list of every example policy; each policy carries its own product line
+allCases = ["contents", "motor"].flatMap(l => testCases[l].map(c => ({...c, line: l})))
 ```
 
 ```{ojs}
-viewof caseId = Inputs.select(caseList.map(d => d.id), {label: "Example policy", format: id => caseList.find(d => d.id === id).name})
+viewof caseId = Inputs.select(allCases.map(d => d.id), {label: "Example policy", format: id => {const c = allCases.find(d => d.id === id); return `${lineNames[c.line]} ${c.name}`}})
 ```
 
 ```{ojs}
-currentCase = caseList.find(d => d.id === caseId)
+currentCase = allCases.find(d => d.id === caseId)
 ```
 
 ```{ojs}
-html`<p><strong>${currentCase.name}</strong>: ${currentCase.description}</p>`
+line = currentCase.line
+```
+
+```{ojs}
+caseList = allCases.filter(d => d.line === line)
+```
+
+```{ojs}
+html`<p><strong>${currentCase.name}</strong>: ${currentCase.description}</p>
+<p>Product line: <strong>${lineNames[line]}</strong> &nbsp;|&nbsp; New business: <strong>${currentCase.policy.new_business ? "Yes" : "No"}</strong> (both set by the example policy)</p>`
 ```
 
 <details><summary>Values loaded from this example policy</summary>
