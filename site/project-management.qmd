@@ -81,6 +81,10 @@ Issues closed, by person: ${byOwner.map(d => `**${d.owner}** ${d.closed} of ${d.
 *Data: the GitHub issues of [the repository](https://github.com/almac09/iaa-hackathon-2026/issues), refreshed on every
 site build and daily.*
 
+```{ojs}
+md`*Last refreshed: **${d3.utcFormat("%d %B %Y, %H:%M")(now)} UTC**.*`
+```
+
 ## Issues raised and closed over time
 
 The gap between the two lines is the open work. A steep closed line means a delivery push.
